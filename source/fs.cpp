@@ -23,6 +23,10 @@
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
 #include <readdir.capnp.h>
+#include <lookup.capnp.h>
+#include <getattr.capnp.h>
+#include <open.capnp.h>
+#include <read.capnp.h>
 
 #include <iostream>
 
@@ -80,12 +84,43 @@ static int hello_stat(fuse_ino_t ino, struct stat *stbuf) {
   return 0;
 }
 
+/**
+ * @brief
+ *
+ * @param req
+ * @param ino -> uint64_t
+ * @param fi -> {
+ *             int 	flags
+ *    unsigned int 	writepage
+ *    unsigned int 	direct_io
+ *    unsigned int 	keep_cache
+ *    unsigned int 	flush
+ *    unsigned int 	nonseekable
+ *    unsigned int 	cache_readdir
+ *    unsigned int 	padding
+ *    uint64_t 	    fh
+ *    uint64_t 	    lock_owner
+ *    uint32_t 	    poll_events
+ *    unsigned int 	noflush
+ * }
+ */
 static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
   struct stat stbuf;
 
   // printf("Called .getattr\n");
 
   (void)fi;
+
+  ::capnp::MallocMessageBuilder message;
+  Getattr::Builder getattr = message.initRoot<Getattr>();
+  Getattr::FuseFileInfo::Builder fuseFileInfo = getattr.initFi();
+
+  getattr.setIno(ino);
+
+  fuseFileInfo.setKeepCache(fi->keep_cache);
+  fuseFileInfo.setDirectIo(fi->direct_io);
+  fuseFileInfo.setFh(fi->fh);
+  fuseFileInfo.setFlags(fi->flags);
 
   memset(&stbuf, 0, sizeof(stbuf));
   if (hello_stat(ino, &stbuf) == -1)
@@ -94,7 +129,20 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
     fuse_reply_attr(req, &stbuf, 1.0);
 }
 
+/**
+ * @brief
+ *
+ * @param req
+ * @param parent -> uint64_t
+ * @param name -> *char
+ */
 static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name) {
+  ::capnp::MallocMessageBuilder message;
+  Lookup::Builder lookup = message.initRoot<Lookup>();
+
+  lookup.setParent(parent);
+  lookup.setName(name);
+
   struct fuse_entry_param e;
 
   // printf("Called .lookup\n");
@@ -208,8 +256,39 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
   }
 }
 
+/**
+ * @brief
+ *
+ * @param req
+ * @param ino -> uint64_t
+ * @param fi -> {
+ *             int 	flags
+ *    unsigned int 	writepage
+ *    unsigned int 	direct_io
+ *    unsigned int 	keep_cache
+ *    unsigned int 	flush
+ *    unsigned int 	nonseekable
+ *    unsigned int 	cache_readdir
+ *    unsigned int 	padding
+ *    uint64_t 	    fh
+ *    uint64_t 	    lock_owner
+ *    uint32_t 	    poll_events
+ *    unsigned int 	noflush
+ * }
+ */
 static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
   // printf("Called .open\n");
+
+  ::capnp::MallocMessageBuilder message;
+  Open::Builder open = message.initRoot<Open>();
+  Open::FuseFileInfo::Builder fuseFileInfo = open.initFi();
+
+  open.setIno(ino);
+
+  fuseFileInfo.setKeepCache(fi->keep_cache);
+  fuseFileInfo.setDirectIo(fi->direct_io);
+  fuseFileInfo.setFh(fi->fh);
+  fuseFileInfo.setFlags(fi->flags);
 
   if (ino != 2 && ino != 3) fuse_reply_err(req, EISDIR);
   // else if ((fi->flags & 3) != O_RDONLY)
@@ -218,9 +297,44 @@ static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info 
     fuse_reply_open(req, fi);
 }
 
+/**
+ * @brief
+ *
+ * @param req
+ * @param ino -> uint64_t
+ * @param size -> unsigned int
+ * @param off -> long int
+ * @param fi -> {
+ *             int 	flags
+ *    unsigned int 	writepage
+ *    unsigned int 	direct_io
+ *    unsigned int 	keep_cache
+ *    unsigned int 	flush
+ *    unsigned int 	nonseekable
+ *    unsigned int 	cache_readdir
+ *    unsigned int 	padding
+ *    uint64_t 	    fh
+ *    uint64_t 	    lock_owner
+ *    uint32_t 	    poll_events
+ *    unsigned int 	noflush
+ * }
+ */
 static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off,
                           struct fuse_file_info *fi) {
   (void)fi;
+
+  ::capnp::MallocMessageBuilder message;
+  Read::Builder read = message.initRoot<Read>();
+  Read::FuseFileInfo::Builder fuseFileInfo = read.initFi();
+
+  read.setIno(ino);
+  read.setSize(size);
+  read.setOff(off);
+
+  fuseFileInfo.setKeepCache(fi->keep_cache);
+  fuseFileInfo.setDirectIo(fi->direct_io);
+  fuseFileInfo.setFh(fi->fh);
+  fuseFileInfo.setFlags(fi->flags);
 
   // printf("Called .read\n");
 

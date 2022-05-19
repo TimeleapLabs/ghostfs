@@ -90,7 +90,10 @@ target_link_libraries(${PROJECT_NAME} PUBLIC ixwebsocket)
 target_link_libraries(${PROJECT_NAME} PRIVATE CapnProto::capnp)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${FUSE_LIBRARIES})
 
-target_include_directories(${PROJECT_NAME} PUBLIC ${uuid_v4_SOURCE_DIR})
+target_include_directories(
+  ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${uuid_v4_SOURCE_DIR}>
+                         $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
+)
 
 target_include_directories(
   ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
