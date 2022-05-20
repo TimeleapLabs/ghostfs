@@ -22,11 +22,16 @@
 
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
-#include <readdir.capnp.h>
-#include <lookup.capnp.h>
+#include <create.capnp.h>
 #include <getattr.capnp.h>
+#include <lookup.capnp.h>
+#include <mkdir.capnp.h>
+#include <mknod.capnp.h>
 #include <open.capnp.h>
 #include <read.capnp.h>
+#include <readdir.capnp.h>
+#include <setattr.capnp.h>
+#include <write.capnp.h>
 
 #include <iostream>
 
@@ -43,15 +48,32 @@ std::string gen_uuid() {
   return uuid.str();
 }
 
+template <class T> void fillFileInfo(T *fuseFileInfo, struct fuse_file_info *fi) {
+  fuseFileInfo->setFlags(fi->flags);
+  fuseFileInfo->setWritepage(fi->writepage);
+  fuseFileInfo->setDirectIo(fi->direct_io);
+  fuseFileInfo->setKeepCache(fi->keep_cache);
+  fuseFileInfo->setFlush(fi->flush);
+  fuseFileInfo->setNonseekable(fi->nonseekable);
+  /* fuseFileInfo->setCacheReaddir(fi->cache_readdir); */
+  fuseFileInfo->setPadding(fi->padding);
+  fuseFileInfo->setFh(fi->fh);
+  fuseFileInfo->setLockOwner(fi->lock_owner);
+  /* fuseFileInfo->setPollEvents(fi->poll_events); */
+  /* fuseFileInfo->setNoflush(fi->noflush); */
+}
+
 /**
  * Notes: fuse_ino_t is uint64_t
  *        off_t is apparently long int
  *        size_t is apparently unsigned int
  *        fuse_file_info check https://libfuse.github.io/doxygen/structfuse__file__info.html
- *        struct stat check https://pubs.opengroup.org/onlinepubs/7908799/xsh/sysstat.h.html
+ *        struct stat check https://pubs.opengroup.org/onlinepubs/7908799/xsh/sysstat.h.html and
+ *                          https://doc.rust-lang.org/std/os/linux/raw/struct.stat.html
  *
  * Cool little trick:
  *        gcc -E -xc -include time.h /dev/null | grep time_t
+ *        gcc -E -xc -include sys/types.h /dev/null | grep nlink_t
  *
  * Useful stuff:
  *        http://www.sde.cs.titech.ac.jp/~gondow/dwarf2-xml/HTML-rxref/app/gcc-3.3.2/lib/gcc-lib/sparc-sun-solaris2.8/3.3.2/include/sys/types.h.html
@@ -117,10 +139,7 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
 
   getattr.setIno(ino);
 
-  fuseFileInfo.setKeepCache(fi->keep_cache);
-  fuseFileInfo.setDirectIo(fi->direct_io);
-  fuseFileInfo.setFh(fi->fh);
-  fuseFileInfo.setFlags(fi->flags);
+  fillFileInfo(&fuseFileInfo, fi);
 
   memset(&stbuf, 0, sizeof(stbuf));
   if (hello_stat(ino, &stbuf) == -1)
@@ -137,15 +156,16 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
  * @param name -> *char
  */
 static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name) {
+
+  struct fuse_entry_param e;
+
+  // printf("Called .lookup\n");
+
   ::capnp::MallocMessageBuilder message;
   Lookup::Builder lookup = message.initRoot<Lookup>();
 
   lookup.setParent(parent);
   lookup.setName(name);
-
-  struct fuse_entry_param e;
-
-  // printf("Called .lookup\n");
 
   bool is_hello = strcmp(name, hello_name) == 0;
   bool is_user_file = strcmp(name, user_file_name) == 0;
@@ -225,10 +245,7 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
   readdir.setSize(size);
   readdir.setOff(off);
 
-  fuseFileInfo.setKeepCache(fi->keep_cache);
-  fuseFileInfo.setDirectIo(fi->direct_io);
-  fuseFileInfo.setFh(fi->fh);
-  fuseFileInfo.setFlags(fi->flags);
+  fillFileInfo(&fuseFileInfo, fi);
 
   const auto m = capnp::messageToFlatArray(message);
   const auto c = m.asChars();
@@ -285,10 +302,7 @@ static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info 
 
   open.setIno(ino);
 
-  fuseFileInfo.setKeepCache(fi->keep_cache);
-  fuseFileInfo.setDirectIo(fi->direct_io);
-  fuseFileInfo.setFh(fi->fh);
-  fuseFileInfo.setFlags(fi->flags);
+  fillFileInfo(&fuseFileInfo, fi);
 
   if (ino != 2 && ino != 3) fuse_reply_err(req, EISDIR);
   // else if ((fi->flags & 3) != O_RDONLY)
@@ -323,6 +337,8 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
                           struct fuse_file_info *fi) {
   (void)fi;
 
+  // printf("Called .read\n");
+
   ::capnp::MallocMessageBuilder message;
   Read::Builder read = message.initRoot<Read>();
   Read::FuseFileInfo::Builder fuseFileInfo = read.initFi();
@@ -331,12 +347,7 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
   read.setSize(size);
   read.setOff(off);
 
-  fuseFileInfo.setKeepCache(fi->keep_cache);
-  fuseFileInfo.setDirectIo(fi->direct_io);
-  fuseFileInfo.setFh(fi->fh);
-  fuseFileInfo.setFlags(fi->flags);
-
-  // printf("Called .read\n");
+  fillFileInfo(&fuseFileInfo, fi);
 
   assert(ino == 2 || ino == 3);
 
@@ -347,11 +358,45 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
   }
 }
 
+/**
+ * @brief
+ *
+ * @param req
+ * @param ino -> uint64_t
+ * @param buf -> *char
+ * @param size -> unsigned int
+ * @param off -> long int
+ * @param fi -> {
+ *             int 	flags
+ *    unsigned int 	writepage
+ *    unsigned int 	direct_io
+ *    unsigned int 	keep_cache
+ *    unsigned int 	flush
+ *    unsigned int 	nonseekable
+ *    unsigned int 	cache_readdir
+ *    unsigned int 	padding
+ *    uint64_t 	    fh
+ *    uint64_t 	    lock_owner
+ *    uint32_t 	    poll_events
+ *    unsigned int 	noflush
+ * }
+ */
 static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size_t size, off_t off,
                            struct fuse_file_info *fi) {
   assert(ino == 3);
 
   // printf("Called .write\n");
+
+  ::capnp::MallocMessageBuilder message;
+  Write::Builder write = message.initRoot<Write>();
+  Write::FuseFileInfo::Builder fuseFileInfo = write.initFi();
+
+  write.setIno(ino);
+  write.setBuf(buf);
+  write.setSize(size);
+  write.setOff(off);
+
+  fillFileInfo(&fuseFileInfo, fi);
 
   strcpy(user_file_str, buf);
 
@@ -362,11 +407,28 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
   }
 }
 
+/**
+ * @brief
+ *
+ * @param req
+ * @param parent -> uint64_t
+ * @param name -> *char
+ * @param mode -> uint64_t
+ * @param rdev -> uint16_t
+ */
 static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode,
                            dev_t rdev) {
   struct fuse_entry_param e;
 
   // printf("Called .mknod\n");
+
+  ::capnp::MallocMessageBuilder message;
+  Mknod::Builder mknod = message.initRoot<Mknod>();
+
+  mknod.setParent(parent);
+  mknod.setName(name);
+  mknod.setMode(mode);
+  mknod.setRdev(rdev);
 
   strcpy(user_file_name, name);
 
@@ -383,11 +445,43 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
   }
 }
 
+/**
+ * @brief
+ *
+ * @param req
+ * @param parent -> uint64_t
+ * @param name -> *char
+ * @param mode -> uint64_t
+ * @param fi -> {
+ *             int 	flags
+ *    unsigned int 	writepage
+ *    unsigned int 	direct_io
+ *    unsigned int 	keep_cache
+ *    unsigned int 	flush
+ *    unsigned int 	nonseekable
+ *    unsigned int 	cache_readdir
+ *    unsigned int 	padding
+ *    uint64_t 	    fh
+ *    uint64_t 	    lock_owner
+ *    uint32_t 	    poll_events
+ *    unsigned int 	noflush
+ * }
+ */
 static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode,
                             struct fuse_file_info *fi) {
   struct fuse_entry_param e;
 
   // printf("Called .create\n");
+
+  ::capnp::MallocMessageBuilder message;
+  Create::Builder create = message.initRoot<Create>();
+  Create::FuseFileInfo::Builder fuseFileInfo = create.initFi();
+
+  create.setParent(parent);
+  create.setName(name);
+  create.setMode(mode);
+
+  fillFileInfo(&fuseFileInfo, fi);
 
   strcpy(user_file_name, name);
 
@@ -406,10 +500,25 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
   }
 }
 
+/**
+ * @brief
+ *
+ * @param req
+ * @param parent -> uint64_t
+ * @param name -> *char
+ * @param mode -> uint64_t
+ */
 static void hello_ll_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode) {
   struct fuse_entry_param e;
 
   // printf("Called .mkdir\n");
+
+  ::capnp::MallocMessageBuilder message;
+  Mkdir::Builder mkdir = message.initRoot<Mkdir>();
+
+  mkdir.setParent(parent);
+  mkdir.setName(name);
+  mkdir.setMode(mode);
 
   strcpy(user_file_name, name);
 
@@ -426,8 +535,69 @@ static void hello_ll_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, 
   }
 }
 
+/**
+ * @brief
+ *
+ * @param req
+ * @param ino -> uint64_t
+ * @param attr -> {
+ *    uint16_t      st_dev
+ *    uint64_t      st_ino
+ *    uint64_t      st_mode
+ *    uint16_t      st_nlink
+ *             int  st_uid
+ *             int  st_gid
+ *    uint16_t      st_rdev
+ *    long     int  st_size
+ *    int64_t       st_atime
+ *    int64_t       st_mtime
+ *    int64_t       st_ctime
+ *    uint64_t      st_blksize
+ *    uint64_t      st_blocks
+ * }
+ * @param to_set -> int64_t
+ * @param fi -> {
+ *             int 	flags
+ *    unsigned int 	writepage
+ *    unsigned int 	direct_io
+ *    unsigned int 	keep_cache
+ *    unsigned int 	flush
+ *    unsigned int 	nonseekable
+ *    unsigned int 	cache_readdir
+ *    unsigned int 	padding
+ *    uint64_t 	    fh
+ *    uint64_t 	    lock_owner
+ *    uint32_t 	    poll_events
+ *    unsigned int 	noflush
+ * }
+ */
 static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, int to_set,
                              struct fuse_file_info *fi) {
+  ::capnp::MallocMessageBuilder message;
+  Setattr::Builder setattr = message.initRoot<Setattr>();
+  Setattr::FuseFileInfo::Builder fuseFileInfo = setattr.initFi();
+  Setattr::Attr::Builder attributes = setattr.initAttr();
+
+  setattr.setIno(ino);
+
+  attributes.setStDev(attr->st_dev);
+  attributes.setStIno(attr->st_ino);
+  attributes.setStMode(attr->st_mode);
+  attributes.setStNlink(attr->st_nlink);
+  attributes.setStUid(attr->st_uid);
+  attributes.setStGid(attr->st_gid);
+  attributes.setStRdev(attr->st_rdev);
+  attributes.setStSize(attr->st_size);
+  attributes.setStAtime(attr->st_atime);
+  attributes.setStMtime(attr->st_mtime);
+  attributes.setStCtime(attr->st_ctime);
+  attributes.setStBlksize(attr->st_blksize);
+  attributes.setStBlocks(attr->st_blocks);
+
+  setattr.setToSet(to_set);
+
+  fillFileInfo(&fuseFileInfo, fi);
+
   // printf("Called .setattr\n");
 
   hello_ll_getattr(req, ino, fi);
@@ -439,11 +609,11 @@ static struct fuse_lowlevel_ops hello_ll_oper = {
     .readdir = hello_ll_readdir,
     .open = hello_ll_open,
     .read = hello_ll_read,
-    //.write = hello_ll_write,
-    //.mknod = hello_ll_mknod,
-    //.create = hello_ll_create,
-    //.mkdir = hello_ll_mkdir,
-    //.setattr = hello_ll_setattr
+    .write = hello_ll_write,
+    .mknod = hello_ll_mknod,
+    .create = hello_ll_create,
+    .mkdir = hello_ll_mkdir,
+    .setattr = hello_ll_setattr
 };
 
 int start_fs(int argc, char *argv[]) {
