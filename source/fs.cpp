@@ -33,7 +33,9 @@
 #include <setattr.capnp.h>
 #include <write.capnp.h>
 
+#include <filesystem>
 #include <iostream>
+#include <map>
 
 static const char *hello_str = "Hello World!\n";
 static const char *hello_name = "hello";
@@ -42,6 +44,11 @@ char user_file_str[40];
 char user_file_name[1024];
 
 UUIDv4::UUIDGenerator<std::mt19937_64> uuidGenerator;
+
+std::map<uint64_t, std::string> ino_to_path;
+std::map<std::string, uint64_t> path_to_ino;
+
+uint64_t current_ino = 1;
 
 std::string gen_uuid() {
   UUIDv4::UUID uuid = uuidGenerator.getUUID();
@@ -83,28 +90,22 @@ template <class T> void fillFileInfo(T *fuseFileInfo, struct fuse_file_info *fi)
  */
 
 static int hello_stat(fuse_ino_t ino, struct stat *stbuf) {
-  stbuf->st_ino = ino;
-  switch (ino) {
-    case 1:
-      stbuf->st_mode = S_IFDIR | 0777;
-      stbuf->st_nlink = 2;
-      break;
-
-    case 2:
-      stbuf->st_mode = S_IFREG | 0444;
-      stbuf->st_nlink = 1;
-      stbuf->st_size = strlen(hello_str);
-      break;
-
-    case 3:
-      stbuf->st_mode = S_IFREG | 0777;
-      stbuf->st_nlink = 1;
-      stbuf->st_size = strlen(user_file_str);
-      break;
-
-    default:
-      return -1;
+  if (ino == 1) {
+    // This is the fs root
+    stbuf->st_ino = ino;
+    stbuf->st_mode = S_IFDIR | 0777;
+    stbuf->st_nlink = 2;
+    return 0;
   }
+
+  if (ino_to_path.find(ino) == ino_to_path.end()) {
+    // File is unknown
+    return -1;
+  }
+
+  stat(ino_to_path[ino].c_str(), stbuf);
+  stbuf->st_ino = ino;
+
   return 0;
 }
 
@@ -129,12 +130,6 @@ static int hello_stat(fuse_ino_t ino, struct stat *stbuf) {
  * }
  */
 static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
-  struct stat stbuf;
-
-  // printf("Called .getattr\n");
-
-  (void)fi;
-
   ::capnp::MallocMessageBuilder message;
   Getattr::Builder getattr = message.initRoot<Getattr>();
   Getattr::FuseFileInfo::Builder fuseFileInfo = getattr.initFi();
@@ -142,6 +137,12 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
   getattr.setIno(ino);
 
   fillFileInfo(&fuseFileInfo, fi);
+
+  struct stat stbuf;
+
+  // printf("Called .getattr\n");
+
+  (void)fi;
 
   memset(&stbuf, 0, sizeof(stbuf));
   if (hello_stat(ino, &stbuf) == -1)
@@ -158,8 +159,6 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
  * @param name -> *char
  */
 static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name) {
-  struct fuse_entry_param e;
-
   // printf("Called .lookup\n");
 
   ::capnp::MallocMessageBuilder message;
@@ -168,17 +167,21 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
   lookup.setParent(parent);
   lookup.setName(name);
 
+  struct fuse_entry_param e;
+
   bool is_hello = strcmp(name, hello_name) == 0;
   bool is_user_file = strcmp(name, user_file_name) == 0;
   bool user_file_exists = strlen(user_file_name) > 0;
 
-  if (parent != 1 || !is_hello && !is_user_file) {
-    fuse_reply_err(req, ENOENT);
-  } else if (is_user_file && !user_file_exists) {
+  std::string parent_path_name = parent == 1 ? "./root" : ino_to_path[parent];
+  std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
+  std::filesystem::path file_path = parent_path / std::filesystem::path(name);
+
+  if (!std::filesystem::exists(file_path)) {
     fuse_reply_err(req, ENOENT);
   } else {
     memset(&e, 0, sizeof(e));
-    e.ino = strcmp(name, hello_name) == 0 ? 2 : 3;
+    e.ino = path_to_ino[file_path];
     e.attr_timeout = 1.0;
     e.entry_timeout = 1.0;
     hello_stat(e.ino, &e.attr);
@@ -248,29 +251,45 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
 
   fillFileInfo(&fuseFileInfo, fi);
 
-  const auto m = capnp::messageToFlatArray(message);
-  const auto c = m.asChars();
-
-  std::cout << "Size: " << c.size() << std::endl;
+  // Don't remove these 3 lines
+  // const auto m = capnp::messageToFlatArray(message);
+  // const auto c = m.asChars();
+  // std::cout << "Size: " << c.size() << std::endl;
 
   // printf("Called .readdir\n");
 
-  if (ino != 1)
-    fuse_reply_err(req, ENOTDIR);
-  else {
+  // Root
+  if (ino == 1) {
+    std::string path = "./root";
+
     struct dirbuf b;
 
     memset(&b, 0, sizeof(b));
     dirbuf_add(req, &b, ".", 1);
     dirbuf_add(req, &b, "..", 1);
-    dirbuf_add(req, &b, hello_name, 2);
 
-    if (strlen(user_file_name) > 0) {
-      dirbuf_add(req, &b, user_file_name, 3);
+    for (const auto &entry : std::filesystem::directory_iterator(path)) {
+      std::string file_path = entry.path();
+      std::string file_name = std::filesystem::path(file_path).filename();
+
+      uint64_t file_ino;
+
+      if (path_to_ino.find(file_path) == path_to_ino.end()) {
+        file_ino = ++current_ino;
+        ino_to_path[file_ino] = file_path;
+        path_to_ino[file_path] = file_ino;
+      } else {
+        file_ino = path_to_ino[file_path];
+      }
+
+      // std::cout << "Filename: " << file_name << ", INO: " << file_ino << std::endl;
+      dirbuf_add(req, &b, file_name.c_str(), file_ino);
     }
 
     reply_buf_limited(req, b.p, b.size, off, size);
     free(b.p);
+  } else {
+    fuse_reply_err(req, ENOTDIR);
   }
 }
 
@@ -609,13 +628,13 @@ static struct fuse_lowlevel_ops hello_ll_oper = {
     .lookup = hello_ll_lookup,
     .getattr = hello_ll_getattr,
     .readdir = hello_ll_readdir,
-    .open = hello_ll_open,
-    .read = hello_ll_read,
-    .write = hello_ll_write,
-    .mknod = hello_ll_mknod,
-    .create = hello_ll_create,
-    .mkdir = hello_ll_mkdir,
-    .setattr = hello_ll_setattr
+    //.open = hello_ll_open,
+    //.read = hello_ll_read,
+    //.write = hello_ll_write,
+    //.mknod = hello_ll_mknod,
+    //.create = hello_ll_create,
+    //.mkdir = hello_ll_mkdir,
+    //.setattr = hello_ll_setattr
 };
 // clang-format on
 
