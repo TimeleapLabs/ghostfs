@@ -17,6 +17,7 @@ auto main(int argc, char** argv) -> int {
     ("h,help", "Show help")
     ("v,version", "Print the current version number")
     ("s,server", "Run in server mode")  // a bool parameter
+    ("g,ghost", "Run in ghost mode")
     ("c,client", "Run in client mode");
 
   // options.add_options()
@@ -52,11 +53,9 @@ auto main(int argc, char** argv) -> int {
     ws.prompt();
 
     return 0;
-  } else {
-    start_fs(argc, argv);
+  } else if (result["ghost"].as<bool>()) {
+    return start_fs(argc, argv);
 
     // ghostfs::GhostFS ghostfs();
-
-    return 0;
   }
 }

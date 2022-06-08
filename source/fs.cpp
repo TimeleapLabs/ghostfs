@@ -49,6 +49,8 @@ std::string gen_uuid() {
 }
 
 template <class T> void fillFileInfo(T *fuseFileInfo, struct fuse_file_info *fi) {
+  if (!fi) return;
+
   fuseFileInfo->setFlags(fi->flags);
   fuseFileInfo->setWritepage(fi->writepage);
   fuseFileInfo->setDirectIo(fi->direct_io);
@@ -156,7 +158,6 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
  * @param name -> *char
  */
 static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name) {
-
   struct fuse_entry_param e;
 
   // printf("Called .lookup\n");
@@ -603,6 +604,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   hello_ll_getattr(req, ino, fi);
 }
 
+// clang-format off
 static struct fuse_lowlevel_ops hello_ll_oper = {
     .lookup = hello_ll_lookup,
     .getattr = hello_ll_getattr,
@@ -615,6 +617,7 @@ static struct fuse_lowlevel_ops hello_ll_oper = {
     .mkdir = hello_ll_mkdir,
     .setattr = hello_ll_setattr
 };
+// clang-format on
 
 int start_fs(int argc, char *argv[]) {
   struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
