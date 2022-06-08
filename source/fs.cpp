@@ -169,10 +169,6 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
 
   struct fuse_entry_param e;
 
-  bool is_hello = strcmp(name, hello_name) == 0;
-  bool is_user_file = strcmp(name, user_file_name) == 0;
-  bool user_file_exists = strlen(user_file_name) > 0;
-
   std::string parent_path_name = parent == 1 ? "./root" : ino_to_path[parent];
   std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
   std::filesystem::path file_path = parent_path / std::filesystem::path(name);
