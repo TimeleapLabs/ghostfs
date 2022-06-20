@@ -408,8 +408,6 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
  */
 static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size_t size, off_t off,
                            struct fuse_file_info *fi) {
-  assert(ino == 3);
-
   // printf("Called .write\n");
 
   ::capnp::MallocMessageBuilder message;
@@ -423,13 +421,9 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
 
   fillFileInfo(&fuseFileInfo, fi);
 
-  strcpy(user_file_str, buf);
-
-  if (false) {
-    fuse_reply_err(req, 1);
-  } else {
-    fuse_reply_write(req, size);
-  }
+  ::lseek(fi->fh, off, SEEK_SET);
+  size_t written = ::write(fi->fh, buf, size);
+  fuse_reply_write(req, written);
 }
 
 /**
@@ -635,7 +629,7 @@ static struct fuse_lowlevel_ops hello_ll_oper = {
     .readdir = hello_ll_readdir,
     .open = hello_ll_open,
     .read = hello_ll_read,
-    //.write = hello_ll_write,
+    .write = hello_ll_write,
     //.mknod = hello_ll_mknod,
     //.create = hello_ll_create,
     //.mkdir = hello_ll_mkdir,
