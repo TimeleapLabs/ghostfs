@@ -320,11 +320,15 @@ static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info 
 
   fillFileInfo(&fuseFileInfo, fi);
 
-  if (ino != 2 && ino != 3) fuse_reply_err(req, EISDIR);
-  // else if ((fi->flags & 3) != O_RDONLY)
-  //   fuse_reply_err(req, EACCES);
-  else
-    fuse_reply_open(req, fi);
+  if (ino_to_path.find(ino) == ino_to_path.end()) {
+    // File is unknown
+    fuse_reply_err(req, ENOENT);
+    return;
+  }
+
+  fi->fh = ::open(ino_to_path[ino].c_str(), fi->flags);
+
+  fuse_reply_open(req, fi);
 }
 
 /**
@@ -365,13 +369,18 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
 
   fillFileInfo(&fuseFileInfo, fi);
 
-  assert(ino == 2 || ino == 3);
-
-  if (ino == 2) {
-    reply_buf_limited(req, hello_str, strlen(hello_str), off, size);
-  } else {
-    reply_buf_limited(req, user_file_str, strlen(user_file_str), off, size);
+  if (ino_to_path.find(ino) == ino_to_path.end()) {
+    // File is unknown
+    fuse_reply_err(req, ENOENT);
+    return;
   }
+
+  char buf[size];
+
+  ::lseek(fi->fh, off, SEEK_SET);
+  ::read(fi->fh, &buf, size);
+
+  reply_buf_limited(req, buf, size, off, size);
 }
 
 /**
@@ -624,8 +633,8 @@ static struct fuse_lowlevel_ops hello_ll_oper = {
     .lookup = hello_ll_lookup,
     .getattr = hello_ll_getattr,
     .readdir = hello_ll_readdir,
-    //.open = hello_ll_open,
-    //.read = hello_ll_read,
+    .open = hello_ll_open,
+    .read = hello_ll_read,
     //.write = hello_ll_write,
     //.mknod = hello_ll_mknod,
     //.create = hello_ll_create,
