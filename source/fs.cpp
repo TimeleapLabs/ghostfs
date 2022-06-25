@@ -31,6 +31,7 @@
 #include <read.capnp.h>
 #include <readdir.capnp.h>
 #include <setattr.capnp.h>
+#include <sys/xattr.h>
 #include <write.capnp.h>
 
 #include <filesystem>
@@ -54,6 +55,8 @@ std::string gen_uuid() {
   UUIDv4::UUID uuid = uuidGenerator.getUUID();
   return uuid.str();
 }
+
+std::string ROOT = "/Users/pouya/.ghostfs/root";
 
 template <class T> void fillFileInfo(T *fuseFileInfo, struct fuse_file_info *fi) {
   if (!fi) return;
@@ -169,7 +172,7 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
 
   struct fuse_entry_param e;
 
-  std::string parent_path_name = parent == 1 ? "./root" : ino_to_path[parent];
+  std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
   std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
   std::filesystem::path file_path = parent_path / std::filesystem::path(name);
 
@@ -256,7 +259,7 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
 
   // Root
   if (ino == 1) {
-    std::string path = "./root";
+    std::string path = ROOT;
 
     struct dirbuf b;
 
@@ -437,8 +440,6 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
  */
 static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode,
                            dev_t rdev) {
-  struct fuse_entry_param e;
-
   // printf("Called .mknod\n");
 
   ::capnp::MallocMessageBuilder message;
@@ -449,17 +450,32 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
   mknod.setMode(mode);
   mknod.setRdev(rdev);
 
-  strcpy(user_file_name, name);
+  std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
+  std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
+  std::filesystem::path file_path = parent_path / std::filesystem::path(name);
 
-  if (false)
-    fuse_reply_err(req, ENOENT);
-  else {
+  uint64_t file_ino;
+
+  file_ino = ++current_ino;
+  ino_to_path[file_ino] = file_path;
+  path_to_ino[file_path] = file_ino;
+
+  int err = ::mknod(file_path.c_str(), mode, rdev);
+
+  if (err == -1) {
+    ino_to_path.erase(file_ino);
+    path_to_ino.erase(file_path);
+
+    fuse_reply_err(req, err);
+  } else {
+    struct fuse_entry_param e;
     memset(&e, 0, sizeof(e));
-    e.ino = 3;
+
+    e.ino = file_ino;
     e.attr_timeout = 1.0;
     e.entry_timeout = 1.0;
-    hello_stat(e.ino, &e.attr);
 
+    hello_stat(e.ino, &e.attr);
     fuse_reply_entry(req, &e);
   }
 }
@@ -502,19 +518,31 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
 
   fillFileInfo(&fuseFileInfo, fi);
 
-  strcpy(user_file_name, name);
+  std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
+  std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
+  std::filesystem::path file_path = parent_path / std::filesystem::path(name);
 
-  if (false)
-    fuse_reply_err(req, ENOENT);
-  else {
+  int res = ::open(file_path.c_str(), (fi->flags | O_CREAT) & ~O_NOFOLLOW, mode);
+
+  if (res == -1) {
+    fuse_reply_err(req, res);
+  } else {
+    struct fuse_entry_param e;
     memset(&e, 0, sizeof(e));
-    e.ino = 3;
+
+    uint64_t file_ino;
+
+    file_ino = ++current_ino;
+    ino_to_path[file_ino] = file_path;
+    path_to_ino[file_path] = file_ino;
+
+    e.ino = file_ino;
     e.attr_timeout = 1.0;
     e.entry_timeout = 1.0;
+
+    fi->fh = res;
+
     hello_stat(e.ino, &e.attr);
-
-    fi->fh = 4;
-
     fuse_reply_create(req, &e, fi);
   }
 }
@@ -617,9 +645,89 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
 
   fillFileInfo(&fuseFileInfo, fi);
 
-  // printf("Called .setattr\n");
+  if (ino_to_path.find(ino) == ino_to_path.end()) {
+    // Parent is unknown
+    fuse_reply_err(req, ENOENT);
+    return;
+  }
+
+  int err;
+  std::string file_path = ino_to_path[ino];
+
+  if (to_set & FUSE_SET_ATTR_MODE) {
+    err = chmod(file_path.c_str(), attr->st_mode);
+    if (err == -1) {
+      fuse_reply_err(req, err);
+      return;
+    }
+  }
+
+  if (to_set & (FUSE_SET_ATTR_UID | FUSE_SET_ATTR_GID)) {
+    uid_t uid = (to_set & FUSE_SET_ATTR_UID) ? attr->st_uid : (uid_t)-1;
+    gid_t gid = (to_set & FUSE_SET_ATTR_GID) ? attr->st_gid : (gid_t)-1;
+
+    err = lchown(file_path.c_str(), uid, gid);
+    if (err == -1) {
+      fuse_reply_err(req, err);
+      return;
+    }
+  }
+
+  if (to_set & FUSE_SET_ATTR_SIZE) {
+    err = truncate(file_path.c_str(), attr->st_size);
+    if (err == -1) {
+      fuse_reply_err(req, err);
+      return;
+    }
+  }
+
+  if (to_set & (FUSE_SET_ATTR_ATIME | FUSE_SET_ATTR_MTIME)) {
+    struct timespec tv[2];
+
+    tv[0].tv_sec = 0;
+    tv[1].tv_sec = 0;
+    tv[0].tv_nsec = UTIME_OMIT;
+    tv[1].tv_nsec = UTIME_OMIT;
+
+    if (to_set & FUSE_SET_ATTR_ATIME_NOW) {
+      tv[0].tv_nsec = UTIME_NOW;
+    } else if (to_set & FUSE_SET_ATTR_ATIME) {  // clang-format off
+      #if defined(__APPLE__)
+        tv[0] = attr->st_atimespec;
+      #else
+        tv[0] = attr->st_atim;
+      #endif  // clang-format on
+    }
+
+    if (to_set & FUSE_SET_ATTR_MTIME_NOW) {
+      tv[1].tv_nsec = UTIME_NOW;
+    } else if (to_set & FUSE_SET_ATTR_MTIME) {  // clang-format off
+      #if defined(__APPLE__)
+        tv[1] = attr->st_mtimespec;
+      #else
+        tv[1] = attr->st_mtim;
+      #endif  // clang-format on
+    }
+
+    err = utimensat(AT_FDCWD, file_path.c_str(), tv, 0);
+
+    if (err == -1) {
+      fuse_reply_err(req, err);
+      return;
+    }
+  }
 
   hello_ll_getattr(req, ino, fi);
+}
+
+static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, const char *value,
+                              size_t size, int flags, uint32_t position) {
+  std::string file_path = ino_to_path[ino];
+
+  int err = setxattr(file_path.c_str(), name, value, size, position, flags);
+  if (err == -1) {
+    fuse_reply_err(req, err);
+  }
 }
 
 // clang-format off
@@ -630,10 +738,11 @@ static struct fuse_lowlevel_ops hello_ll_oper = {
     .open = hello_ll_open,
     .read = hello_ll_read,
     .write = hello_ll_write,
-    //.mknod = hello_ll_mknod,
-    //.create = hello_ll_create,
+    .mknod = hello_ll_mknod,
+    .create = hello_ll_create,
     //.mkdir = hello_ll_mkdir,
-    //.setattr = hello_ll_setattr
+    .setattr = hello_ll_setattr,
+    .setxattr = hello_ll_setxattr,
 };
 // clang-format on
 
