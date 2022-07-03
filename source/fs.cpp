@@ -257,39 +257,43 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
 
   // printf("Called .readdir\n");
 
+  std::string path;
+
   // Root
   if (ino == 1) {
-    std::string path = ROOT;
-
-    struct dirbuf b;
-
-    memset(&b, 0, sizeof(b));
-    dirbuf_add(req, &b, ".", 1);
-    dirbuf_add(req, &b, "..", 1);
-
-    for (const auto &entry : std::filesystem::directory_iterator(path)) {
-      std::string file_path = entry.path();
-      std::string file_name = std::filesystem::path(file_path).filename();
-
-      uint64_t file_ino;
-
-      if (path_to_ino.find(file_path) == path_to_ino.end()) {
-        file_ino = ++current_ino;
-        ino_to_path[file_ino] = file_path;
-        path_to_ino[file_path] = file_ino;
-      } else {
-        file_ino = path_to_ino[file_path];
-      }
-
-      // std::cout << "Filename: " << file_name << ", INO: " << file_ino << std::endl;
-      dirbuf_add(req, &b, file_name.c_str(), file_ino);
-    }
-
-    reply_buf_limited(req, b.p, b.size, off, size);
-    free(b.p);
+    path = ROOT;
+  } else if (ino_to_path.find(ino) != ino_to_path.end()) {
+    path = ino_to_path[ino];
   } else {
     fuse_reply_err(req, ENOTDIR);
   }
+
+  struct dirbuf b;
+
+  memset(&b, 0, sizeof(b));
+  dirbuf_add(req, &b, ".", 1);
+  dirbuf_add(req, &b, "..", 1);
+
+  for (const auto &entry : std::filesystem::directory_iterator(path)) {
+    std::string file_path = entry.path();
+    std::string file_name = std::filesystem::path(file_path).filename();
+
+    uint64_t file_ino;
+
+    if (path_to_ino.find(file_path) == path_to_ino.end()) {
+      file_ino = ++current_ino;
+      ino_to_path[file_ino] = file_path;
+      path_to_ino[file_path] = file_ino;
+    } else {
+      file_ino = path_to_ino[file_path];
+    }
+
+    // std::cout << "Filename: " << file_name << ", INO: " << file_ino << std::endl;
+    dirbuf_add(req, &b, file_name.c_str(), file_ino);
+  }
+
+  reply_buf_limited(req, b.p, b.size, off, size);
+  free(b.p);
 }
 
 /**
@@ -556,8 +560,6 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
  * @param mode -> uint64_t
  */
 static void hello_ll_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode) {
-  struct fuse_entry_param e;
-
   // printf("Called .mkdir\n");
 
   ::capnp::MallocMessageBuilder message;
@@ -567,17 +569,29 @@ static void hello_ll_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, 
   mkdir.setName(name);
   mkdir.setMode(mode);
 
-  strcpy(user_file_name, name);
+  std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
+  std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
+  std::filesystem::path file_path = parent_path / std::filesystem::path(name);
 
-  if (false)
+  int res = ::mkdir(file_path.c_str(), mode);
+
+  if (res == -1)
     fuse_reply_err(req, ENOENT);
   else {
+    struct fuse_entry_param e;
     memset(&e, 0, sizeof(e));
-    e.ino = 3;
+
+    uint64_t file_ino;
+
+    file_ino = ++current_ino;
+    ino_to_path[file_ino] = file_path;
+    path_to_ino[file_path] = file_ino;
+
+    e.ino = file_ino;
     e.attr_timeout = 1.0;
     e.entry_timeout = 1.0;
-    hello_stat(e.ino, &e.attr);
 
+    hello_stat(e.ino, &e.attr);
     fuse_reply_entry(req, &e);
   }
 }
@@ -740,7 +754,7 @@ static struct fuse_lowlevel_ops hello_ll_oper = {
     .write = hello_ll_write,
     .mknod = hello_ll_mknod,
     .create = hello_ll_create,
-    //.mkdir = hello_ll_mkdir,
+    .mkdir = hello_ll_mkdir,
     .setattr = hello_ll_setattr,
     .setxattr = hello_ll_setxattr,
 };
