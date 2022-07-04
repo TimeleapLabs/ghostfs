@@ -21,10 +21,11 @@ WSClient::WSClient(std::string _url) : url(std::move(_url)) {
   webSocket.start();
 
   // Send a message to the server (default to TEXT mode)
-  webSocket.send("hello world");
+  // webSocket.send("hello world");
 }
 
 void WSClient::send(std::string message) { webSocket.send(message); }
+void WSClient::sendBinary(char* message) { webSocket.sendBinary(message); }
 
 void WSClient::prompt() {
   // Display a prompt
@@ -41,14 +42,14 @@ void WSClient::prompt() {
 
 void WSClient::onMessage(const ix::WebSocketMessagePtr& msg) {
   if (msg->type == ix::WebSocketMessageType::Message) {
-    std::cout << "received message: " << msg->str << std::endl;
-    std::cout << "> " << std::flush;
+    // std::cout << "received message: " << msg->str << std::endl;
+    // std::cout << "> " << std::flush;
   } else if (msg->type == ix::WebSocketMessageType::Open) {
     std::cout << "Connection established" << std::endl;
-    std::cout << "> " << std::flush;
+    // std::cout << "> " << std::flush;
   } else if (msg->type == ix::WebSocketMessageType::Error) {
     // Maybe SSL is not configured properly
     std::cout << "Connection error: " << msg->errorInfo.reason << std::endl;
-    std::cout << "> " << std::flush;
+    // std::cout << "> " << std::flush;
   }
 }

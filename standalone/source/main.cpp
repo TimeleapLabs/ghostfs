@@ -31,7 +31,7 @@ auto main(int argc, char** argv) -> int {
 
   auto result = options.parse(argc, argv);
 
-  std::cout << "UUID: " << gen_uuid() << std::endl;
+  // std::cout << "UUID: " << gen_uuid() << std::endl;
 
   if (result["help"].as<bool>()) {
     std::cout << options.help() << std::endl;
@@ -54,7 +54,8 @@ auto main(int argc, char** argv) -> int {
 
     return 0;
   } else if (result["ghost"].as<bool>()) {
-    return start_fs(argc, argv);
+    wsclient::WSClient ws("http://localhost:3444");
+    return start_fs(argc, argv, &ws);
 
     // ghostfs::GhostFS ghostfs();
   }

@@ -28,6 +28,7 @@ namespace wsclient {
      * @param message the message to send
      */
     void send(std::string message);
+    void sendBinary(char* message);
 
     void prompt();
 

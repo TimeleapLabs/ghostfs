@@ -24,6 +24,7 @@
 #include <capnp/serialize-packed.h>
 #include <create.capnp.h>
 #include <getattr.capnp.h>
+#include <ghostfs/ws.h>
 #include <lookup.capnp.h>
 #include <mkdir.capnp.h>
 #include <mknod.capnp.h>
@@ -58,6 +59,19 @@ std::string gen_uuid() {
 
 std::string ROOT = "/Users/pouya/.ghostfs/root";
 
+struct request {
+  char *name;
+  uint8_t type;
+  fuse_req_t req;
+  fuse_file_info *fi;
+  size_t size;
+  off_t off;
+};
+
+std::map<std::string, request> requests;
+
+wsclient::WSClient *ws;
+
 template <class T> void fillFileInfo(T *fuseFileInfo, struct fuse_file_info *fi) {
   if (!fi) return;
 
@@ -75,6 +89,7 @@ template <class T> void fillFileInfo(T *fuseFileInfo, struct fuse_file_info *fi)
   /* fuseFileInfo->setNoflush(fi->noflush); */
 }
 
+void process_response(uint8_t msg) {}
 /**
  * Notes: fuse_ino_t is uint64_t
  *        off_t is apparently long int
@@ -141,17 +156,26 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
 
   fillFileInfo(&fuseFileInfo, fi);
 
-  struct stat stbuf;
+  std::string uuid = gen_uuid();
+  requests[uuid] = {.type = 1, .req = req};
+
+  const auto data = capnp::messageToFlatArray(message);
+  const auto bytes = data.asBytes();
+  std::string payload(bytes.begin(), bytes.end());
+
+  ws->send("1" + payload);
 
   // printf("Called .getattr\n");
 
   (void)fi;
+  struct stat stbuf;
 
   memset(&stbuf, 0, sizeof(stbuf));
-  if (hello_stat(ino, &stbuf) == -1)
+  if (hello_stat(ino, &stbuf) == -1) {
     fuse_reply_err(req, ENOENT);
-  else
+  } else {
     fuse_reply_attr(req, &stbuf, 1.0);
+  }
 }
 
 /**
@@ -169,6 +193,20 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
 
   lookup.setParent(parent);
   lookup.setName(name);
+
+  std::string uuid = gen_uuid();
+  requests[uuid] = {.type = 2, .req = req};
+
+  const auto data = capnp::messageToFlatArray(message);
+  const auto bytes = data.asBytes();
+  std::string payload(bytes.begin(), bytes.end());
+
+  ws->send("2" + payload);
+
+  struct stat stbuf;
+
+  // char msg[] = {2, parent, *name};
+  // ws->sendBinary(msg);
 
   struct fuse_entry_param e;
 
@@ -238,7 +276,7 @@ static int reply_buf_limited(fuse_req_t req, const char *buf, size_t bufsize, of
  */
 static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off,
                              struct fuse_file_info *fi) {
-  (void)fi;
+  //(void)fi;
 
   ::capnp::MallocMessageBuilder message;
   Readdir::Builder readdir = message.initRoot<Readdir>();
@@ -256,6 +294,20 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
   // std::cout << "Size: " << c.size() << std::endl;
 
   // printf("Called .readdir\n");
+
+  std::string uuid = gen_uuid();
+  requests[uuid] = {.type = 3, .req = req, .size = size, .off = off};
+
+  const auto data = capnp::messageToFlatArray(message);
+  const auto bytes = data.asBytes();
+  std::string payload(bytes.begin(), bytes.end());
+
+  ws->send("3" + payload);
+
+  struct stat stbuf;
+
+  // char msg[] = {3, ino};
+  // ws->sendBinary(msg);
 
   std::string path;
 
@@ -749,18 +801,20 @@ static struct fuse_lowlevel_ops hello_ll_oper = {
     .lookup = hello_ll_lookup,
     .getattr = hello_ll_getattr,
     .readdir = hello_ll_readdir,
-    .open = hello_ll_open,
-    .read = hello_ll_read,
-    .write = hello_ll_write,
-    .mknod = hello_ll_mknod,
-    .create = hello_ll_create,
-    .mkdir = hello_ll_mkdir,
-    .setattr = hello_ll_setattr,
-    .setxattr = hello_ll_setxattr,
+    //.open = hello_ll_open,
+    //.read = hello_ll_read,
+    //.write = hello_ll_write,
+    //.mknod = hello_ll_mknod,
+    //.create = hello_ll_create,
+    //.mkdir = hello_ll_mkdir,
+    //.setattr = hello_ll_setattr,
+    //.setxattr = hello_ll_setxattr,
 };
 // clang-format on
 
-int start_fs(int argc, char *argv[]) {
+int start_fs(int argc, char *argv[], wsclient::WSClient *wsc) {
+  ws = wsc;
+
   struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
   struct fuse_chan *ch;
   char *mountpoint;
