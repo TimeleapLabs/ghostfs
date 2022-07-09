@@ -24,6 +24,7 @@
 #include <capnp/serialize-packed.h>
 #include <create.capnp.h>
 #include <getattr.capnp.h>
+#include <getattr.response.capnp.h>
 #include <ghostfs/ws.h>
 #include <lookup.capnp.h>
 #include <mkdir.capnp.h>
@@ -107,7 +108,7 @@ void process_response(uint8_t msg) {}
  *        Apparently Solaris devs knew how to write non-cryptic code
  */
 
-static int hello_stat(fuse_ino_t ino, struct stat *stbuf) {
+int hello_stat(fuse_ino_t ino, struct stat *stbuf) {
   if (ino == 1) {
     // This is the fs root
     stbuf->st_ino = ino;
@@ -125,6 +126,47 @@ static int hello_stat(fuse_ino_t ino, struct stat *stbuf) {
   stbuf->st_ino = ino;
 
   return 0;
+}
+
+void process_getattr_response(std::string payload) {
+  const kj::ArrayPtr<const capnp::word> view(
+      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
+      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
+
+  capnp::FlatArrayMessageReader data(view);
+  GetattrResponse::Reader getattr_response = data.getRoot<GetattrResponse>();
+
+  struct stat attr;
+
+  memset(&attr, 0, sizeof(attr));
+
+  std::string uuid = getattr_response.getUuid();
+  request request = requests[uuid];
+
+  int res = getattr_response.getRes();
+
+  if (res == -1) {
+    fuse_reply_err(request.req, ENOENT);
+    return;
+  }
+
+  GetattrResponse::Attr::Reader attributes = getattr_response.getAttr();
+
+  attr.st_dev = attributes.getStDev();
+  attr.st_ino = attributes.getStIno();
+  attr.st_mode = attributes.getStMode();
+  attr.st_nlink = attributes.getStNlink();
+  attr.st_uid = attributes.getStUid();
+  attr.st_gid = attributes.getStGid();
+  attr.st_rdev = attributes.getStRdev();
+  attr.st_size = attributes.getStSize();
+  attr.st_atime = attributes.getStAtime();
+  attr.st_mtime = attributes.getStMtime();
+  attr.st_ctime = attributes.getStCtime();
+  attr.st_blksize = attributes.getStBlksize();
+  attr.st_blocks = attributes.getStBlocks();
+
+  fuse_reply_attr(request.req, &attr, 1.0);
 }
 
 /**
@@ -159,6 +201,8 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
   std::string uuid = gen_uuid();
   requests[uuid] = {.type = 1, .req = req};
 
+  getattr.setUuid(uuid);
+
   const auto data = capnp::messageToFlatArray(message);
   const auto bytes = data.asBytes();
   std::string payload(bytes.begin(), bytes.end());
@@ -167,15 +211,15 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
 
   // printf("Called .getattr\n");
 
-  (void)fi;
-  struct stat stbuf;
+  // (void)fi;
+  // struct stat stbuf;
 
-  memset(&stbuf, 0, sizeof(stbuf));
-  if (hello_stat(ino, &stbuf) == -1) {
-    fuse_reply_err(req, ENOENT);
-  } else {
-    fuse_reply_attr(req, &stbuf, 1.0);
-  }
+  // memset(&stbuf, 0, sizeof(stbuf));
+  // if (hello_stat(ino, &stbuf) == -1) {
+  //   fuse_reply_err(req, ENOENT);
+  // } else {
+  //   fuse_reply_attr(req, &stbuf, 1.0);
+  // }
 }
 
 /**

@@ -8,6 +8,7 @@
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
 #include <getattr.capnp.h>
+#include <getattr.response.capnp.h>
 #include <lookup.capnp.h>
 #include <readdir.capnp.h>
 
@@ -88,6 +89,38 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         Getattr::Reader getattr = data.getRoot<Getattr>();
 
         std::cout << "Lookup: " << getattr.getIno() << std::endl;
+
+        struct stat attr;
+
+        memset(&attr, 0, sizeof(attr));
+        int res = hello_stat(getattr.getIno(), &attr);
+
+        ::capnp::MallocMessageBuilder message;
+        GetattrResponse::Builder getattr_response = message.initRoot<GetattrResponse>();
+        GetattrResponse::Attr::Builder attributes = getattr_response.initAttr();
+
+        getattr_response.setUuid(getattr.getUuid());
+        getattr_response.setRes(res);
+
+        attributes.setStDev(attr.st_dev);
+        attributes.setStIno(attr.st_ino);
+        attributes.setStMode(attr.st_mode);
+        attributes.setStNlink(attr.st_nlink);
+        attributes.setStUid(attr.st_uid);
+        attributes.setStGid(attr.st_gid);
+        attributes.setStRdev(attr.st_rdev);
+        attributes.setStSize(attr.st_size);
+        attributes.setStAtime(attr.st_atime);
+        attributes.setStMtime(attr.st_mtime);
+        attributes.setStCtime(attr.st_ctime);
+        attributes.setStBlksize(attr.st_blksize);
+        attributes.setStBlocks(attr.st_blocks);
+
+        const auto response_data = capnp::messageToFlatArray(message);
+        const auto bytes = response_data.asBytes();
+        std::string payload(bytes.begin(), bytes.end());
+
+        webSocket.send("1" + payload);
 
         break;
       }

@@ -3,6 +3,7 @@
 struct Getattr {
   ino   @0 :UInt64;
   fi    @1 :FuseFileInfo;
+  uuid  @2 :Text;
 
   struct FuseFileInfo {
     flags         @0  :Int8;

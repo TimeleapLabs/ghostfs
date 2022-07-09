@@ -1,4 +1,5 @@
 #include <fmt/format.h>
+#include <ghostfs/fs.h>
 #include <ghostfs/ws.h>
 
 #include <iostream>
@@ -44,6 +45,19 @@ void WSClient::onMessage(const ix::WebSocketMessagePtr& msg) {
   if (msg->type == ix::WebSocketMessageType::Message) {
     // std::cout << "received message: " << msg->str << std::endl;
     // std::cout << "> " << std::flush;
+    const char command = msg->str[0];
+    std::string payload = msg->str.substr(1);
+
+    switch (command) {
+      case '1': {
+        process_getattr_response(payload);
+        break;
+      }
+
+      default:
+        break;
+    }
+
   } else if (msg->type == ix::WebSocketMessageType::Open) {
     std::cout << "Connection established" << std::endl;
     // std::cout << "> " << std::flush;
