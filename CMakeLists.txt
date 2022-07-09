@@ -102,6 +102,11 @@ target_include_directories(
   $<INSTALL_INTERFACE:capnp/${PROJECT_NAME}-${PROJECT_VERSION}>
 )
 
+target_include_directories(
+  ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${FUSE_INCLUDE_DIR}>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
+)
+
 # ---- Create an installable target ----
 # this allows users to install and find the library via `find_package()`.
 
