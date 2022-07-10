@@ -53,6 +53,10 @@ void WSClient::onMessage(const ix::WebSocketMessagePtr& msg) {
         process_getattr_response(payload);
         break;
       }
+      case '3': {
+        process_readdir_response(payload);
+        break;
+      }
 
       default:
         break;

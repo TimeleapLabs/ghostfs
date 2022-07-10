@@ -25,6 +25,7 @@
 #include <create.capnp.h>
 #include <getattr.capnp.h>
 #include <getattr.response.capnp.h>
+#include <readdir.response.capnp.h>
 #include <ghostfs/ws.h>
 #include <lookup.capnp.h>
 #include <mkdir.capnp.h>
@@ -60,6 +61,11 @@ std::string gen_uuid() {
 
 std::string ROOT = "/Users/pouya/.ghostfs/root";
 
+struct dirbuf {
+  char *p;
+  size_t size;
+};
+
 struct request {
   char *name;
   uint8_t type;
@@ -68,6 +74,16 @@ struct request {
   size_t size;
   off_t off;
 };
+
+#define min(x, y) ((x) < (y) ? (x) : (y))
+
+static int reply_buf_limited(fuse_req_t req, const char *buf, size_t bufsize, off_t off,
+                             size_t maxsize) {
+  if (off < bufsize)
+    return fuse_reply_buf(req, buf + off, min(bufsize - off, maxsize));
+  else
+    return fuse_reply_buf(req, NULL, 0);
+}
 
 std::map<std::string, request> requests;
 
@@ -170,6 +186,40 @@ void process_getattr_response(std::string payload) {
   attr.st_blocks = attributes.getStBlocks();
 
   fuse_reply_attr(request.req, &attr, 1.0);
+}
+
+void process_readdir_response(std::string payload) {
+  const kj::ArrayPtr<const capnp::word> view(
+      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
+      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
+
+  capnp::FlatArrayMessageReader data(view);
+  ReaddirResponse::Reader readdir_response = data.getRoot<ReaddirResponse>();
+
+  struct dirbuf b;
+
+  memset(&b, 0, sizeof(b));
+
+  std::string uuid = readdir_response.getUuid();
+
+  // std::cout << "Response UUID: " << uuid << std::endl;
+
+  request request = requests[uuid];
+
+  int res = readdir_response.getRes();
+
+  if (res == -1) {
+    fuse_reply_err(request.req, ENOENT);
+    return;
+  }
+
+  ReaddirResponse::Dirbuf::Reader _dirbuf = readdir_response.getDirbuf();
+
+  b.p = (char *) _dirbuf.getP().cStr();
+  b.size = _dirbuf.getSize();
+
+  reply_buf_limited(request.req, b.p, b.size, request.off, request.size);
+  free(b.p);
 }
 
 /**
@@ -276,12 +326,7 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
   }
 }
 
-struct dirbuf {
-  char *p;
-  size_t size;
-};
-
-static void dirbuf_add(fuse_req_t req, struct dirbuf *b, const char *name, fuse_ino_t ino) {
+void dirbuf_add(fuse_req_t req, struct dirbuf *b, const char *name, fuse_ino_t ino) {
   struct stat stbuf;
   size_t oldsize = b->size;
   b->size += fuse_add_direntry(req, NULL, 0, name, NULL, 0);
@@ -289,16 +334,6 @@ static void dirbuf_add(fuse_req_t req, struct dirbuf *b, const char *name, fuse_
   memset(&stbuf, 0, sizeof(stbuf));
   stbuf.st_ino = ino;
   fuse_add_direntry(req, b->p + oldsize, b->size - oldsize, name, &stbuf, b->size);
-}
-
-#define min(x, y) ((x) < (y) ? (x) : (y))
-
-static int reply_buf_limited(fuse_req_t req, const char *buf, size_t bufsize, off_t off,
-                             size_t maxsize) {
-  if (off < bufsize)
-    return fuse_reply_buf(req, buf + off, min(bufsize - off, maxsize));
-  else
-    return fuse_reply_buf(req, NULL, 0);
 }
 
 /**
@@ -352,49 +387,6 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
   std::string payload(bytes.begin(), bytes.end());
 
   ws->send("3" + payload);
-
-  struct stat stbuf;
-
-  // char msg[] = {3, ino};
-  // ws->sendBinary(msg);
-
-  std::string path;
-
-  // Root
-  if (ino == 1) {
-    path = ROOT;
-  } else if (ino_to_path.find(ino) != ino_to_path.end()) {
-    path = ino_to_path[ino];
-  } else {
-    fuse_reply_err(req, ENOTDIR);
-  }
-
-  struct dirbuf b;
-
-  memset(&b, 0, sizeof(b));
-  dirbuf_add(req, &b, ".", 1);
-  dirbuf_add(req, &b, "..", 1);
-
-  for (const auto &entry : std::filesystem::directory_iterator(path)) {
-    std::string file_path = entry.path();
-    std::string file_name = std::filesystem::path(file_path).filename();
-
-    uint64_t file_ino;
-
-    if (path_to_ino.find(file_path) == path_to_ino.end()) {
-      file_ino = ++current_ino;
-      ino_to_path[file_ino] = file_path;
-      path_to_ino[file_path] = file_ino;
-    } else {
-      file_ino = path_to_ino[file_path];
-    }
-
-    // std::cout << "Filename: " << file_name << ", INO: " << file_ino << std::endl;
-    dirbuf_add(req, &b, file_name.c_str(), file_ino);
-  }
-
-  reply_buf_limited(req, b.p, b.size, off, size);
-  free(b.p);
 }
 
 /**

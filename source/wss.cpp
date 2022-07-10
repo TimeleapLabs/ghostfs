@@ -9,6 +9,7 @@
 #include <capnp/serialize-packed.h>
 #include <getattr.capnp.h>
 #include <getattr.response.capnp.h>
+#include <readdir.response.capnp.h>
 #include <lookup.capnp.h>
 #include <readdir.capnp.h>
 
@@ -123,6 +124,86 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         webSocket.send("1" + response_payload, true);
 
         break;
+      }
+
+      case '3': {
+        const kj::ArrayPtr<const capnp::word> view(
+            reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
+            reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
+
+        capnp::FlatArrayMessageReader data(view);
+        Readdir::Reader readdir = data.getRoot<Readdir>();
+        uint64_t ino = readdir.getIno();
+
+        struct stat stbuf;
+
+        // char msg[] = {3, ino};
+        // ws->sendBinary(msg);
+
+        std::string path;
+
+        // Root
+        if (ino == 1) {
+          path = ROOT;
+        } else if (ino_to_path.find(ino) != ino_to_path.end()) {
+          path = ino_to_path[ino];
+        } else {
+          ::capnp::MallocMessageBuilder message;
+          ReaddirResponse::Builder readdir_response = message.initRoot<ReaddirResponse>();
+
+          readdir_response.setUuid(readdir.getUuid());
+          readdir_response.setRes(-1);
+
+          const auto response_data = capnp::messageToFlatArray(message);
+          const auto bytes = response_data.asBytes();
+          std::string response_payload(bytes.begin(), bytes.end());
+
+          webSocket.send("3" + response_payload, true);
+
+          return;
+        }
+
+        struct dirbuf b;
+
+        memset(&b, 0, sizeof(b));
+        dirbuf_add(req, &b, ".", 1);
+        dirbuf_add(req, &b, "..", 1);
+
+        for (const auto& entry : std::filesystem::directory_iterator(path)) {
+          std::string file_path = entry.path();
+          std::string file_name = std::filesystem::path(file_path).filename();
+
+          uint64_t file_ino;
+
+          if (path_to_ino.find(file_path) == path_to_ino.end()) {
+            file_ino = ++current_ino;
+            ino_to_path[file_ino] = file_path;
+            path_to_ino[file_path] = file_ino;
+          } else {
+            file_ino = path_to_ino[file_path];
+          }
+
+          // std::cout << "Filename: " << file_name << ", INO: " << file_ino << std::endl;
+          dirbuf_add(req, &b, file_name.c_str(), file_ino);
+        }
+
+        ::capnp::MallocMessageBuilder message;
+        ReaddirResponse::Builder readdir_response = message.initRoot<ReaddirResponse>();
+        ReaddirResponse::Dirbuf::Builder _dirbuf = readdir_response.initDirbuf();
+
+
+        readdir_response.setUuid(readdir.getUuid());
+        readdir_response.setRes(0);
+        _dirbuf.setP(b.p);
+        _dirbuf.setSize(b.size);
+
+        const auto response_data = capnp::messageToFlatArray(message);
+        const auto bytes = response_data.asBytes();
+        std::string response_payload(bytes.begin(), bytes.end());
+
+        webSocket.send("3" + response_payload, true);
+
+        free(b.p);
       }
 
       default:
