@@ -58,6 +58,8 @@ void WSClient::onMessage(const ix::WebSocketMessagePtr& msg) {
         break;
     }
 
+  } else if (msg->type == ix::WebSocketMessageType::Close) {
+    std::cout << "Connection closed" << std::endl;
   } else if (msg->type == ix::WebSocketMessageType::Open) {
     std::cout << "Connection established" << std::endl;
     // std::cout << "> " << std::flush;

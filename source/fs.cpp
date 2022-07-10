@@ -141,6 +141,9 @@ void process_getattr_response(std::string payload) {
   memset(&attr, 0, sizeof(attr));
 
   std::string uuid = getattr_response.getUuid();
+
+  // std::cout << "Response UUID: " << uuid << std::endl;
+
   request request = requests[uuid];
 
   int res = getattr_response.getRes();
@@ -200,6 +203,8 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
 
   std::string uuid = gen_uuid();
   requests[uuid] = {.type = 1, .req = req};
+
+  // std::cout << "Request UUID: " << uuid << std::endl;
 
   getattr.setUuid(uuid);
 

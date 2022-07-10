@@ -88,7 +88,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         capnp::FlatArrayMessageReader data(view);
         Getattr::Reader getattr = data.getRoot<Getattr>();
 
-        std::cout << "Lookup: " << getattr.getIno() << std::endl;
+        // std::cout << "Received UUID: " << getattr.getUuid().cStr() << std::endl;
 
         struct stat attr;
 
@@ -118,9 +118,9 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         const auto response_data = capnp::messageToFlatArray(message);
         const auto bytes = response_data.asBytes();
-        std::string payload(bytes.begin(), bytes.end());
+        std::string response_payload(bytes.begin(), bytes.end());
 
-        webSocket.send("1" + payload);
+        webSocket.send("1" + response_payload, true);
 
         break;
       }
