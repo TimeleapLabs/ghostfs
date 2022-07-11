@@ -25,7 +25,6 @@
 #include <create.capnp.h>
 #include <getattr.capnp.h>
 #include <getattr.response.capnp.h>
-#include <readdir.response.capnp.h>
 #include <ghostfs/ws.h>
 #include <lookup.capnp.h>
 #include <mkdir.capnp.h>
@@ -33,6 +32,7 @@
 #include <open.capnp.h>
 #include <read.capnp.h>
 #include <readdir.capnp.h>
+#include <readdir.response.capnp.h>
 #include <setattr.capnp.h>
 #include <sys/xattr.h>
 #include <write.capnp.h>
@@ -188,6 +188,16 @@ void process_getattr_response(std::string payload) {
   fuse_reply_attr(request.req, &attr, 1.0);
 }
 
+void dirbuf_add(fuse_req_t req, struct dirbuf *b, const char *name, fuse_ino_t ino) {
+  struct stat stbuf;
+  size_t oldsize = b->size;
+  b->size += fuse_add_direntry(req, NULL, 0, name, NULL, 0);
+  b->p = (char *)realloc(b->p, b->size);
+  memset(&stbuf, 0, sizeof(stbuf));
+  stbuf.st_ino = ino;
+  fuse_add_direntry(req, b->p + oldsize, b->size - oldsize, name, &stbuf, b->size);
+}
+
 void process_readdir_response(std::string payload) {
   const kj::ArrayPtr<const capnp::word> view(
       reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
@@ -204,6 +214,7 @@ void process_readdir_response(std::string payload) {
 
   // std::cout << "Response UUID: " << uuid << std::endl;
 
+  // TODO: FIX type name
   request request = requests[uuid];
 
   int res = readdir_response.getRes();
@@ -213,10 +224,13 @@ void process_readdir_response(std::string payload) {
     return;
   }
 
-  ReaddirResponse::Dirbuf::Reader _dirbuf = readdir_response.getDirbuf();
+  // TODO: FIX ino
+  dirbuf_add(request.req, &b, ".", 1);
+  dirbuf_add(request.req, &b, "..", 1);
 
-  b.p = (char *) _dirbuf.getP().cStr();
-  b.size = _dirbuf.getSize();
+  for (ReaddirResponse::Entry::Reader entry : readdir_response.getEntries()) {
+    dirbuf_add(request.req, &b, entry.getName().cStr(), entry.getIno());
+  }
 
   reply_buf_limited(request.req, b.p, b.size, request.off, request.size);
   free(b.p);
@@ -324,16 +338,6 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
 
     fuse_reply_entry(req, &e);
   }
-}
-
-void dirbuf_add(fuse_req_t req, struct dirbuf *b, const char *name, fuse_ino_t ino) {
-  struct stat stbuf;
-  size_t oldsize = b->size;
-  b->size += fuse_add_direntry(req, NULL, 0, name, NULL, 0);
-  b->p = (char *)realloc(b->p, b->size);
-  memset(&stbuf, 0, sizeof(stbuf));
-  stbuf.st_ino = ino;
-  fuse_add_direntry(req, b->p + oldsize, b->size - oldsize, name, &stbuf, b->size);
 }
 
 /**

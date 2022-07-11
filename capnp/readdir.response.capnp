@@ -3,11 +3,10 @@
 struct ReaddirResponse {
   uuid      @0 :Text;
   res       @1 :Int8;
-  dirbuf    @2 :Dirbuf;
+  entries   @2 :List(Entry);
 
-  struct Dirbuf {
-    p     @0  :Text;  
-    size  @1  :UInt64;
+  struct Entry {
+    name  @0 :Text;
+    ino   @1 :UInt64;
   }
-
 }

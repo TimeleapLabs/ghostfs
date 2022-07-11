@@ -9,10 +9,11 @@
 #include <capnp/serialize-packed.h>
 #include <getattr.capnp.h>
 #include <getattr.response.capnp.h>
-#include <readdir.response.capnp.h>
 #include <lookup.capnp.h>
 #include <readdir.capnp.h>
+#include <readdir.response.capnp.h>
 
+#include <filesystem>
 #include <iostream>
 
 using namespace wsserver;
@@ -163,11 +164,22 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           return;
         }
 
-        struct dirbuf b;
+        ::capnp::MallocMessageBuilder message;
+        ReaddirResponse::Builder readdir_response = message.initRoot<ReaddirResponse>();
 
-        memset(&b, 0, sizeof(b));
-        dirbuf_add(req, &b, ".", 1);
-        dirbuf_add(req, &b, "..", 1);
+        uint64_t length = 0;
+
+        /**
+         * TODO: Find a better way
+         */
+        for (const auto& entry : std::filesystem::directory_iterator(path)) {
+          length++;
+        }
+
+        ::capnp::List<ReaddirResponse::Entry>::Builder entries
+            = readdir_response.initEntries(length);
+
+        uint64_t index = 0;
 
         for (const auto& entry : std::filesystem::directory_iterator(path)) {
           std::string file_path = entry.path();
@@ -183,27 +195,20 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
             file_ino = path_to_ino[file_path];
           }
 
-          // std::cout << "Filename: " << file_name << ", INO: " << file_ino << std::endl;
-          dirbuf_add(req, &b, file_name.c_str(), file_ino);
+          entries[index].setName(file_name);
+          entries[index].setIno(file_ino);
+
+          index++;
         }
-
-        ::capnp::MallocMessageBuilder message;
-        ReaddirResponse::Builder readdir_response = message.initRoot<ReaddirResponse>();
-        ReaddirResponse::Dirbuf::Builder _dirbuf = readdir_response.initDirbuf();
-
 
         readdir_response.setUuid(readdir.getUuid());
         readdir_response.setRes(0);
-        _dirbuf.setP(b.p);
-        _dirbuf.setSize(b.size);
 
         const auto response_data = capnp::messageToFlatArray(message);
         const auto bytes = response_data.asBytes();
         std::string response_payload(bytes.begin(), bytes.end());
 
         webSocket.send("3" + response_payload, true);
-
-        free(b.p);
       }
 
       default:

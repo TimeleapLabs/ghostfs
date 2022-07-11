@@ -17,7 +17,7 @@ namespace capnp {
 namespace schemas {
 
 CAPNP_DECLARE_SCHEMA(f790988c45aa0691);
-CAPNP_DECLARE_SCHEMA(df7ffb9aacdd796b);
+CAPNP_DECLARE_SCHEMA(a8eef581a14f965a);
 
 }  // namespace schemas
 }  // namespace capnp
@@ -29,7 +29,7 @@ struct ReaddirResponse {
   class Reader;
   class Builder;
   class Pipeline;
-  struct Dirbuf;
+  struct Entry;
 
   struct _capnpPrivate {
     CAPNP_DECLARE_STRUCT_HEADER(f790988c45aa0691, 1, 2)
@@ -39,15 +39,15 @@ struct ReaddirResponse {
   };
 };
 
-struct ReaddirResponse::Dirbuf {
-  Dirbuf() = delete;
+struct ReaddirResponse::Entry {
+  Entry() = delete;
 
   class Reader;
   class Builder;
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(df7ffb9aacdd796b, 1, 1)
+    CAPNP_DECLARE_STRUCT_HEADER(a8eef581a14f965a, 1, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -78,8 +78,8 @@ public:
 
   inline  ::int8_t getRes() const;
 
-  inline bool hasDirbuf() const;
-  inline  ::ReaddirResponse::Dirbuf::Reader getDirbuf() const;
+  inline bool hasEntries() const;
+  inline  ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>::Reader getEntries() const;
 
 private:
   ::capnp::_::StructReader _reader;
@@ -119,12 +119,12 @@ public:
   inline  ::int8_t getRes();
   inline void setRes( ::int8_t value);
 
-  inline bool hasDirbuf();
-  inline  ::ReaddirResponse::Dirbuf::Builder getDirbuf();
-  inline void setDirbuf( ::ReaddirResponse::Dirbuf::Reader value);
-  inline  ::ReaddirResponse::Dirbuf::Builder initDirbuf();
-  inline void adoptDirbuf(::capnp::Orphan< ::ReaddirResponse::Dirbuf>&& value);
-  inline ::capnp::Orphan< ::ReaddirResponse::Dirbuf> disownDirbuf();
+  inline bool hasEntries();
+  inline  ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>::Builder getEntries();
+  inline void setEntries( ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>::Reader value);
+  inline  ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>::Builder initEntries(unsigned int size);
+  inline void adoptEntries(::capnp::Orphan< ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>>&& value);
+  inline ::capnp::Orphan< ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>> disownEntries();
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -144,7 +144,6 @@ public:
   inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
       : _typeless(kj::mv(typeless)) {}
 
-  inline  ::ReaddirResponse::Dirbuf::Pipeline getDirbuf();
 private:
   ::capnp::AnyPointer::Pipeline _typeless;
   friend class ::capnp::PipelineHook;
@@ -153,9 +152,9 @@ private:
 };
 #endif  // !CAPNP_LITE
 
-class ReaddirResponse::Dirbuf::Reader {
+class ReaddirResponse::Entry::Reader {
 public:
-  typedef Dirbuf Reads;
+  typedef Entry Reads;
 
   Reader() = default;
   inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
@@ -170,10 +169,10 @@ public:
   }
 #endif  // !CAPNP_LITE
 
-  inline bool hasP() const;
-  inline  ::capnp::Text::Reader getP() const;
+  inline bool hasName() const;
+  inline  ::capnp::Text::Reader getName() const;
 
-  inline  ::uint64_t getSize() const;
+  inline  ::uint64_t getIno() const;
 
 private:
   ::capnp::_::StructReader _reader;
@@ -187,9 +186,9 @@ private:
   friend class ::capnp::Orphanage;
 };
 
-class ReaddirResponse::Dirbuf::Builder {
+class ReaddirResponse::Entry::Builder {
 public:
-  typedef Dirbuf Builds;
+  typedef Entry Builds;
 
   Builder() = delete;  // Deleted to discourage incorrect usage.
                        // You can explicitly initialize to nullptr instead.
@@ -203,15 +202,15 @@ public:
   inline ::kj::StringTree toString() const { return asReader().toString(); }
 #endif  // !CAPNP_LITE
 
-  inline bool hasP();
-  inline  ::capnp::Text::Builder getP();
-  inline void setP( ::capnp::Text::Reader value);
-  inline  ::capnp::Text::Builder initP(unsigned int size);
-  inline void adoptP(::capnp::Orphan< ::capnp::Text>&& value);
-  inline ::capnp::Orphan< ::capnp::Text> disownP();
+  inline bool hasName();
+  inline  ::capnp::Text::Builder getName();
+  inline void setName( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initName(unsigned int size);
+  inline void adoptName(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownName();
 
-  inline  ::uint64_t getSize();
-  inline void setSize( ::uint64_t value);
+  inline  ::uint64_t getIno();
+  inline void setIno( ::uint64_t value);
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -223,9 +222,9 @@ private:
 };
 
 #if !CAPNP_LITE
-class ReaddirResponse::Dirbuf::Pipeline {
+class ReaddirResponse::Entry::Pipeline {
 public:
-  typedef Dirbuf Pipelines;
+  typedef Entry Pipelines;
 
   inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
   inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
@@ -289,89 +288,84 @@ inline void ReaddirResponse::Builder::setRes( ::int8_t value) {
       ::capnp::bounded<0>() * ::capnp::ELEMENTS, value);
 }
 
-inline bool ReaddirResponse::Reader::hasDirbuf() const {
+inline bool ReaddirResponse::Reader::hasEntries() const {
   return !_reader.getPointerField(
       ::capnp::bounded<1>() * ::capnp::POINTERS).isNull();
 }
-inline bool ReaddirResponse::Builder::hasDirbuf() {
+inline bool ReaddirResponse::Builder::hasEntries() {
   return !_builder.getPointerField(
       ::capnp::bounded<1>() * ::capnp::POINTERS).isNull();
 }
-inline  ::ReaddirResponse::Dirbuf::Reader ReaddirResponse::Reader::getDirbuf() const {
-  return ::capnp::_::PointerHelpers< ::ReaddirResponse::Dirbuf>::get(_reader.getPointerField(
+inline  ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>::Reader ReaddirResponse::Reader::getEntries() const {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>>::get(_reader.getPointerField(
       ::capnp::bounded<1>() * ::capnp::POINTERS));
 }
-inline  ::ReaddirResponse::Dirbuf::Builder ReaddirResponse::Builder::getDirbuf() {
-  return ::capnp::_::PointerHelpers< ::ReaddirResponse::Dirbuf>::get(_builder.getPointerField(
+inline  ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>::Builder ReaddirResponse::Builder::getEntries() {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>>::get(_builder.getPointerField(
       ::capnp::bounded<1>() * ::capnp::POINTERS));
 }
-#if !CAPNP_LITE
-inline  ::ReaddirResponse::Dirbuf::Pipeline ReaddirResponse::Pipeline::getDirbuf() {
-  return  ::ReaddirResponse::Dirbuf::Pipeline(_typeless.getPointerField(1));
-}
-#endif  // !CAPNP_LITE
-inline void ReaddirResponse::Builder::setDirbuf( ::ReaddirResponse::Dirbuf::Reader value) {
-  ::capnp::_::PointerHelpers< ::ReaddirResponse::Dirbuf>::set(_builder.getPointerField(
+inline void ReaddirResponse::Builder::setEntries( ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>>::set(_builder.getPointerField(
       ::capnp::bounded<1>() * ::capnp::POINTERS), value);
 }
-inline  ::ReaddirResponse::Dirbuf::Builder ReaddirResponse::Builder::initDirbuf() {
-  return ::capnp::_::PointerHelpers< ::ReaddirResponse::Dirbuf>::init(_builder.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS));
+inline  ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>::Builder ReaddirResponse::Builder::initEntries(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>>::init(_builder.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS), size);
 }
-inline void ReaddirResponse::Builder::adoptDirbuf(
-    ::capnp::Orphan< ::ReaddirResponse::Dirbuf>&& value) {
-  ::capnp::_::PointerHelpers< ::ReaddirResponse::Dirbuf>::adopt(_builder.getPointerField(
+inline void ReaddirResponse::Builder::adoptEntries(
+    ::capnp::Orphan< ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>>::adopt(_builder.getPointerField(
       ::capnp::bounded<1>() * ::capnp::POINTERS), kj::mv(value));
 }
-inline ::capnp::Orphan< ::ReaddirResponse::Dirbuf> ReaddirResponse::Builder::disownDirbuf() {
-  return ::capnp::_::PointerHelpers< ::ReaddirResponse::Dirbuf>::disown(_builder.getPointerField(
+inline ::capnp::Orphan< ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>> ReaddirResponse::Builder::disownEntries() {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>>::disown(_builder.getPointerField(
       ::capnp::bounded<1>() * ::capnp::POINTERS));
 }
 
-inline bool ReaddirResponse::Dirbuf::Reader::hasP() const {
+inline bool ReaddirResponse::Entry::Reader::hasName() const {
   return !_reader.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
 }
-inline bool ReaddirResponse::Dirbuf::Builder::hasP() {
+inline bool ReaddirResponse::Entry::Builder::hasName() {
   return !_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
 }
-inline  ::capnp::Text::Reader ReaddirResponse::Dirbuf::Reader::getP() const {
+inline  ::capnp::Text::Reader ReaddirResponse::Entry::Reader::getName() const {
   return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_reader.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
-inline  ::capnp::Text::Builder ReaddirResponse::Dirbuf::Builder::getP() {
+inline  ::capnp::Text::Builder ReaddirResponse::Entry::Builder::getName() {
   return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
-inline void ReaddirResponse::Dirbuf::Builder::setP( ::capnp::Text::Reader value) {
+inline void ReaddirResponse::Entry::Builder::setName( ::capnp::Text::Reader value) {
   ::capnp::_::PointerHelpers< ::capnp::Text>::set(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS), value);
 }
-inline  ::capnp::Text::Builder ReaddirResponse::Dirbuf::Builder::initP(unsigned int size) {
+inline  ::capnp::Text::Builder ReaddirResponse::Entry::Builder::initName(unsigned int size) {
   return ::capnp::_::PointerHelpers< ::capnp::Text>::init(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS), size);
 }
-inline void ReaddirResponse::Dirbuf::Builder::adoptP(
+inline void ReaddirResponse::Entry::Builder::adoptName(
     ::capnp::Orphan< ::capnp::Text>&& value) {
   ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
 }
-inline ::capnp::Orphan< ::capnp::Text> ReaddirResponse::Dirbuf::Builder::disownP() {
+inline ::capnp::Orphan< ::capnp::Text> ReaddirResponse::Entry::Builder::disownName() {
   return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 
-inline  ::uint64_t ReaddirResponse::Dirbuf::Reader::getSize() const {
+inline  ::uint64_t ReaddirResponse::Entry::Reader::getIno() const {
   return _reader.getDataField< ::uint64_t>(
       ::capnp::bounded<0>() * ::capnp::ELEMENTS);
 }
 
-inline  ::uint64_t ReaddirResponse::Dirbuf::Builder::getSize() {
+inline  ::uint64_t ReaddirResponse::Entry::Builder::getIno() {
   return _builder.getDataField< ::uint64_t>(
       ::capnp::bounded<0>() * ::capnp::ELEMENTS);
 }
-inline void ReaddirResponse::Dirbuf::Builder::setSize( ::uint64_t value) {
+inline void ReaddirResponse::Entry::Builder::setIno( ::uint64_t value) {
   _builder.setDataField< ::uint64_t>(
       ::capnp::bounded<0>() * ::capnp::ELEMENTS, value);
 }
