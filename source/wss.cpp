@@ -10,6 +10,7 @@
 #include <getattr.capnp.h>
 #include <getattr.response.capnp.h>
 #include <lookup.capnp.h>
+#include <lookup.response.capnp.h>
 #include <readdir.capnp.h>
 #include <readdir.response.capnp.h>
 
@@ -123,6 +124,72 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         std::string response_payload(bytes.begin(), bytes.end());
 
         webSocket.send("1" + response_payload, true);
+
+        break;
+      }
+
+      case '2': {
+        const kj::ArrayPtr<const capnp::word> view(
+            reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
+            reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
+
+        capnp::FlatArrayMessageReader data(view);
+        Lookup::Reader lookup = data.getRoot<Lookup>();
+
+        // char msg[] = {2, parent, *name};
+        // ws->sendBinary(msg);
+
+        ::capnp::MallocMessageBuilder message;
+        LookupResponse::Builder lookup_response = message.initRoot<LookupResponse>();
+
+        lookup_response.setUuid(lookup.getUuid());
+
+        uint64_t parent = lookup.getParent();
+        std::string name = lookup.getName();
+
+        std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
+        std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
+        std::filesystem::path file_path = parent_path / std::filesystem::path(name);
+
+        if (!std::filesystem::exists(file_path)) {
+          lookup_response.setRes(-1);
+        } else {
+          uint64_t ino = path_to_ino[file_path];
+          lookup_response.setIno(ino);
+
+          //e.attr_timeout = 1.0;
+         // e.entry_timeout = 1.0;
+
+          struct stat attr;
+
+          memset(&attr, 0, sizeof(attr));
+
+          int res = hello_stat(ino, &attr);
+
+          LookupResponse::Attr::Builder attributes = lookup_response.initAttr();
+
+          lookup_response.setRes(res);
+
+          attributes.setStDev(attr.st_dev);
+          attributes.setStIno(attr.st_ino);
+          attributes.setStMode(attr.st_mode);
+          attributes.setStNlink(attr.st_nlink);
+          attributes.setStUid(attr.st_uid);
+          attributes.setStGid(attr.st_gid);
+          attributes.setStRdev(attr.st_rdev);
+          attributes.setStSize(attr.st_size);
+          attributes.setStAtime(attr.st_atime);
+          attributes.setStMtime(attr.st_mtime);
+          attributes.setStCtime(attr.st_ctime);
+          attributes.setStBlksize(attr.st_blksize);
+          attributes.setStBlocks(attr.st_blocks);
+        }
+
+        const auto response_data = capnp::messageToFlatArray(message);
+        const auto bytes = response_data.asBytes();
+        std::string response_payload(bytes.begin(), bytes.end());
+
+        webSocket.send("2" + response_payload, true);
 
         break;
       }

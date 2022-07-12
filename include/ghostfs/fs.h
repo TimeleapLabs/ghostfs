@@ -26,3 +26,4 @@ void dirbuf_add(fuse_req_t req, struct dirbuf* b, const char* name, fuse_ino_t i
 // Responses
 void process_getattr_response(std::string payload);
 void process_readdir_response(std::string payload);
+void process_lookup_response(std::string payload);

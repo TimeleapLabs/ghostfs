@@ -27,6 +27,7 @@
 #include <getattr.response.capnp.h>
 #include <ghostfs/ws.h>
 #include <lookup.capnp.h>
+#include <lookup.response.capnp.h>
 #include <mkdir.capnp.h>
 #include <mknod.capnp.h>
 #include <open.capnp.h>
@@ -59,7 +60,7 @@ std::string gen_uuid() {
   return uuid.str();
 }
 
-std::string ROOT = "/Users/pouya/.ghostfs/root";
+std::string ROOT = "/Users/ncasati/.ghostfs/root";
 
 struct dirbuf {
   char *p;
@@ -142,6 +143,57 @@ int hello_stat(fuse_ino_t ino, struct stat *stbuf) {
   stbuf->st_ino = ino;
 
   return 0;
+}
+
+void process_lookup_response(std::string payload) {
+  const kj::ArrayPtr<const capnp::word> view(
+      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
+      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
+
+  capnp::FlatArrayMessageReader data(view);
+  LookupResponse::Reader lookup_response = data.getRoot<LookupResponse>();
+
+  struct stat attr;
+
+  memset(&attr, 0, sizeof(attr));
+
+  std::string uuid = lookup_response.getUuid();
+
+  // std::cout << "Response UUID: " << uuid << std::endl;
+
+  request request = requests[uuid];
+
+  int res = lookup_response.getRes();
+
+  if (res == -1) {
+    fuse_reply_err(request.req, ENOENT);
+    return;
+  }
+
+  struct fuse_entry_param e;
+
+  memset(&e, 0, sizeof(e));
+  e.ino = lookup_response.getIno();
+  e.attr_timeout = 1.0;
+  e.entry_timeout = 1.0;
+
+  LookupResponse::Attr::Reader attributes = lookup_response.getAttr();
+
+  e.attr.st_dev = attributes.getStDev();
+  e.attr.st_ino = attributes.getStIno();
+  e.attr.st_mode = attributes.getStMode();
+  e.attr.st_nlink = attributes.getStNlink();
+  e.attr.st_uid = attributes.getStUid();
+  e.attr.st_gid = attributes.getStGid();
+  e.attr.st_rdev = attributes.getStRdev();
+  e.attr.st_size = attributes.getStSize();
+  e.attr.st_atime = attributes.getStAtime();
+  e.attr.st_mtime = attributes.getStMtime();
+  e.attr.st_ctime = attributes.getStCtime();
+  e.attr.st_blksize = attributes.getStBlksize();
+  e.attr.st_blocks = attributes.getStBlocks();
+
+  fuse_reply_entry(request.req, &e);
 }
 
 void process_getattr_response(std::string payload) {
@@ -315,29 +367,6 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
   std::string payload(bytes.begin(), bytes.end());
 
   ws->send("2" + payload);
-
-  struct stat stbuf;
-
-  // char msg[] = {2, parent, *name};
-  // ws->sendBinary(msg);
-
-  struct fuse_entry_param e;
-
-  std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
-  std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
-  std::filesystem::path file_path = parent_path / std::filesystem::path(name);
-
-  if (!std::filesystem::exists(file_path)) {
-    fuse_reply_err(req, ENOENT);
-  } else {
-    memset(&e, 0, sizeof(e));
-    e.ino = path_to_ino[file_path];
-    e.attr_timeout = 1.0;
-    e.entry_timeout = 1.0;
-    hello_stat(e.ino, &e.attr);
-
-    fuse_reply_entry(req, &e);
-  }
 }
 
 /**
