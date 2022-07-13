@@ -25,7 +25,7 @@ WSClient::WSClient(std::string _url) : url(std::move(_url)) {
   // webSocket.send("hello world");
 }
 
-void WSClient::send(std::string message) { webSocket.send(message); }
+void WSClient::send(std::string message) { webSocket.send(message, true); }
 void WSClient::sendBinary(char* message) { webSocket.sendBinary(message); }
 
 void WSClient::prompt() {

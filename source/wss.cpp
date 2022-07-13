@@ -137,7 +137,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         const auto bytes = response_data.asBytes();
         std::string response_payload(bytes.begin(), bytes.end());
 
-        webSocket.sendBinary("1" + response_payload);
+        webSocket.send("1" + response_payload, true);
 
         std::cout << "getattr_response sent correctly: " << response_payload << std::endl;
 
@@ -207,7 +207,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         const auto bytes = response_data.asBytes();
         std::string response_payload(bytes.begin(), bytes.end());
 
-        webSocket.sendBinary("2" + response_payload);
+        webSocket.send("2" + response_payload, true);
 
         std::cout << "lookup_response sent correctly: " << response_payload << std::endl;
 
@@ -248,7 +248,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           const auto bytes = response_data.asBytes();
           std::string response_payload(bytes.begin(), bytes.end());
 
-          webSocket.sendBinary("3" + response_payload);
+          webSocket.send("3" + response_payload, true);
 
           std::cout << "readdir_response sent error: " << response_payload << std::endl;
 
@@ -295,7 +295,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         const auto bytes = response_data.asBytes();
         std::string response_payload(bytes.begin(), bytes.end());
 
-        webSocket.sendBinary("3" + response_payload);
+        webSocket.send("3" + response_payload, true);
 
         std::cout << "readdir_response sent correctly: " << response_payload<< std::endl;
 

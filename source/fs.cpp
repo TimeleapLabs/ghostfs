@@ -429,11 +429,9 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
   const auto bytes = data.asBytes();
   std::string payload(bytes.begin(), bytes.end());
 
-  //problem is here
   ws->send("3" + payload);
 
   std::cout << "hello_ll_readdir executed correctly: " << "3" + payload << std::endl;
-  std::cout << "problem is here as this last payload contains non-utf8 characters!" << std::endl;
 }
 
 /**
