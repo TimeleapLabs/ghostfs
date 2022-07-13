@@ -119,11 +119,27 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         attributes.setStBlksize(attr.st_blksize);
         attributes.setStBlocks(attr.st_blocks);
 
+        std::cout << "st_dev " << attr.st_dev << " " << attributes.getStDev() << std::endl;
+        std::cout << "st_ino " << attr.st_ino << " " << attributes.getStIno() << std::endl;
+        std::cout << "st_mode " << attr.st_mode << " " << attributes.getStMode() << std::endl;
+        std::cout << "st_nlink " << attr.st_nlink << " " << attributes.getStNlink() << std::endl;
+        std::cout << "st_uid " << attr.st_uid << " " << attributes.getStUid() << std::endl;
+        std::cout << "st_gid " << attr.st_gid << " " << attributes.getStGid() << std::endl;
+        std::cout << "st_rdev " << attr.st_rdev << " " << attributes.getStRdev() << std::endl;
+        std::cout << "st_size " << attr.st_size << " " << attributes.getStSize() << std::endl;
+        std::cout << "st_atime " << attr.st_atime << " " << attributes.getStAtime() << std::endl;
+        std::cout << "st_mtime " << attr.st_mtime << " " << attributes.getStMtime() << std::endl;
+        std::cout << "st_ctime " << attr.st_ctime << " " << attributes.getStCtime() << std::endl;
+        std::cout << "st_blksize " << attr.st_blksize << " " << attributes.getStBlksize() << std::endl;
+        std::cout << "st_blocks " << attr.st_blocks << " " << attributes.getStBlocks() << std::endl;
+
         const auto response_data = capnp::messageToFlatArray(message);
         const auto bytes = response_data.asBytes();
         std::string response_payload(bytes.begin(), bytes.end());
 
-        webSocket.send("1" + response_payload, true);
+        webSocket.sendBinary("1" + response_payload);
+
+        std::cout << "getattr_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -135,6 +151,8 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         capnp::FlatArrayMessageReader data(view);
         Lookup::Reader lookup = data.getRoot<Lookup>();
+
+        std::cout << "lookup: Received UUID: " << lookup.getUuid().cStr() << std::endl;
 
         // char msg[] = {2, parent, *name};
         // ws->sendBinary(msg);
@@ -189,7 +207,9 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         const auto bytes = response_data.asBytes();
         std::string response_payload(bytes.begin(), bytes.end());
 
-        webSocket.send("2" + response_payload, true);
+        webSocket.sendBinary("2" + response_payload);
+
+        std::cout << "lookup_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -203,6 +223,8 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         Readdir::Reader readdir = data.getRoot<Readdir>();
         uint64_t ino = readdir.getIno();
 
+        std::cout << "readdir: Received UUID: " << readdir.getUuid().cStr() << std::endl;
+
         struct stat stbuf;
 
         // char msg[] = {3, ino};
@@ -210,29 +232,28 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         std::string path;
 
+        ::capnp::MallocMessageBuilder message;
+        ReaddirResponse::Builder readdir_response = message.initRoot<ReaddirResponse>();
+        readdir_response.setUuid(readdir.getUuid());
+
         // Root
         if (ino == 1) {
           path = ROOT;
         } else if (ino_to_path.find(ino) != ino_to_path.end()) {
           path = ino_to_path[ino];
         } else {
-          ::capnp::MallocMessageBuilder message;
-          ReaddirResponse::Builder readdir_response = message.initRoot<ReaddirResponse>();
-
-          readdir_response.setUuid(readdir.getUuid());
           readdir_response.setRes(-1);
 
           const auto response_data = capnp::messageToFlatArray(message);
           const auto bytes = response_data.asBytes();
           std::string response_payload(bytes.begin(), bytes.end());
 
-          webSocket.send("3" + response_payload, true);
+          webSocket.sendBinary("3" + response_payload);
+
+          std::cout << "readdir_response sent error: " << response_payload << std::endl;
 
           return;
         }
-
-        ::capnp::MallocMessageBuilder message;
-        ReaddirResponse::Builder readdir_response = message.initRoot<ReaddirResponse>();
 
         uint64_t length = 0;
 
@@ -268,14 +289,17 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           index++;
         }
 
-        readdir_response.setUuid(readdir.getUuid());
         readdir_response.setRes(0);
 
         const auto response_data = capnp::messageToFlatArray(message);
         const auto bytes = response_data.asBytes();
         std::string response_payload(bytes.begin(), bytes.end());
 
-        webSocket.send("3" + response_payload, true);
+        webSocket.sendBinary("3" + response_payload);
+
+        std::cout << "readdir_response sent correctly: " << response_payload<< std::endl;
+
+        break;
       }
 
       default:

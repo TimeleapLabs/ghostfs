@@ -159,7 +159,7 @@ void process_lookup_response(std::string payload) {
 
   std::string uuid = lookup_response.getUuid();
 
-  // std::cout << "Response UUID: " << uuid << std::endl;
+  std::cout << "process_lookup_response: Response UUID: " << uuid << std::endl;
 
   request request = requests[uuid];
 
@@ -193,7 +193,11 @@ void process_lookup_response(std::string payload) {
   e.attr.st_blksize = attributes.getStBlksize();
   e.attr.st_blocks = attributes.getStBlocks();
 
+  std::cout << "process_lookup_response: Request: " << request.req << std::endl;
+
   fuse_reply_entry(request.req, &e);
+
+  std::cout << "process_lookup_response: fuse_reply_entry correctly executed" << std::endl;
 }
 
 void process_getattr_response(std::string payload) {
@@ -268,7 +272,7 @@ void process_readdir_response(std::string payload) {
 
   std::string uuid = readdir_response.getUuid();
 
-  // std::cout << "Response UUID: " << uuid << std::endl;
+  std::cout << "process_readdir_response: Response UUID: " << uuid << std::endl;
 
   // TODO: FIX type name
   request request = requests[uuid];
@@ -290,6 +294,8 @@ void process_readdir_response(std::string payload) {
 
   reply_buf_limited(request.req, b.p, b.size, request.off, request.size);
   free(b.p);
+
+  std::cout << "process_readdir_response: reply_buf_limited correctly executed" << std::endl;
 }
 
 /**
@@ -333,6 +339,8 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
   std::string payload(bytes.begin(), bytes.end());
 
   ws->send("1" + payload);
+
+  std::cout << "hello_ll_getattr executed correctly: " << payload << std::endl;
 }
 
 /**
@@ -354,11 +362,17 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
   std::string uuid = gen_uuid();
   requests[uuid] = {.type = 2, .req = req};
 
+  lookup.setUuid(uuid);
+
+  std::cout << "hello_ll_lookup: Request UUID: " << uuid << std::endl;
+
   const auto data = capnp::messageToFlatArray(message);
   const auto bytes = data.asBytes();
   std::string payload(bytes.begin(), bytes.end());
 
   ws->send("2" + payload);
+
+  std::cout << "hello_ll_lookup executed correctly: " << payload <<std::endl;
 }
 
 /**
@@ -407,11 +421,19 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
   std::string uuid = gen_uuid();
   requests[uuid] = {.type = 3, .req = req, .size = size, .off = off};
 
+  readdir.setUuid(uuid);
+
+  std::cout << "hello_ll_readdir: Request UUID: " << uuid << std::endl;
+
   const auto data = capnp::messageToFlatArray(message);
   const auto bytes = data.asBytes();
   std::string payload(bytes.begin(), bytes.end());
 
+  //problem is here
   ws->send("3" + payload);
+
+  std::cout << "hello_ll_readdir executed correctly: " << "3" + payload << std::endl;
+  std::cout << "problem is here as this last payload contains non-utf8 characters!" << std::endl;
 }
 
 /**

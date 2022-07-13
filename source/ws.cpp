@@ -43,8 +43,8 @@ void WSClient::prompt() {
 
 void WSClient::onMessage(const ix::WebSocketMessagePtr& msg) {
   if (msg->type == ix::WebSocketMessageType::Message) {
-    // std::cout << "received message: " << msg->str << std::endl;
-    // std::cout << "> " << std::flush;
+    std::cout << "received message: " << msg->str << std::endl;
+    std::cout << "> " << std::flush;
     const char command = msg->str[0];
     std::string payload = msg->str.substr(1);
 
@@ -61,13 +61,12 @@ void WSClient::onMessage(const ix::WebSocketMessagePtr& msg) {
         process_readdir_response(payload);
         break;
       }
-
       default:
         break;
     }
 
   } else if (msg->type == ix::WebSocketMessageType::Close) {
-    std::cout << "Connection closed" << std::endl;
+    std::cout << "Connection closed with error code " << msg->closeInfo.code << ": " <<msg->closeInfo.reason << std::endl;
   } else if (msg->type == ix::WebSocketMessageType::Open) {
     std::cout << "Connection established" << std::endl;
     // std::cout << "> " << std::flush;
