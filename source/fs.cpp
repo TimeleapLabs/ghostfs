@@ -210,7 +210,7 @@ void process_getattr_response(std::string payload) {
 
   std::string uuid = getattr_response.getUuid();
 
-  // std::cout << "Response UUID: " << uuid << std::endl;
+  std::cout << "process_getattr_response: Response UUID: " << uuid << std::endl;
 
   request request = requests[uuid];
 
@@ -237,7 +237,11 @@ void process_getattr_response(std::string payload) {
   attr.st_blksize = attributes.getStBlksize();
   attr.st_blocks = attributes.getStBlocks();
 
+  std::cout << "process_getattr_response: Request: " << request.req << std::endl;
+
   fuse_reply_attr(request.req, &attr, 1.0);
+
+  std::cout << "process_getattr_response: fuse_reply_attr correctly executed" << std::endl;
 }
 
 void dirbuf_add(fuse_req_t req, struct dirbuf *b, const char *name, fuse_ino_t ino) {
@@ -320,7 +324,7 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
   std::string uuid = gen_uuid();
   requests[uuid] = {.type = 1, .req = req};
 
-  // std::cout << "Request UUID: " << uuid << std::endl;
+  std::cout << "hello_ll_getattr: Request UUID: " << uuid << std::endl;
 
   getattr.setUuid(uuid);
 
@@ -329,18 +333,6 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
   std::string payload(bytes.begin(), bytes.end());
 
   ws->send("1" + payload);
-
-  // printf("Called .getattr\n");
-
-  // (void)fi;
-  // struct stat stbuf;
-
-  // memset(&stbuf, 0, sizeof(stbuf));
-  // if (hello_stat(ino, &stbuf) == -1) {
-  //   fuse_reply_err(req, ENOENT);
-  // } else {
-  //   fuse_reply_attr(req, &stbuf, 1.0);
-  // }
 }
 
 /**

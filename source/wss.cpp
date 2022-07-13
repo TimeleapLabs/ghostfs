@@ -91,7 +91,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         capnp::FlatArrayMessageReader data(view);
         Getattr::Reader getattr = data.getRoot<Getattr>();
 
-        // std::cout << "Received UUID: " << getattr.getUuid().cStr() << std::endl;
+        std::cout << "getattr: Received UUID: " << getattr.getUuid().cStr() << std::endl;
 
         struct stat attr;
 
