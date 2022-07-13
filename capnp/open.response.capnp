@@ -1,9 +1,10 @@
-@0xb27be781d51db8dd;
+@0xec6e6ddddb23b53a;
 
-struct Open {
+struct OpenResponse {
   ino   @0 :UInt64;
   fi    @1 :FuseFileInfo;
   uuid  @2 :Text;
+  res   @3 :Int8;
 
   struct FuseFileInfo {
     flags         @0  :Int8;

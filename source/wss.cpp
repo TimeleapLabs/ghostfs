@@ -13,6 +13,8 @@
 #include <lookup.response.capnp.h>
 #include <readdir.capnp.h>
 #include <readdir.response.capnp.h>
+#include <open.capnp.h>
+#include <open.response.capnp.h>
 
 #include <filesystem>
 #include <iostream>
@@ -298,6 +300,58 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         webSocket.send("3" + response_payload, true);
 
         std::cout << "readdir_response sent correctly: " << response_payload<< std::endl;
+
+        break;
+      }
+      case '4': {
+        const kj::ArrayPtr<const capnp::word> view(
+            reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
+            reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
+
+        capnp::FlatArrayMessageReader data(view);
+        Open::Reader open = data.getRoot<Open>();
+
+        std::cout << "open: Received UUID: " << open.getUuid().cStr() << std::endl;
+
+
+        ::capnp::MallocMessageBuilder message;
+        OpenResponse::Builder open_response = message.initRoot<OpenResponse>();
+
+        open_response.setUuid(open.getUuid());
+
+        if (ino_to_path.find(open.getIno()) == ino_to_path.end()) {
+          // File is unknown
+          open_response.setRes(-1);
+        } else {
+          open_response.setIno(open.getIno());
+
+          Open::FuseFileInfo::Reader fi = open.getFi();
+
+          uint64_t fh = ::open(ino_to_path[open.getIno()].c_str(), fi.getFlags());
+
+          OpenResponse::FuseFileInfo::Builder fi_response = open_response.initFi();
+
+          fi_response.setCacheReaddir(fi.getCacheReaddir());
+          fi_response.setDirectIo(fi.getDirectIo());
+          fi_response.setFh(fh);
+          fi_response.setFlags(fi.getFlags());
+          fi_response.setFlush(fi.getFlush());
+          fi_response.setKeepCache(fi.getKeepCache());
+          fi_response.setLockOwner(fi.getLockOwner());
+          fi_response.setNoflush(fi.getNoflush());
+          fi_response.setNonseekable(fi.getNonseekable());
+          fi_response.setPadding(fi.getPadding());
+          fi_response.setPollEvents(fi.getPollEvents());
+          fi_response.setWritepage(fi.getWritepage());
+        }
+
+        const auto response_data = capnp::messageToFlatArray(message);
+        const auto bytes = response_data.asBytes();
+        std::string response_payload(bytes.begin(), bytes.end());
+
+        webSocket.send("4" + response_payload, true);
+
+        std::cout << "open_response sent correctly: " << response_payload << std::endl;
 
         break;
       }

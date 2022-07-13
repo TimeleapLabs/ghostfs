@@ -61,6 +61,10 @@ void WSClient::onMessage(const ix::WebSocketMessagePtr& msg) {
         process_readdir_response(payload);
         break;
       }
+      case '4': {
+        process_open_response(payload);
+        break;
+      }
       default:
         break;
     }
