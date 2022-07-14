@@ -62,7 +62,7 @@ std::string gen_uuid() {
   return uuid.str();
 }
 
-std::string ROOT = "/Users/ncasati/.ghostfs/root";
+std::string ROOT = "/Users/pouya/.ghostfs/root";
 
 struct dirbuf {
   char *p;
@@ -168,6 +168,7 @@ void process_lookup_response(std::string payload) {
   int res = lookup_response.getRes();
 
   if (res == -1) {
+    std::cout << "LOOKUP::ENOENT" << std::endl;
     fuse_reply_err(request.req, ENOENT);
     return;
   }
@@ -295,7 +296,7 @@ void process_readdir_response(std::string payload) {
   }
 
   reply_buf_limited(request.req, b.p, b.size, request.off, request.size);
-  free(b.p);
+  // free(b.p);
 
   std::cout << "process_readdir_response: reply_buf_limited correctly executed" << std::endl;
 }
@@ -308,9 +309,9 @@ void process_open_response(std::string payload) {
   capnp::FlatArrayMessageReader data(view);
   OpenResponse::Reader open_response = data.getRoot<OpenResponse>();
 
-  struct fuse_file_info fi;
+  // struct fuse_file_info fi;
 
-  memset(&fi, 0, sizeof(fi));
+  // memset(&fi, 0, sizeof(fi));
 
   std::string uuid = open_response.getUuid();
 
@@ -328,21 +329,21 @@ void process_open_response(std::string payload) {
   OpenResponse::FuseFileInfo::Reader fi_response = open_response.getFi();
 
   // fi.cache_readdir = fi_response.getCacheReaddir();
-  fi.direct_io = fi_response.getDirectIo();
-  fi.fh = fi_response.getFh();
-  fi.flags = fi_response.getFlags();
-  // fi.flush = fi_response.getFlush();
-  fi.keep_cache = fi_response.getKeepCache();
-  fi.lock_owner = fi_response.getLockOwner();
-  // fi.noflush = fi_response.getNoflush();
-  fi.nonseekable = fi_response.getNonseekable();
-  fi.padding = fi_response.getPadding();
-  // fi.poll_events = fi_response.getPollEvents();
-  fi.writepage = fi_response.getWritepage();
+  // fi.direct_io = fi_response.getDirectIo();
+  request.fi->fh = fi_response.getFh();
+  // fi.flags = fi_response.getFlags();
+  //  fi.flush = fi_response.getFlush();
+  // fi.keep_cache = fi_response.getKeepCache();
+  // fi.lock_owner = fi_response.getLockOwner();
+  //  fi.noflush = fi_response.getNoflush();
+  // fi.nonseekable = fi_response.getNonseekable();
+  // fi.padding = fi_response.getPadding();
+  //  fi.poll_events = fi_response.getPollEvents();
+  // fi.writepage = fi_response.getWritepage();
 
   std::cout << "process_getattr_response: Request: " << request.req << std::endl;
 
-  fuse_reply_open(request.req, &fi);
+  fuse_reply_open(request.req, request.fi);
 
   std::cout << "process_getattr_response: fuse_reply_open correctly executed" << std::endl;
 }
@@ -368,6 +369,7 @@ void process_read_response(std::string payload) {
   int res = read_response.getRes();
 
   if (res == -1) {
+    std::cout << "READ::ENOENT" << std::endl;
     fuse_reply_err(request.req, ENOENT);
     return;
   }
@@ -377,9 +379,9 @@ void process_read_response(std::string payload) {
   capnp::Data::Reader buf_reader = read_response.getBuf();
   std::cout << "process_read_response: Request: 1" << std::endl;
   const auto bytes = buf_reader.asBytes();
-  std::cout << "process_read_response: Request: 2"<< std::endl;
+  std::cout << "process_read_response: Request: 2" << std::endl;
   std::string buf(bytes.begin(), bytes.end());
-  std::cout << "process_read_response: Request: 3 "<< buf << std::endl;
+  std::cout << "process_read_response: Request: 3 " << buf << std::endl;
 
   reply_buf_limited(request.req, buf.c_str(), request.size, request.off, request.size);
 
@@ -460,7 +462,7 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
 
   ws->send("2" + payload);
 
-  std::cout << "hello_ll_lookup executed correctly: " << payload <<std::endl;
+  std::cout << "hello_ll_lookup executed correctly: " << payload << std::endl;
 }
 
 /**
@@ -519,7 +521,8 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
 
   ws->send("3" + payload);
 
-  std::cout << "hello_ll_readdir executed correctly: " << "3" + payload << std::endl;
+  std::cout << "hello_ll_readdir executed correctly: "
+            << "3" + payload << std::endl;
 }
 
 /**
@@ -550,9 +553,9 @@ static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info 
   Open::FuseFileInfo::Builder fuseFileInfo = open.initFi();
 
   open.setIno(ino);
-  
+
   std::string uuid = gen_uuid();
-  requests[uuid] = {.type = 4, .req = req };
+  requests[uuid] = {.type = 4, .req = req, .fi = fi};
 
   open.setUuid(uuid);
 
@@ -566,8 +569,8 @@ static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info 
 
   ws->send("4" + payload);
 
-  std::cout << "hello_ll_open executed correctly: " << "4" + payload << std::endl;
-
+  std::cout << "hello_ll_open executed correctly: "
+            << "4" + payload << std::endl;
 }
 
 /**
@@ -609,7 +612,7 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
   fillFileInfo(&fuseFileInfo, fi);
 
   std::string uuid = gen_uuid();
-  requests[uuid] = {.type = 5, .req = req, .size = size, .off = off };
+  requests[uuid] = {.type = 5, .req = req, .size = size, .off = off};
 
   read.setUuid(uuid);
 
@@ -621,22 +624,23 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
 
   ws->send("5" + payload);
 
-  std::cout << "hello_ll_read executed correctly: " << "5" + payload << std::endl;
+  std::cout << "hello_ll_read executed correctly: "
+            << "5" + payload << std::endl;
 
-  //goes to other function
+  // goes to other function
 
-  if (ino_to_path.find(ino) == ino_to_path.end()) {
-    // File is unknown
-    fuse_reply_err(req, ENOENT);
-    return;
-  }
+  // if (ino_to_path.find(ino) == ino_to_path.end()) {
+  //   // File is unknown
+  //   fuse_reply_err(req, ENOENT);
+  //   return;
+  // }
 
-  char buf[size];
+  // char buf[size];
 
-  ::lseek(fi->fh, off, SEEK_SET);
-  ::read(fi->fh, &buf, size);
+  // ::lseek(fi->fh, off, SEEK_SET);
+  // ::read(fi->fh, &buf, size);
 
-  reply_buf_limited(req, buf, size, off, size);
+  // reply_buf_limited(req, buf, size, off, size);
 }
 
 /**

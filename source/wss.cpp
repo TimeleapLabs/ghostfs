@@ -11,12 +11,12 @@
 #include <getattr.response.capnp.h>
 #include <lookup.capnp.h>
 #include <lookup.response.capnp.h>
+#include <open.capnp.h>
+#include <open.response.capnp.h>
 #include <read.capnp.h>
 #include <read.response.capnp.h>
 #include <readdir.capnp.h>
 #include <readdir.response.capnp.h>
-#include <open.capnp.h>
-#include <open.response.capnp.h>
 
 #include <filesystem>
 #include <iostream>
@@ -134,8 +134,9 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         // std::cout << "st_atime " << attr.st_atime << " " << attributes.getStAtime() << std::endl;
         // std::cout << "st_mtime " << attr.st_mtime << " " << attributes.getStMtime() << std::endl;
         // std::cout << "st_ctime " << attr.st_ctime << " " << attributes.getStCtime() << std::endl;
-        // std::cout << "st_blksize " << attr.st_blksize << " " << attributes.getStBlksize() << std::endl;
-        // std::cout << "st_blocks " << attr.st_blocks << " " << attributes.getStBlocks() << std::endl;
+        // std::cout << "st_blksize " << attr.st_blksize << " " << attributes.getStBlksize() <<
+        // std::endl; std::cout << "st_blocks " << attr.st_blocks << " " << attributes.getStBlocks()
+        // << std::endl;
 
         const auto response_data = capnp::messageToFlatArray(message);
         const auto bytes = response_data.asBytes();
@@ -176,11 +177,20 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         if (!std::filesystem::exists(file_path)) {
           lookup_response.setRes(-1);
         } else {
-          uint64_t ino = path_to_ino[file_path];
+          uint64_t ino;
+
+          if (path_to_ino.find(file_path) == path_to_ino.end()) {
+            ino = ++current_ino;
+            ino_to_path[ino] = file_path;
+            path_to_ino[file_path] = ino;
+          } else {
+            ino = path_to_ino[file_path];
+          }
+
           lookup_response.setIno(ino);
 
-          //e.attr_timeout = 1.0;
-         // e.entry_timeout = 1.0;
+          // e.attr_timeout = 1.0;
+          // e.entry_timeout = 1.0;
 
           struct stat attr;
 
@@ -301,7 +311,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         webSocket.send("3" + response_payload, true);
 
-        std::cout << "readdir_response sent correctly: " << response_payload<< std::endl;
+        std::cout << "readdir_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -375,7 +385,6 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           // File is unknown
           read_response.setRes(-1);
         } else {
-
           size_t size = read.getSize();
           off_t off = read.getOff();
 
@@ -386,7 +395,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           ::lseek(fi.getFh(), off, SEEK_SET);
           ::read(fi.getFh(), &buf, size);
 
-          kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((unsigned char*) buf, size);
+          kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((unsigned char*)buf, size);
           capnp::Data::Reader buf_reader(buf_ptr);
 
           read_response.setBuf(buf_reader);
