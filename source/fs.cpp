@@ -33,6 +33,7 @@
 #include <open.capnp.h>
 #include <open.response.capnp.h>
 #include <read.capnp.h>
+#include <read.response.capnp.h>
 #include <readdir.capnp.h>
 #include <readdir.response.capnp.h>
 #include <setattr.capnp.h>
@@ -343,7 +344,46 @@ void process_open_response(std::string payload) {
 
   fuse_reply_open(request.req, &fi);
 
-  std::cout << "process_getattr_response: fuse_reply_attr correctly executed" << std::endl;
+  std::cout << "process_getattr_response: fuse_reply_open correctly executed" << std::endl;
+}
+
+void process_read_response(std::string payload) {
+  const kj::ArrayPtr<const capnp::word> view(
+      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
+      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
+
+  capnp::FlatArrayMessageReader data(view);
+  ReadResponse::Reader read_response = data.getRoot<ReadResponse>();
+
+  struct fuse_file_info fi;
+
+  memset(&fi, 0, sizeof(fi));
+
+  std::string uuid = read_response.getUuid();
+
+  std::cout << "process_read_response: Response UUID: " << uuid << std::endl;
+
+  request request = requests[uuid];
+
+  int res = read_response.getRes();
+
+  if (res == -1) {
+    fuse_reply_err(request.req, ENOENT);
+    return;
+  }
+
+  std::cout << "process_read_response: Request: " << request.req << std::endl;
+
+  capnp::Data::Reader buf_reader = read_response.getBuf();
+  std::cout << "process_read_response: Request: 1" << std::endl;
+  const auto bytes = buf_reader.asBytes();
+  std::cout << "process_read_response: Request: 2"<< std::endl;
+  std::string buf(bytes.begin(), bytes.end());
+  std::cout << "process_read_response: Request: 3 "<< buf << std::endl;
+
+  reply_buf_limited(request.req, buf.c_str(), request.size, request.off, request.size);
+
+  std::cout << "process_read_response: reply_buf_limited correctly executed" << std::endl;
 }
 
 /**
@@ -512,7 +552,7 @@ static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info 
   open.setIno(ino);
   
   std::string uuid = gen_uuid();
-  requests[uuid] = {.type = 4, .req = req};
+  requests[uuid] = {.type = 4, .req = req };
 
   open.setUuid(uuid);
 
@@ -567,6 +607,23 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
   read.setOff(off);
 
   fillFileInfo(&fuseFileInfo, fi);
+
+  std::string uuid = gen_uuid();
+  requests[uuid] = {.type = 5, .req = req, .size = size, .off = off };
+
+  read.setUuid(uuid);
+
+  std::cout << "hello_ll_read: Request UUID: " << uuid << std::endl;
+
+  const auto data = capnp::messageToFlatArray(message);
+  const auto bytes = data.asBytes();
+  std::string payload(bytes.begin(), bytes.end());
+
+  ws->send("5" + payload);
+
+  std::cout << "hello_ll_read executed correctly: " << "5" + payload << std::endl;
+
+  //goes to other function
 
   if (ino_to_path.find(ino) == ino_to_path.end()) {
     // File is unknown
@@ -942,7 +999,7 @@ static struct fuse_lowlevel_ops hello_ll_oper = {
     .getattr = hello_ll_getattr,
     .readdir = hello_ll_readdir,
     .open = hello_ll_open,
-    //.read = hello_ll_read,
+    .read = hello_ll_read,
     //.write = hello_ll_write,
     //.mknod = hello_ll_mknod,
     //.create = hello_ll_create,

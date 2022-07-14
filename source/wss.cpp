@@ -11,6 +11,8 @@
 #include <getattr.response.capnp.h>
 #include <lookup.capnp.h>
 #include <lookup.response.capnp.h>
+#include <read.capnp.h>
+#include <read.response.capnp.h>
 #include <readdir.capnp.h>
 #include <readdir.response.capnp.h>
 #include <open.capnp.h>
@@ -121,19 +123,19 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         attributes.setStBlksize(attr.st_blksize);
         attributes.setStBlocks(attr.st_blocks);
 
-        std::cout << "st_dev " << attr.st_dev << " " << attributes.getStDev() << std::endl;
-        std::cout << "st_ino " << attr.st_ino << " " << attributes.getStIno() << std::endl;
-        std::cout << "st_mode " << attr.st_mode << " " << attributes.getStMode() << std::endl;
-        std::cout << "st_nlink " << attr.st_nlink << " " << attributes.getStNlink() << std::endl;
-        std::cout << "st_uid " << attr.st_uid << " " << attributes.getStUid() << std::endl;
-        std::cout << "st_gid " << attr.st_gid << " " << attributes.getStGid() << std::endl;
-        std::cout << "st_rdev " << attr.st_rdev << " " << attributes.getStRdev() << std::endl;
-        std::cout << "st_size " << attr.st_size << " " << attributes.getStSize() << std::endl;
-        std::cout << "st_atime " << attr.st_atime << " " << attributes.getStAtime() << std::endl;
-        std::cout << "st_mtime " << attr.st_mtime << " " << attributes.getStMtime() << std::endl;
-        std::cout << "st_ctime " << attr.st_ctime << " " << attributes.getStCtime() << std::endl;
-        std::cout << "st_blksize " << attr.st_blksize << " " << attributes.getStBlksize() << std::endl;
-        std::cout << "st_blocks " << attr.st_blocks << " " << attributes.getStBlocks() << std::endl;
+        // std::cout << "st_dev " << attr.st_dev << " " << attributes.getStDev() << std::endl;
+        // std::cout << "st_ino " << attr.st_ino << " " << attributes.getStIno() << std::endl;
+        // std::cout << "st_mode " << attr.st_mode << " " << attributes.getStMode() << std::endl;
+        // std::cout << "st_nlink " << attr.st_nlink << " " << attributes.getStNlink() << std::endl;
+        // std::cout << "st_uid " << attr.st_uid << " " << attributes.getStUid() << std::endl;
+        // std::cout << "st_gid " << attr.st_gid << " " << attributes.getStGid() << std::endl;
+        // std::cout << "st_rdev " << attr.st_rdev << " " << attributes.getStRdev() << std::endl;
+        // std::cout << "st_size " << attr.st_size << " " << attributes.getStSize() << std::endl;
+        // std::cout << "st_atime " << attr.st_atime << " " << attributes.getStAtime() << std::endl;
+        // std::cout << "st_mtime " << attr.st_mtime << " " << attributes.getStMtime() << std::endl;
+        // std::cout << "st_ctime " << attr.st_ctime << " " << attributes.getStCtime() << std::endl;
+        // std::cout << "st_blksize " << attr.st_blksize << " " << attributes.getStBlksize() << std::endl;
+        // std::cout << "st_blocks " << attr.st_blocks << " " << attributes.getStBlocks() << std::endl;
 
         const auto response_data = capnp::messageToFlatArray(message);
         const auto bytes = response_data.asBytes();
@@ -313,7 +315,6 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         std::cout << "open: Received UUID: " << open.getUuid().cStr() << std::endl;
 
-
         ::capnp::MallocMessageBuilder message;
         OpenResponse::Builder open_response = message.initRoot<OpenResponse>();
 
@@ -352,6 +353,53 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         webSocket.send("4" + response_payload, true);
 
         std::cout << "open_response sent correctly: " << response_payload << std::endl;
+
+        break;
+      }
+      case '5': {
+        const kj::ArrayPtr<const capnp::word> view(
+            reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
+            reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
+
+        capnp::FlatArrayMessageReader data(view);
+        Read::Reader read = data.getRoot<Read>();
+
+        std::cout << "read: Received UUID: " << read.getUuid().cStr() << std::endl;
+
+        ::capnp::MallocMessageBuilder message;
+        ReadResponse::Builder read_response = message.initRoot<ReadResponse>();
+
+        read_response.setUuid(read.getUuid());
+
+        if (ino_to_path.find(read.getIno()) == ino_to_path.end()) {
+          // File is unknown
+          read_response.setRes(-1);
+        } else {
+
+          size_t size = read.getSize();
+          off_t off = read.getOff();
+
+          char buf[size];
+
+          Read::FuseFileInfo::Reader fi = read.getFi();
+
+          ::lseek(fi.getFh(), off, SEEK_SET);
+          ::read(fi.getFh(), &buf, size);
+
+          kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((unsigned char*) buf, size);
+          capnp::Data::Reader buf_reader(buf_ptr);
+
+          read_response.setBuf(buf_reader);
+          read_response.setRes(0);
+        }
+
+        const auto response_data = capnp::messageToFlatArray(message);
+        const auto bytes = response_data.asBytes();
+        std::string response_payload(bytes.begin(), bytes.end());
+
+        webSocket.send("5" + response_payload, true);
+
+        std::cout << "read_response sent correctly: " << response_payload << std::endl;
 
         break;
       }

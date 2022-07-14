@@ -28,3 +28,4 @@ void process_getattr_response(std::string payload);
 void process_readdir_response(std::string payload);
 void process_lookup_response(std::string payload);
 void process_open_response(std::string payload);
+void process_read_response(std::string payload);
