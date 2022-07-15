@@ -322,6 +322,7 @@ void process_open_response(std::string payload) {
 
   int res = open_response.getRes();
 
+  // TODO: FIX THESE
   if (res == -1) {
     fuse_reply_err(request.req, ENOENT);
     return;

@@ -57,7 +57,7 @@ void WSServer::start() {
   server.wait();
 }
 
-template <class T> std::string send_error(T &response, ::capnp::MallocMessageBuilder &message,
+template <class T> std::string send_message(T &response, ::capnp::MallocMessageBuilder &message,
                                           int res, ix::WebSocket& webSocket, std::string opcode) {
   response.setRes(res);
 
@@ -123,7 +123,6 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         GetattrResponse::Attr::Builder attributes = getattr_response.initAttr();
 
         getattr_response.setUuid(getattr.getUuid());
-        getattr_response.setRes(res);
 
         attributes.setStDev(attr.st_dev);
         attributes.setStIno(attr.st_ino);
@@ -154,11 +153,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         // std::endl; std::cout << "st_blocks " << attr.st_blocks << " " << attributes.getStBlocks()
         // << std::endl;
 
-        const auto response_data = capnp::messageToFlatArray(message);
-        const auto bytes = response_data.asBytes();
-        std::string response_payload(bytes.begin(), bytes.end());
-
-        webSocket.send("1" + response_payload, true);
+        std::string response_payload = send_message(getattr_response, message, res, webSocket, "1");
 
         std::cout << "getattr_response sent correctly: " << response_payload << std::endl;
 
@@ -191,53 +186,49 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         std::filesystem::path file_path = parent_path / std::filesystem::path(name);
 
         if (!std::filesystem::exists(file_path)) {
-          lookup_response.setRes(-1);
+          std::string response_payload = send_message(lookup_response, message, -1, webSocket, "2");
+          std::cout << "lookup_response sent error: " << response_payload << std::endl;
+          return;
+        } 
+
+        uint64_t ino;
+
+        if (path_to_ino.find(file_path) == path_to_ino.end()) {
+          ino = ++current_ino;
+          ino_to_path[ino] = file_path;
+          path_to_ino[file_path] = ino;
         } else {
-          uint64_t ino;
-
-          if (path_to_ino.find(file_path) == path_to_ino.end()) {
-            ino = ++current_ino;
-            ino_to_path[ino] = file_path;
-            path_to_ino[file_path] = ino;
-          } else {
-            ino = path_to_ino[file_path];
-          }
-
-          lookup_response.setIno(ino);
-
-          // e.attr_timeout = 1.0;
-          // e.entry_timeout = 1.0;
-
-          struct stat attr;
-
-          memset(&attr, 0, sizeof(attr));
-
-          int res = hello_stat(ino, &attr);
-
-          LookupResponse::Attr::Builder attributes = lookup_response.initAttr();
-
-          lookup_response.setRes(res);
-
-          attributes.setStDev(attr.st_dev);
-          attributes.setStIno(attr.st_ino);
-          attributes.setStMode(attr.st_mode);
-          attributes.setStNlink(attr.st_nlink);
-          attributes.setStUid(attr.st_uid);
-          attributes.setStGid(attr.st_gid);
-          attributes.setStRdev(attr.st_rdev);
-          attributes.setStSize(attr.st_size);
-          attributes.setStAtime(attr.st_atime);
-          attributes.setStMtime(attr.st_mtime);
-          attributes.setStCtime(attr.st_ctime);
-          attributes.setStBlksize(attr.st_blksize);
-          attributes.setStBlocks(attr.st_blocks);
+          ino = path_to_ino[file_path];
         }
 
-        const auto response_data = capnp::messageToFlatArray(message);
-        const auto bytes = response_data.asBytes();
-        std::string response_payload(bytes.begin(), bytes.end());
+        lookup_response.setIno(ino);
 
-        webSocket.send("2" + response_payload, true);
+        // e.attr_timeout = 1.0;
+        // e.entry_timeout = 1.0;
+
+        struct stat attr;
+
+        memset(&attr, 0, sizeof(attr));
+
+        int res = hello_stat(ino, &attr);
+
+        LookupResponse::Attr::Builder attributes = lookup_response.initAttr();
+
+        attributes.setStDev(attr.st_dev);
+        attributes.setStIno(attr.st_ino);
+        attributes.setStMode(attr.st_mode);
+        attributes.setStNlink(attr.st_nlink);
+        attributes.setStUid(attr.st_uid);
+        attributes.setStGid(attr.st_gid);
+        attributes.setStRdev(attr.st_rdev);
+        attributes.setStSize(attr.st_size);
+        attributes.setStAtime(attr.st_atime);
+        attributes.setStMtime(attr.st_mtime);
+        attributes.setStCtime(attr.st_ctime);
+        attributes.setStBlksize(attr.st_blksize);
+        attributes.setStBlocks(attr.st_blocks);
+
+        std::string response_payload = send_message(lookup_response, message, res, webSocket, "2");
 
         std::cout << "lookup_response sent correctly: " << response_payload << std::endl;
 
@@ -272,13 +263,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         } else if (ino_to_path.find(ino) != ino_to_path.end()) {
           path = ino_to_path[ino];
         } else {
-          readdir_response.setRes(-1);
-
-          const auto response_data = capnp::messageToFlatArray(message);
-          const auto bytes = response_data.asBytes();
-          std::string response_payload(bytes.begin(), bytes.end());
-
-          webSocket.send("3" + response_payload, true);
+          std::string response_payload = send_message(readdir_response, message, -1, webSocket, "3");
 
           std::cout << "readdir_response sent error: " << response_payload << std::endl;
 
@@ -319,13 +304,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           index++;
         }
 
-        readdir_response.setRes(0);
-
-        const auto response_data = capnp::messageToFlatArray(message);
-        const auto bytes = response_data.asBytes();
-        std::string response_payload(bytes.begin(), bytes.end());
-
-        webSocket.send("3" + response_payload, true);
+        std::string response_payload = send_message(readdir_response, message, 0, webSocket, "3");
 
         std::cout << "readdir_response sent correctly: " << response_payload << std::endl;
 
@@ -348,35 +327,34 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         if (ino_to_path.find(open.getIno()) == ino_to_path.end()) {
           // File is unknown
-          open_response.setRes(-1);
-        } else {
-          open_response.setIno(open.getIno());
+          std::string response_payload = send_message(open_response, message, -1, webSocket, "4");
 
-          Open::FuseFileInfo::Reader fi = open.getFi();
+          std::cout << "readdir_response sent error: " << response_payload << std::endl;
+          return;
+        } 
 
-          uint64_t fh = ::open(ino_to_path[open.getIno()].c_str(), fi.getFlags());
+        open_response.setIno(open.getIno());
 
-          OpenResponse::FuseFileInfo::Builder fi_response = open_response.initFi();
+        Open::FuseFileInfo::Reader fi = open.getFi();
 
-          fi_response.setCacheReaddir(fi.getCacheReaddir());
-          fi_response.setDirectIo(fi.getDirectIo());
-          fi_response.setFh(fh);
-          fi_response.setFlags(fi.getFlags());
-          fi_response.setFlush(fi.getFlush());
-          fi_response.setKeepCache(fi.getKeepCache());
-          fi_response.setLockOwner(fi.getLockOwner());
-          fi_response.setNoflush(fi.getNoflush());
-          fi_response.setNonseekable(fi.getNonseekable());
-          fi_response.setPadding(fi.getPadding());
-          fi_response.setPollEvents(fi.getPollEvents());
-          fi_response.setWritepage(fi.getWritepage());
-        }
+        uint64_t fh = ::open(ino_to_path[open.getIno()].c_str(), fi.getFlags());
 
-        const auto response_data = capnp::messageToFlatArray(message);
-        const auto bytes = response_data.asBytes();
-        std::string response_payload(bytes.begin(), bytes.end());
+        OpenResponse::FuseFileInfo::Builder fi_response = open_response.initFi();
 
-        webSocket.send("4" + response_payload, true);
+        fi_response.setCacheReaddir(fi.getCacheReaddir());
+        fi_response.setDirectIo(fi.getDirectIo());
+        fi_response.setFh(fh);
+        fi_response.setFlags(fi.getFlags());
+        fi_response.setFlush(fi.getFlush());
+        fi_response.setKeepCache(fi.getKeepCache());
+        fi_response.setLockOwner(fi.getLockOwner());
+        fi_response.setNoflush(fi.getNoflush());
+        fi_response.setNonseekable(fi.getNonseekable());
+        fi_response.setPadding(fi.getPadding());
+        fi_response.setPollEvents(fi.getPollEvents());
+        fi_response.setWritepage(fi.getWritepage());
+
+        std::string response_payload = send_message(open_response, message, 0, webSocket, "4");
 
         std::cout << "open_response sent correctly: " << response_payload << std::endl;
 
@@ -399,30 +377,27 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         if (ino_to_path.find(read.getIno()) == ino_to_path.end()) {
           // File is unknown
-          read_response.setRes(-1);
-        } else {
-          size_t size = read.getSize();
-          off_t off = read.getOff();
+          std::string response_payload = send_message(read_response, message, -1, webSocket, "5");
 
-          char buf[size];
+          std::cout << "read_response sent error: " << response_payload << std::endl;
+        } 
 
-          Read::FuseFileInfo::Reader fi = read.getFi();
+        size_t size = read.getSize();
+        off_t off = read.getOff();
 
-          ::lseek(fi.getFh(), off, SEEK_SET);
-          ::read(fi.getFh(), &buf, size);
+        char buf[size];
 
-          kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((unsigned char*)buf, size);
-          capnp::Data::Reader buf_reader(buf_ptr);
+        Read::FuseFileInfo::Reader fi = read.getFi();
 
-          read_response.setBuf(buf_reader);
-          read_response.setRes(0);
-        }
+        ::lseek(fi.getFh(), off, SEEK_SET);
+        ::read(fi.getFh(), &buf, size);
 
-        const auto response_data = capnp::messageToFlatArray(message);
-        const auto bytes = response_data.asBytes();
-        std::string response_payload(bytes.begin(), bytes.end());
+        kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((unsigned char*)buf, size);
+        capnp::Data::Reader buf_reader(buf_ptr);
 
-        webSocket.send("5" + response_payload, true);
+        read_response.setBuf(buf_reader);
+
+        std::string response_payload = send_message(read_response, message, 0, webSocket, "5");
 
         std::cout << "read_response sent correctly: " << response_payload << std::endl;
 
@@ -447,7 +422,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         if (ino_to_path.find(ino) == ino_to_path.end()) {
           // Parent is unknown
-          std::string response_payload = send_error(setattr_response, message, -1, webSocket, "6");
+          std::string response_payload = send_message(setattr_response, message, -1, webSocket, "6");
 
           std::cout << "setattr_response sent error: " << response_payload << std::endl;
 
@@ -470,7 +445,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           err = chmod(file_path.c_str(), attr.getStMode());
           if (err == -1) {
             std::string response_payload
-                = send_error(setattr_response, message, -1, webSocket, "6");
+                = send_message(setattr_response, message, -1, webSocket, "6");
 
             std::cout << "setattr_response sent error: " << response_payload << std::endl;
 
@@ -485,7 +460,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           err = lchown(file_path.c_str(), uid, gid);
           if (err == -1) {
             std::string response_payload
-                = send_error(setattr_response, message, -1, webSocket, "6");
+                = send_message(setattr_response, message, -1, webSocket, "6");
 
             std::cout << "setattr_response sent error: " << response_payload << std::endl;
             return;
@@ -496,7 +471,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           err = truncate(file_path.c_str(), attr.getStSize());
           if (err == -1) {
             std::string response_payload
-                = send_error(setattr_response, message, -1, webSocket, "6");
+                = send_message(setattr_response, message, -1, webSocket, "6");
 
             std::cout << "setattr_response sent error: " << response_payload << std::endl;
             return;
@@ -538,21 +513,16 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           err = utimensat(AT_FDCWD, file_path.c_str(), tv, 0);
 
           if (err == -1) {
-            std::string response_payload = send_error(setattr_response, message, -1, webSocket, "6");
+            std::string response_payload = send_message(setattr_response, message, -1, webSocket, "6");
 
             std::cout << "setattr_response sent error: " << response_payload << std::endl;
             return;
           }
         }
 
-        setattr_response.setRes(0);
         setattr_response.setIno(ino);
-
-        const auto response_data = capnp::messageToFlatArray(message);
-        const auto bytes = response_data.asBytes();
-        std::string response_payload(bytes.begin(), bytes.end());
-
-        webSocket.send("6" + response_payload, true);
+        
+        std::string response_payload = send_message(setattr_response, message, 0, webSocket, "6");
 
         std::cout << "setattr_response sent correctly: " << response_payload << std::endl;
 
