@@ -458,6 +458,12 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         std::string file_path = ino_to_path[ino];
 
         Setattr::Attr::Reader attr = setattr.getAttr();
+        Setattr::TimeSpec::Reader stAtime = attr.getStAtime();
+        Setattr::TimeSpec::Reader stMtime = attr.getStMtime();
+
+        struct timespec a_time = {.tv_sec = stAtime.getTvSec(), .tv_nsec = stAtime.getTvNSec()};
+        struct timespec m_time = {.tv_sec = stMtime.getTvSec(), .tv_nsec = stMtime.getTvNSec()};
+
         uint64_t to_set = setattr.getToSet();
 
         if (to_set & FUSE_SET_ATTR_MODE) {
@@ -515,7 +521,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
       // #else
       //   tv[0] = attr->st_atim;
       // #endif  // clang-format on
-            tv[0] = attr.getStAtime();
+            tv[0] = a_time;
           }
 
           if (to_set & FUSE_SET_ATTR_MTIME_NOW) {
@@ -526,7 +532,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
       // #else
       //   tv[1] = attr->st_mtim;
       // #endif  // clang-format on
-            tv[1] = attr.getStMtime();
+            tv[1] = m_time;
           }
 
           err = utimensat(AT_FDCWD, file_path.c_str(), tv, 0);
@@ -538,8 +544,6 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
             return;
           }
         }
-
-        SetattrResponse::Attr::Builder attributes = setattr_response.initAttr();
 
         setattr_response.setRes(0);
         setattr_response.setIno(ino);
