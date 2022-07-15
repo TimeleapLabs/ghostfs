@@ -38,6 +38,8 @@
 #include <readdir.response.capnp.h>
 #include <setattr.capnp.h>
 #include <setattr.response.capnp.h>
+#include <write.capnp.h>
+#include <write.response.capnp.h>
 #include <sys/xattr.h>
 #include <write.capnp.h>
 
@@ -423,6 +425,33 @@ void process_setattr_response(std::string payload) {
   std::cout << "process_setattr_response: hello_ll_getattr correctly executed" << std::endl;
 }
 
+void process_write_response(std::string payload) {
+  const kj::ArrayPtr<const capnp::word> view(
+      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
+      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
+
+  capnp::FlatArrayMessageReader data(view);
+  WriteResponse::Reader write_response = data.getRoot<WriteResponse>();
+
+  std::string uuid = write_response.getUuid();
+
+  std::cout << "process_write_response: Response UUID: " << uuid << std::endl;
+
+  request request = requests[uuid];
+
+  int res = write_response.getRes();
+
+  if (res == -1) {
+    std::cout << "READ::ENOENT" << std::endl;
+    fuse_reply_err(request.req, ENOENT);
+    return;
+  }
+
+  fuse_reply_write(request.req, write_response.getWritten());
+
+  std::cout << "process_setattr_response: hello_ll_getattr correctly executed" << std::endl;
+}
+
 /**
  * @brief
  *
@@ -701,9 +730,20 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
 
   fillFileInfo(&fuseFileInfo, fi);
 
-  ::lseek(fi->fh, off, SEEK_SET);
-  size_t written = ::write(fi->fh, buf, size);
-  fuse_reply_write(req, written);
+  std::string uuid = gen_uuid();
+  requests[uuid] = {.type = 6, .req = req};
+
+  write.setUuid(uuid);
+
+  std::cout << "hello_ll_write: Request UUID: " << uuid << std::endl;
+
+  const auto data = capnp::messageToFlatArray(message);
+  const auto bytes = data.asBytes();
+  std::string payload(bytes.begin(), bytes.end());
+
+  ws->send("6" + payload);
+
+  std::cout << "hello_ll_write executed correctly: " << "6" + payload << std::endl;
 }
 
 /**
