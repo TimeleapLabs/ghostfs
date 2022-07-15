@@ -1,5 +1,6 @@
 
 #include <fmt/format.h>
+#include <fuse_lowlevel.h>
 #include <ghostfs/fs.h>
 #include <ghostfs/wss.h>
 
@@ -17,6 +18,8 @@
 #include <read.response.capnp.h>
 #include <readdir.capnp.h>
 #include <readdir.response.capnp.h>
+#include <setattr.capnp.h>
+#include <setattr.response.capnp.h>
 
 #include <filesystem>
 #include <iostream>
@@ -52,6 +55,19 @@ void WSServer::start() {
 
   // Block until server.stop() is called.
   server.wait();
+}
+
+template <class T> std::string send_error(T &response, ::capnp::MallocMessageBuilder &message,
+                                          int res, ix::WebSocket& webSocket, std::string opcode) {
+  response.setRes(res);
+
+  const auto response_data = capnp::messageToFlatArray(message);
+  const auto bytes = response_data.asBytes();
+  std::string response_payload(bytes.begin(), bytes.end());
+
+  webSocket.send(opcode + response_payload, true);
+
+  return response_payload;
 }
 
 void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
@@ -409,6 +425,132 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         webSocket.send("5" + response_payload, true);
 
         std::cout << "read_response sent correctly: " << response_payload << std::endl;
+
+        break;
+      }
+      case '6': {
+        const kj::ArrayPtr<const capnp::word> view(
+            reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
+            reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
+
+        capnp::FlatArrayMessageReader data(view);
+        Setattr::Reader setattr = data.getRoot<Setattr>();
+
+        std::cout << "setattr: Received UUID: " << setattr.getUuid().cStr() << std::endl;
+
+        ::capnp::MallocMessageBuilder message;
+        SetattrResponse::Builder setattr_response = message.initRoot<SetattrResponse>();
+
+        setattr_response.setUuid(setattr.getUuid());
+
+        uint64_t ino = setattr.getIno();
+
+        if (ino_to_path.find(ino) == ino_to_path.end()) {
+          // Parent is unknown
+          std::string response_payload = send_error(setattr_response, message, -1, webSocket, "6");
+
+          std::cout << "setattr_response sent error: " << response_payload << std::endl;
+
+          return;
+        }
+
+        int err;
+        std::string file_path = ino_to_path[ino];
+
+        Setattr::Attr::Reader attr = setattr.getAttr();
+        uint64_t to_set = setattr.getToSet();
+
+        if (to_set & FUSE_SET_ATTR_MODE) {
+          err = chmod(file_path.c_str(), attr.getStMode());
+          if (err == -1) {
+            std::string response_payload
+                = send_error(setattr_response, message, -1, webSocket, "6");
+
+            std::cout << "setattr_response sent error: " << response_payload << std::endl;
+
+            return;
+          }
+        }
+
+        if (to_set & (FUSE_SET_ATTR_UID | FUSE_SET_ATTR_GID)) {
+          uid_t uid = (to_set & FUSE_SET_ATTR_UID) ? attr.getStUid() : (uid_t)-1;
+          gid_t gid = (to_set & FUSE_SET_ATTR_GID) ? attr.getStGid() : (gid_t)-1;
+
+          err = lchown(file_path.c_str(), uid, gid);
+          if (err == -1) {
+            std::string response_payload
+                = send_error(setattr_response, message, -1, webSocket, "6");
+
+            std::cout << "setattr_response sent error: " << response_payload << std::endl;
+            return;
+          }
+        }
+
+        if (to_set & FUSE_SET_ATTR_SIZE) {
+          err = truncate(file_path.c_str(), attr.getStSize());
+          if (err == -1) {
+            std::string response_payload
+                = send_error(setattr_response, message, -1, webSocket, "6");
+
+            std::cout << "setattr_response sent error: " << response_payload << std::endl;
+            return;
+          }
+        }
+
+        // todo from here
+
+        if (to_set & (FUSE_SET_ATTR_ATIME | FUSE_SET_ATTR_MTIME)) {
+          struct timespec tv[2];
+
+          tv[0].tv_sec = 0;
+          tv[1].tv_sec = 0;
+          tv[0].tv_nsec = UTIME_OMIT;
+          tv[1].tv_nsec = UTIME_OMIT;
+
+          if (to_set & FUSE_SET_ATTR_ATIME_NOW) {
+            tv[0].tv_nsec = UTIME_NOW;
+          } else if (to_set & FUSE_SET_ATTR_ATIME) {  // clang-format off
+      // #if defined(__APPLE__)
+      //   tv[0] = attr->st_atimespec;
+      // #else
+      //   tv[0] = attr->st_atim;
+      // #endif  // clang-format on
+            tv[0] = attr.getStAtime();
+          }
+
+          if (to_set & FUSE_SET_ATTR_MTIME_NOW) {
+            tv[1].tv_nsec = UTIME_NOW;
+          } else if (to_set & FUSE_SET_ATTR_MTIME) {  // clang-format off
+      // #if defined(__APPLE__)
+      //   tv[1] = attr->st_mtimespec;
+      // #else
+      //   tv[1] = attr->st_mtim;
+      // #endif  // clang-format on
+            tv[1] = attr.getStMtime();
+          }
+
+          err = utimensat(AT_FDCWD, file_path.c_str(), tv, 0);
+
+          if (err == -1) {
+            std::string response_payload = send_error(setattr_response, message, -1, webSocket, "6");
+
+            std::cout << "setattr_response sent error: " << response_payload << std::endl;
+            return;
+          }
+        }
+
+        SetattrResponse::Attr::Builder attributes = setattr_response.initAttr();
+
+        setattr_response.setRes(0);
+        setattr_response.setIno(ino);
+
+        const auto response_data = capnp::messageToFlatArray(message);
+        const auto bytes = response_data.asBytes();
+        std::string response_payload(bytes.begin(), bytes.end());
+
+        webSocket.send("6" + response_payload, true);
+
+        std::cout << "setattr_response sent correctly: " << response_payload << std::endl;
 
         break;
       }

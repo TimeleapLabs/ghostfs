@@ -388,577 +388,611 @@ void process_read_response(std::string payload) {
   std::cout << "process_read_response: reply_buf_limited correctly executed" << std::endl;
 }
 
-/**
- * @brief
- *
- * @param req
- * @param ino -> uint64_t
- * @param fi -> {
- *             int 	flags
- *    unsigned int 	writepage
- *    unsigned int 	direct_io
- *    unsigned int 	keep_cache
- *    unsigned int 	flush
- *    unsigned int 	nonseekable
- *    unsigned int 	cache_readdir
- *    unsigned int 	padding
- *    uint64_t 	    fh
- *    uint64_t 	    lock_owner
- *    uint32_t 	    poll_events
- *    unsigned int 	noflush
- * }
- */
-static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
-  ::capnp::MallocMessageBuilder message;
-  Getattr::Builder getattr = message.initRoot<Getattr>();
-  Getattr::FuseFileInfo::Builder fuseFileInfo = getattr.initFi();
+void process_setattr_response(std::string payload) {
+  const kj::ArrayPtr<const capnp::word> view(
+      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
+      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
 
-  getattr.setIno(ino);
+  capnp::FlatArrayMessageReader data(view);
+  SetattrResponse::Reader setattr_response = data.getRoot<SetattrResponse>();
 
-  fillFileInfo(&fuseFileInfo, fi);
+  struct fuse_file_info fi;
 
-  std::string uuid = gen_uuid();
-  requests[uuid] = {.type = 1, .req = req};
+  memset(&fi, 0, sizeof(fi));
 
-  std::cout << "hello_ll_getattr: Request UUID: " << uuid << std::endl;
+  std::string uuid = setattr_response.getUuid();
 
-  getattr.setUuid(uuid);
+  std::cout << "process_setattr_response: Response UUID: " << uuid << std::endl;
 
-  const auto data = capnp::messageToFlatArray(message);
-  const auto bytes = data.asBytes();
-  std::string payload(bytes.begin(), bytes.end());
+  request request = requests[uuid];
 
-  ws->send("1" + payload);
-
-  std::cout << "hello_ll_getattr executed correctly: " << payload << std::endl;
-}
-
-/**
- * @brief
- *
- * @param req
- * @param parent -> uint64_t
- * @param name -> *char
- */
-static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name) {
-  // printf("Called .lookup\n");
-
-  ::capnp::MallocMessageBuilder message;
-  Lookup::Builder lookup = message.initRoot<Lookup>();
-
-  lookup.setParent(parent);
-  lookup.setName(name);
-
-  std::string uuid = gen_uuid();
-  requests[uuid] = {.type = 2, .req = req};
-
-  lookup.setUuid(uuid);
-
-  std::cout << "hello_ll_lookup: Request UUID: " << uuid << std::endl;
-
-  const auto data = capnp::messageToFlatArray(message);
-  const auto bytes = data.asBytes();
-  std::string payload(bytes.begin(), bytes.end());
-
-  ws->send("2" + payload);
-
-  std::cout << "hello_ll_lookup executed correctly: " << payload << std::endl;
-}
-
-/**
- * @brief Readdir fuse low-level function (called when using ls)
- *
- * @param req
- * @param ino -> uint64_t
- * @param size -> unsigned int
- * @param off -> long int
- * @param fi -> {
- *             int 	flags
- *    unsigned int 	writepage
- *    unsigned int 	direct_io
- *    unsigned int 	keep_cache
- *    unsigned int 	flush
- *    unsigned int 	nonseekable
- *    unsigned int 	cache_readdir
- *    unsigned int 	padding
- *    uint64_t 	    fh
- *    uint64_t 	    lock_owner
- *    uint32_t 	    poll_events
- *    unsigned int 	noflush
- * }
- */
-static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off,
-                             struct fuse_file_info *fi) {
-  //(void)fi;
-
-  ::capnp::MallocMessageBuilder message;
-  Readdir::Builder readdir = message.initRoot<Readdir>();
-  Readdir::FuseFileInfo::Builder fuseFileInfo = readdir.initFi();
-
-  readdir.setIno(ino);
-  readdir.setSize(size);
-  readdir.setOff(off);
-
-  fillFileInfo(&fuseFileInfo, fi);
-
-  // Don't remove these 3 lines
-  // const auto m = capnp::messageToFlatArray(message);
-  // const auto c = m.asChars();
-  // std::cout << "Size: " << c.size() << std::endl;
-
-  // printf("Called .readdir\n");
-
-  std::string uuid = gen_uuid();
-  requests[uuid] = {.type = 3, .req = req, .size = size, .off = off};
-
-  readdir.setUuid(uuid);
-
-  std::cout << "hello_ll_readdir: Request UUID: " << uuid << std::endl;
-
-  const auto data = capnp::messageToFlatArray(message);
-  const auto bytes = data.asBytes();
-  std::string payload(bytes.begin(), bytes.end());
-
-  ws->send("3" + payload);
-
-  std::cout << "hello_ll_readdir executed correctly: "
-            << "3" + payload << std::endl;
-}
-
-/**
- * @brief
- *
- * @param req
- * @param ino -> uint64_t
- * @param fi -> {
- *             int 	flags
- *    unsigned int 	writepage
- *    unsigned int 	direct_io
- *    unsigned int 	keep_cache
- *    unsigned int 	flush
- *    unsigned int 	nonseekable
- *    unsigned int 	cache_readdir
- *    unsigned int 	padding
- *    uint64_t 	    fh
- *    uint64_t 	    lock_owner
- *    uint32_t 	    poll_events
- *    unsigned int 	noflush
- * }
- */
-static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
-  // printf("Called .open\n");
-
-  ::capnp::MallocMessageBuilder message;
-  Open::Builder open = message.initRoot<Open>();
-  Open::FuseFileInfo::Builder fuseFileInfo = open.initFi();
-
-  open.setIno(ino);
-
-  std::string uuid = gen_uuid();
-  requests[uuid] = {.type = 4, .req = req, .fi = fi};
-
-  open.setUuid(uuid);
-
-  fillFileInfo(&fuseFileInfo, fi);
-
-  std::cout << "hello_ll_open: Request UUID: " << uuid << std::endl;
-
-  const auto data = capnp::messageToFlatArray(message);
-  const auto bytes = data.asBytes();
-  std::string payload(bytes.begin(), bytes.end());
-
-  ws->send("4" + payload);
-
-  std::cout << "hello_ll_open executed correctly: "
-            << "4" + payload << std::endl;
-}
-
-/**
- * @brief
- *
- * @param req
- * @param ino -> uint64_t
- * @param size -> unsigned int
- * @param off -> long int
- * @param fi -> {
- *             int 	flags
- *    unsigned int 	writepage
- *    unsigned int 	direct_io
- *    unsigned int 	keep_cache
- *    unsigned int 	flush
- *    unsigned int 	nonseekable
- *    unsigned int 	cache_readdir
- *    unsigned int 	padding
- *    uint64_t 	    fh
- *    uint64_t 	    lock_owner
- *    uint32_t 	    poll_events
- *    unsigned int 	noflush
- * }
- */
-static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off,
-                          struct fuse_file_info *fi) {
-  (void)fi;
-
-  // printf("Called .read\n");
-
-  ::capnp::MallocMessageBuilder message;
-  Read::Builder read = message.initRoot<Read>();
-  Read::FuseFileInfo::Builder fuseFileInfo = read.initFi();
-
-  read.setIno(ino);
-  read.setSize(size);
-  read.setOff(off);
-
-  fillFileInfo(&fuseFileInfo, fi);
-
-  std::string uuid = gen_uuid();
-  requests[uuid] = {.type = 5, .req = req, .size = size, .off = off};
-
-  read.setUuid(uuid);
-
-  std::cout << "hello_ll_read: Request UUID: " << uuid << std::endl;
-
-  const auto data = capnp::messageToFlatArray(message);
-  const auto bytes = data.asBytes();
-  std::string payload(bytes.begin(), bytes.end());
-
-  ws->send("5" + payload);
-
-  std::cout << "hello_ll_read executed correctly: "
-            << "5" + payload << std::endl;
-
-  // goes to other function
-
-  // if (ino_to_path.find(ino) == ino_to_path.end()) {
-  //   // File is unknown
-  //   fuse_reply_err(req, ENOENT);
-  //   return;
-  // }
-
-  // char buf[size];
-
-  // ::lseek(fi->fh, off, SEEK_SET);
-  // ::read(fi->fh, &buf, size);
-
-  // reply_buf_limited(req, buf, size, off, size);
-}
-
-/**
- * @brief
- *
- * @param req
- * @param ino -> uint64_t
- * @param buf -> *char
- * @param size -> unsigned int
- * @param off -> long int
- * @param fi -> {
- *             int 	flags
- *    unsigned int 	writepage
- *    unsigned int 	direct_io
- *    unsigned int 	keep_cache
- *    unsigned int 	flush
- *    unsigned int 	nonseekable
- *    unsigned int 	cache_readdir
- *    unsigned int 	padding
- *    uint64_t 	    fh
- *    uint64_t 	    lock_owner
- *    uint32_t 	    poll_events
- *    unsigned int 	noflush
- * }
- */
-static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size_t size, off_t off,
-                           struct fuse_file_info *fi) {
-  // printf("Called .write\n");
-
-  ::capnp::MallocMessageBuilder message;
-  Write::Builder write = message.initRoot<Write>();
-  Write::FuseFileInfo::Builder fuseFileInfo = write.initFi();
-
-  write.setIno(ino);
-  write.setBuf(buf);
-  write.setSize(size);
-  write.setOff(off);
-
-  fillFileInfo(&fuseFileInfo, fi);
-
-  ::lseek(fi->fh, off, SEEK_SET);
-  size_t written = ::write(fi->fh, buf, size);
-  fuse_reply_write(req, written);
-}
-
-/**
- * @brief
- *
- * @param req
- * @param parent -> uint64_t
- * @param name -> *char
- * @param mode -> uint64_t
- * @param rdev -> uint16_t
- */
-static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode,
-                           dev_t rdev) {
-  // printf("Called .mknod\n");
-
-  ::capnp::MallocMessageBuilder message;
-  Mknod::Builder mknod = message.initRoot<Mknod>();
-
-  mknod.setParent(parent);
-  mknod.setName(name);
-  mknod.setMode(mode);
-  mknod.setRdev(rdev);
-
-  std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
-  std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
-  std::filesystem::path file_path = parent_path / std::filesystem::path(name);
-
-  uint64_t file_ino;
-
-  file_ino = ++current_ino;
-  ino_to_path[file_ino] = file_path;
-  path_to_ino[file_path] = file_ino;
-
-  int err = ::mknod(file_path.c_str(), mode, rdev);
-
-  if (err == -1) {
-    ino_to_path.erase(file_ino);
-    path_to_ino.erase(file_path);
-
-    fuse_reply_err(req, err);
-  } else {
-    struct fuse_entry_param e;
-    memset(&e, 0, sizeof(e));
-
-    e.ino = file_ino;
-    e.attr_timeout = 1.0;
-    e.entry_timeout = 1.0;
-
-    hello_stat(e.ino, &e.attr);
-    fuse_reply_entry(req, &e);
-  }
-}
-
-/**
- * @brief
- *
- * @param req
- * @param parent -> uint64_t
- * @param name -> *char
- * @param mode -> uint64_t
- * @param fi -> {
- *             int 	flags
- *    unsigned int 	writepage
- *    unsigned int 	direct_io
- *    unsigned int 	keep_cache
- *    unsigned int 	flush
- *    unsigned int 	nonseekable
- *    unsigned int 	cache_readdir
- *    unsigned int 	padding
- *    uint64_t 	    fh
- *    uint64_t 	    lock_owner
- *    uint32_t 	    poll_events
- *    unsigned int 	noflush
- * }
- */
-static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode,
-                            struct fuse_file_info *fi) {
-  struct fuse_entry_param e;
-
-  // printf("Called .create\n");
-
-  ::capnp::MallocMessageBuilder message;
-  Create::Builder create = message.initRoot<Create>();
-  Create::FuseFileInfo::Builder fuseFileInfo = create.initFi();
-
-  create.setParent(parent);
-  create.setName(name);
-  create.setMode(mode);
-
-  fillFileInfo(&fuseFileInfo, fi);
-
-  std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
-  std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
-  std::filesystem::path file_path = parent_path / std::filesystem::path(name);
-
-  int res = ::open(file_path.c_str(), (fi->flags | O_CREAT) & ~O_NOFOLLOW, mode);
+  int res = setattr_response.getRes();
 
   if (res == -1) {
-    fuse_reply_err(req, res);
-  } else {
-    struct fuse_entry_param e;
-    memset(&e, 0, sizeof(e));
-
-    uint64_t file_ino;
-
-    file_ino = ++current_ino;
-    ino_to_path[file_ino] = file_path;
-    path_to_ino[file_path] = file_ino;
-
-    e.ino = file_ino;
-    e.attr_timeout = 1.0;
-    e.entry_timeout = 1.0;
-
-    fi->fh = res;
-
-    hello_stat(e.ino, &e.attr);
-    fuse_reply_create(req, &e, fi);
-  }
-}
-
-/**
- * @brief
- *
- * @param req
- * @param parent -> uint64_t
- * @param name -> *char
- * @param mode -> uint64_t
- */
-static void hello_ll_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode) {
-  // printf("Called .mkdir\n");
-
-  ::capnp::MallocMessageBuilder message;
-  Mkdir::Builder mkdir = message.initRoot<Mkdir>();
-
-  mkdir.setParent(parent);
-  mkdir.setName(name);
-  mkdir.setMode(mode);
-
-  std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
-  std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
-  std::filesystem::path file_path = parent_path / std::filesystem::path(name);
-
-  int res = ::mkdir(file_path.c_str(), mode);
-
-  if (res == -1)
-    fuse_reply_err(req, ENOENT);
-  else {
-    struct fuse_entry_param e;
-    memset(&e, 0, sizeof(e));
-
-    uint64_t file_ino;
-
-    file_ino = ++current_ino;
-    ino_to_path[file_ino] = file_path;
-    path_to_ino[file_path] = file_ino;
-
-    e.ino = file_ino;
-    e.attr_timeout = 1.0;
-    e.entry_timeout = 1.0;
-
-    hello_stat(e.ino, &e.attr);
-    fuse_reply_entry(req, &e);
-  }
-}
-
-/**
- * @brief
- *
- * @param req
- * @param ino -> uint64_t
- * @param attr -> {
- *    uint16_t      st_dev
- *    uint64_t      st_ino
- *    uint64_t      st_mode
- *    uint16_t      st_nlink
- *             int  st_uid
- *             int  st_gid
- *    uint16_t      st_rdev
- *    long     int  st_size
- *    int64_t       st_atime
- *    int64_t       st_mtime
- *    int64_t       st_ctime
- *    uint64_t      st_blksize
- *    uint64_t      st_blocks
- * }
- * @param to_set -> int64_t
- * @param fi -> {
- *             int 	flags
- *    unsigned int 	writepage
- *    unsigned int 	direct_io
- *    unsigned int 	keep_cache
- *    unsigned int 	flush
- *    unsigned int 	nonseekable
- *    unsigned int 	cache_readdir
- *    unsigned int 	padding
- *    uint64_t 	    fh
- *    uint64_t 	    lock_owner
- *    uint32_t 	    poll_events
- *    unsigned int 	noflush
- * }
- */
-static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, int to_set,
-                             struct fuse_file_info *fi) {
-  ::capnp::MallocMessageBuilder message;
-  Setattr::Builder setattr = message.initRoot<Setattr>();
-  Setattr::FuseFileInfo::Builder fuseFileInfo = setattr.initFi();
-  Setattr::Attr::Builder attributes = setattr.initAttr();
-
-  setattr.setIno(ino);
-
-  attributes.setStDev(attr->st_dev);
-  attributes.setStIno(attr->st_ino);
-  attributes.setStMode(attr->st_mode);
-  attributes.setStNlink(attr->st_nlink);
-  attributes.setStUid(attr->st_uid);
-  attributes.setStGid(attr->st_gid);
-  attributes.setStRdev(attr->st_rdev);
-  attributes.setStSize(attr->st_size);
-  attributes.setStAtime(attr->st_atime);
-  attributes.setStMtime(attr->st_mtime);
-  attributes.setStCtime(attr->st_ctime);
-  attributes.setStBlksize(attr->st_blksize);
-  attributes.setStBlocks(attr->st_blocks);
-
-  setattr.setToSet(to_set);
-
-  fillFileInfo(&fuseFileInfo, fi);
-
-  if (ino_to_path.find(ino) == ino_to_path.end()) {
-    // Parent is unknown
-    fuse_reply_err(req, ENOENT);
+    std::cout << "READ::ENOENT" << std::endl;
+    fuse_reply_err(request.req, ENOENT);
     return;
+  } 
+
+  hello_ll_getattr(request.req, setattr_response.getIno(), request.fi);
+  
+  std::cout << "process_setattr_response: hello_ll_getattr correctly executed" << std::endl;
+}
+
+  /**
+   * @brief
+   *
+   * @param req
+   * @param ino -> uint64_t
+   * @param fi -> {
+   *             int 	flags
+   *    unsigned int 	writepage
+   *    unsigned int 	direct_io
+   *    unsigned int 	keep_cache
+   *    unsigned int 	flush
+   *    unsigned int 	nonseekable
+   *    unsigned int 	cache_readdir
+   *    unsigned int 	padding
+   *    uint64_t 	    fh
+   *    uint64_t 	    lock_owner
+   *    uint32_t 	    poll_events
+   *    unsigned int 	noflush
+   * }
+   */
+  static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info * fi) {
+    ::capnp::MallocMessageBuilder message;
+    Getattr::Builder getattr = message.initRoot<Getattr>();
+    Getattr::FuseFileInfo::Builder fuseFileInfo = getattr.initFi();
+
+    getattr.setIno(ino);
+
+    fillFileInfo(&fuseFileInfo, fi);
+
+    std::string uuid = gen_uuid();
+    requests[uuid] = {.type = 1, .req = req};
+
+    std::cout << "hello_ll_getattr: Request UUID: " << uuid << std::endl;
+
+    getattr.setUuid(uuid);
+
+    const auto data = capnp::messageToFlatArray(message);
+    const auto bytes = data.asBytes();
+    std::string payload(bytes.begin(), bytes.end());
+
+    ws->send("1" + payload);
+
+    std::cout << "hello_ll_getattr executed correctly: " << payload << std::endl;
   }
 
-  int err;
-  std::string file_path = ino_to_path[ino];
+  /**
+   * @brief
+   *
+   * @param req
+   * @param parent -> uint64_t
+   * @param name -> *char
+   */
+  static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name) {
+    // printf("Called .lookup\n");
 
-  if (to_set & FUSE_SET_ATTR_MODE) {
-    err = chmod(file_path.c_str(), attr->st_mode);
+    ::capnp::MallocMessageBuilder message;
+    Lookup::Builder lookup = message.initRoot<Lookup>();
+
+    lookup.setParent(parent);
+    lookup.setName(name);
+
+    std::string uuid = gen_uuid();
+    requests[uuid] = {.type = 2, .req = req};
+
+    lookup.setUuid(uuid);
+
+    std::cout << "hello_ll_lookup: Request UUID: " << uuid << std::endl;
+
+    const auto data = capnp::messageToFlatArray(message);
+    const auto bytes = data.asBytes();
+    std::string payload(bytes.begin(), bytes.end());
+
+    ws->send("2" + payload);
+
+    std::cout << "hello_ll_lookup executed correctly: " << payload << std::endl;
+  }
+
+  /**
+   * @brief Readdir fuse low-level function (called when using ls)
+   *
+   * @param req
+   * @param ino -> uint64_t
+   * @param size -> unsigned int
+   * @param off -> long int
+   * @param fi -> {
+   *             int 	flags
+   *    unsigned int 	writepage
+   *    unsigned int 	direct_io
+   *    unsigned int 	keep_cache
+   *    unsigned int 	flush
+   *    unsigned int 	nonseekable
+   *    unsigned int 	cache_readdir
+   *    unsigned int 	padding
+   *    uint64_t 	    fh
+   *    uint64_t 	    lock_owner
+   *    uint32_t 	    poll_events
+   *    unsigned int 	noflush
+   * }
+   */
+  static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off,
+                               struct fuse_file_info * fi) {
+    //(void)fi;
+
+    ::capnp::MallocMessageBuilder message;
+    Readdir::Builder readdir = message.initRoot<Readdir>();
+    Readdir::FuseFileInfo::Builder fuseFileInfo = readdir.initFi();
+
+    readdir.setIno(ino);
+    readdir.setSize(size);
+    readdir.setOff(off);
+
+    fillFileInfo(&fuseFileInfo, fi);
+
+    // Don't remove these 3 lines
+    // const auto m = capnp::messageToFlatArray(message);
+    // const auto c = m.asChars();
+    // std::cout << "Size: " << c.size() << std::endl;
+
+    // printf("Called .readdir\n");
+
+    std::string uuid = gen_uuid();
+    requests[uuid] = {.type = 3, .req = req, .size = size, .off = off};
+
+    readdir.setUuid(uuid);
+
+    std::cout << "hello_ll_readdir: Request UUID: " << uuid << std::endl;
+
+    const auto data = capnp::messageToFlatArray(message);
+    const auto bytes = data.asBytes();
+    std::string payload(bytes.begin(), bytes.end());
+
+    ws->send("3" + payload);
+
+    std::cout << "hello_ll_readdir executed correctly: "
+              << "3" + payload << std::endl;
+  }
+
+  /**
+   * @brief
+   *
+   * @param req
+   * @param ino -> uint64_t
+   * @param fi -> {
+   *             int 	flags
+   *    unsigned int 	writepage
+   *    unsigned int 	direct_io
+   *    unsigned int 	keep_cache
+   *    unsigned int 	flush
+   *    unsigned int 	nonseekable
+   *    unsigned int 	cache_readdir
+   *    unsigned int 	padding
+   *    uint64_t 	    fh
+   *    uint64_t 	    lock_owner
+   *    uint32_t 	    poll_events
+   *    unsigned int 	noflush
+   * }
+   */
+  static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info * fi) {
+    // printf("Called .open\n");
+
+    ::capnp::MallocMessageBuilder message;
+    Open::Builder open = message.initRoot<Open>();
+    Open::FuseFileInfo::Builder fuseFileInfo = open.initFi();
+
+    open.setIno(ino);
+
+    std::string uuid = gen_uuid();
+    requests[uuid] = {.type = 4, .req = req, .fi = fi};
+
+    open.setUuid(uuid);
+
+    fillFileInfo(&fuseFileInfo, fi);
+
+    std::cout << "hello_ll_open: Request UUID: " << uuid << std::endl;
+
+    const auto data = capnp::messageToFlatArray(message);
+    const auto bytes = data.asBytes();
+    std::string payload(bytes.begin(), bytes.end());
+
+    ws->send("4" + payload);
+
+    std::cout << "hello_ll_open executed correctly: "
+              << "4" + payload << std::endl;
+  }
+
+  /**
+   * @brief
+   *
+   * @param req
+   * @param ino -> uint64_t
+   * @param size -> unsigned int
+   * @param off -> long int
+   * @param fi -> {
+   *             int 	flags
+   *    unsigned int 	writepage
+   *    unsigned int 	direct_io
+   *    unsigned int 	keep_cache
+   *    unsigned int 	flush
+   *    unsigned int 	nonseekable
+   *    unsigned int 	cache_readdir
+   *    unsigned int 	padding
+   *    uint64_t 	    fh
+   *    uint64_t 	    lock_owner
+   *    uint32_t 	    poll_events
+   *    unsigned int 	noflush
+   * }
+   */
+  static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off,
+                            struct fuse_file_info * fi) {
+    (void)fi;
+
+    // printf("Called .read\n");
+
+    ::capnp::MallocMessageBuilder message;
+    Read::Builder read = message.initRoot<Read>();
+    Read::FuseFileInfo::Builder fuseFileInfo = read.initFi();
+
+    read.setIno(ino);
+    read.setSize(size);
+    read.setOff(off);
+
+    fillFileInfo(&fuseFileInfo, fi);
+
+    std::string uuid = gen_uuid();
+    requests[uuid] = {.type = 5, .req = req, .size = size, .off = off};
+
+    read.setUuid(uuid);
+
+    std::cout << "hello_ll_read: Request UUID: " << uuid << std::endl;
+
+    const auto data = capnp::messageToFlatArray(message);
+    const auto bytes = data.asBytes();
+    std::string payload(bytes.begin(), bytes.end());
+
+    ws->send("5" + payload);
+
+    std::cout << "hello_ll_read executed correctly: "
+              << "5" + payload << std::endl;
+  }
+
+  /**
+   * @brief
+   *
+   * @param req
+   * @param ino -> uint64_t
+   * @param buf -> *char
+   * @param size -> unsigned int
+   * @param off -> long int
+   * @param fi -> {
+   *             int 	flags
+   *    unsigned int 	writepage
+   *    unsigned int 	direct_io
+   *    unsigned int 	keep_cache
+   *    unsigned int 	flush
+   *    unsigned int 	nonseekable
+   *    unsigned int 	cache_readdir
+   *    unsigned int 	padding
+   *    uint64_t 	    fh
+   *    uint64_t 	    lock_owner
+   *    uint32_t 	    poll_events
+   *    unsigned int 	noflush
+   * }
+   */
+  static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size_t size,
+                             off_t off, struct fuse_file_info *fi) {
+    // printf("Called .write\n");
+
+    ::capnp::MallocMessageBuilder message;
+    Write::Builder write = message.initRoot<Write>();
+    Write::FuseFileInfo::Builder fuseFileInfo = write.initFi();
+
+    write.setIno(ino);
+    write.setBuf(buf);
+    write.setSize(size);
+    write.setOff(off);
+
+    fillFileInfo(&fuseFileInfo, fi);
+
+    ::lseek(fi->fh, off, SEEK_SET);
+    size_t written = ::write(fi->fh, buf, size);
+    fuse_reply_write(req, written);
+  }
+
+  /**
+   * @brief
+   *
+   * @param req
+   * @param parent -> uint64_t
+   * @param name -> *char
+   * @param mode -> uint64_t
+   * @param rdev -> uint16_t
+   */
+  static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode,
+                             dev_t rdev) {
+    // printf("Called .mknod\n");
+
+    ::capnp::MallocMessageBuilder message;
+    Mknod::Builder mknod = message.initRoot<Mknod>();
+
+    mknod.setParent(parent);
+    mknod.setName(name);
+    mknod.setMode(mode);
+    mknod.setRdev(rdev);
+
+    std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
+    std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
+    std::filesystem::path file_path = parent_path / std::filesystem::path(name);
+
+    uint64_t file_ino;
+
+    file_ino = ++current_ino;
+    ino_to_path[file_ino] = file_path;
+    path_to_ino[file_path] = file_ino;
+
+    int err = ::mknod(file_path.c_str(), mode, rdev);
+
     if (err == -1) {
+      ino_to_path.erase(file_ino);
+      path_to_ino.erase(file_path);
+
       fuse_reply_err(req, err);
-      return;
+    } else {
+      struct fuse_entry_param e;
+      memset(&e, 0, sizeof(e));
+
+      e.ino = file_ino;
+      e.attr_timeout = 1.0;
+      e.entry_timeout = 1.0;
+
+      hello_stat(e.ino, &e.attr);
+      fuse_reply_entry(req, &e);
     }
   }
 
-  if (to_set & (FUSE_SET_ATTR_UID | FUSE_SET_ATTR_GID)) {
-    uid_t uid = (to_set & FUSE_SET_ATTR_UID) ? attr->st_uid : (uid_t)-1;
-    gid_t gid = (to_set & FUSE_SET_ATTR_GID) ? attr->st_gid : (gid_t)-1;
+  /**
+   * @brief
+   *
+   * @param req
+   * @param parent -> uint64_t
+   * @param name -> *char
+   * @param mode -> uint64_t
+   * @param fi -> {
+   *             int 	flags
+   *    unsigned int 	writepage
+   *    unsigned int 	direct_io
+   *    unsigned int 	keep_cache
+   *    unsigned int 	flush
+   *    unsigned int 	nonseekable
+   *    unsigned int 	cache_readdir
+   *    unsigned int 	padding
+   *    uint64_t 	    fh
+   *    uint64_t 	    lock_owner
+   *    uint32_t 	    poll_events
+   *    unsigned int 	noflush
+   * }
+   */
+  static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode,
+                              struct fuse_file_info *fi) {
+    struct fuse_entry_param e;
 
-    err = lchown(file_path.c_str(), uid, gid);
-    if (err == -1) {
-      fuse_reply_err(req, err);
-      return;
+    // printf("Called .create\n");
+
+    ::capnp::MallocMessageBuilder message;
+    Create::Builder create = message.initRoot<Create>();
+    Create::FuseFileInfo::Builder fuseFileInfo = create.initFi();
+
+    create.setParent(parent);
+    create.setName(name);
+    create.setMode(mode);
+
+    fillFileInfo(&fuseFileInfo, fi);
+
+    std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
+    std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
+    std::filesystem::path file_path = parent_path / std::filesystem::path(name);
+
+    int res = ::open(file_path.c_str(), (fi->flags | O_CREAT) & ~O_NOFOLLOW, mode);
+
+    if (res == -1) {
+      fuse_reply_err(req, res);
+    } else {
+      struct fuse_entry_param e;
+      memset(&e, 0, sizeof(e));
+
+      uint64_t file_ino;
+
+      file_ino = ++current_ino;
+      ino_to_path[file_ino] = file_path;
+      path_to_ino[file_path] = file_ino;
+
+      e.ino = file_ino;
+      e.attr_timeout = 1.0;
+      e.entry_timeout = 1.0;
+
+      fi->fh = res;
+
+      hello_stat(e.ino, &e.attr);
+      fuse_reply_create(req, &e, fi);
     }
   }
 
-  if (to_set & FUSE_SET_ATTR_SIZE) {
-    err = truncate(file_path.c_str(), attr->st_size);
-    if (err == -1) {
-      fuse_reply_err(req, err);
-      return;
+  /**
+   * @brief
+   *
+   * @param req
+   * @param parent -> uint64_t
+   * @param name -> *char
+   * @param mode -> uint64_t
+   */
+  static void hello_ll_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode) {
+    // printf("Called .mkdir\n");
+
+    ::capnp::MallocMessageBuilder message;
+    Mkdir::Builder mkdir = message.initRoot<Mkdir>();
+
+    mkdir.setParent(parent);
+    mkdir.setName(name);
+    mkdir.setMode(mode);
+
+    std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
+    std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
+    std::filesystem::path file_path = parent_path / std::filesystem::path(name);
+
+    int res = ::mkdir(file_path.c_str(), mode);
+
+    if (res == -1)
+      fuse_reply_err(req, ENOENT);
+    else {
+      struct fuse_entry_param e;
+      memset(&e, 0, sizeof(e));
+
+      uint64_t file_ino;
+
+      file_ino = ++current_ino;
+      ino_to_path[file_ino] = file_path;
+      path_to_ino[file_path] = file_ino;
+
+      e.ino = file_ino;
+      e.attr_timeout = 1.0;
+      e.entry_timeout = 1.0;
+
+      hello_stat(e.ino, &e.attr);
+      fuse_reply_entry(req, &e);
     }
   }
 
-  if (to_set & (FUSE_SET_ATTR_ATIME | FUSE_SET_ATTR_MTIME)) {
-    struct timespec tv[2];
+  /**
+   * @brief
+   *
+   * @param req
+   * @param ino -> uint64_t
+   * @param attr -> {
+   *    uint16_t      st_dev
+   *    uint64_t      st_ino
+   *    uint64_t      st_mode
+   *    uint16_t      st_nlink
+   *             int  st_uid
+   *             int  st_gid
+   *    uint16_t      st_rdev
+   *    long     int  st_size
+   *    int64_t       st_atime
+   *    int64_t       st_mtime
+   *    int64_t       st_ctime
+   *    uint64_t      st_blksize
+   *    uint64_t      st_blocks
+   * }
+   * @param to_set -> int64_t
+   * @param fi -> {
+   *             int 	flags
+   *    unsigned int 	writepage
+   *    unsigned int 	direct_io
+   *    unsigned int 	keep_cache
+   *    unsigned int 	flush
+   *    unsigned int 	nonseekable
+   *    unsigned int 	cache_readdir
+   *    unsigned int 	padding
+   *    uint64_t 	    fh
+   *    uint64_t 	    lock_owner
+   *    uint32_t 	    poll_events
+   *    unsigned int 	noflush
+   * }
+   */
+  static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat * attr, int to_set,
+                               struct fuse_file_info *fi) {
+    ::capnp::MallocMessageBuilder message;
+    Setattr::Builder setattr = message.initRoot<Setattr>();
+    Setattr::FuseFileInfo::Builder fuseFileInfo = setattr.initFi();
+    Setattr::Attr::Builder attributes = setattr.initAttr();
 
-    tv[0].tv_sec = 0;
-    tv[1].tv_sec = 0;
-    tv[0].tv_nsec = UTIME_OMIT;
-    tv[1].tv_nsec = UTIME_OMIT;
+    setattr.setIno(ino);
 
-    if (to_set & FUSE_SET_ATTR_ATIME_NOW) {
-      tv[0].tv_nsec = UTIME_NOW;
-    } else if (to_set & FUSE_SET_ATTR_ATIME) {  // clang-format off
+    attributes.setStDev(attr->st_dev);
+    attributes.setStIno(attr->st_ino);
+    attributes.setStMode(attr->st_mode);
+    attributes.setStNlink(attr->st_nlink);
+    attributes.setStUid(attr->st_uid);
+    attributes.setStGid(attr->st_gid);
+    attributes.setStRdev(attr->st_rdev);
+    attributes.setStSize(attr->st_size);
+    attributes.setStAtime(attr->st_atime);
+    attributes.setStMtime(attr->st_mtime);
+    attributes.setStCtime(attr->st_ctime);
+    attributes.setStBlksize(attr->st_blksize);
+    attributes.setStBlocks(attr->st_blocks);
+
+    setattr.setToSet(to_set);
+
+    fillFileInfo(&fuseFileInfo, fi);
+
+    std::string uuid = gen_uuid();
+    requests[uuid] = {.type = 6, .req = req, .fi = fi};
+
+    setattr.setUuid(uuid);
+
+    std::cout << "hello_ll_setattr: Request UUID: " << uuid << std::endl;
+
+    const auto data = capnp::messageToFlatArray(message);
+    const auto bytes = data.asBytes();
+    std::string payload(bytes.begin(), bytes.end());
+
+    ws->send("6" + payload);
+
+    std::cout << "hello_ll_setattr executed correctly: "
+              << "6" + payload << std::endl;
+
+    // goes to other function
+
+    if (ino_to_path.find(ino) == ino_to_path.end()) {
+      // Parent is unknown
+      fuse_reply_err(req, ENOENT);
+      return;
+    }
+
+    int err;
+    std::string file_path = ino_to_path[ino];
+
+    if (to_set & FUSE_SET_ATTR_MODE) {
+      err = chmod(file_path.c_str(), attr->st_mode);
+      if (err == -1) {
+        fuse_reply_err(req, err);
+        return;
+      }
+    }
+
+    if (to_set & (FUSE_SET_ATTR_UID | FUSE_SET_ATTR_GID)) {
+      uid_t uid = (to_set & FUSE_SET_ATTR_UID) ? attr->st_uid : (uid_t)-1;
+      gid_t gid = (to_set & FUSE_SET_ATTR_GID) ? attr->st_gid : (gid_t)-1;
+
+      err = lchown(file_path.c_str(), uid, gid);
+      if (err == -1) {
+        fuse_reply_err(req, err);
+        return;
+      }
+    }
+
+    if (to_set & FUSE_SET_ATTR_SIZE) {
+      err = truncate(file_path.c_str(), attr->st_size);
+      if (err == -1) {
+        fuse_reply_err(req, err);
+        return;
+      }
+    }
+
+    if (to_set & (FUSE_SET_ATTR_ATIME | FUSE_SET_ATTR_MTIME)) {
+      struct timespec tv[2];
+
+      tv[0].tv_sec = 0;
+      tv[1].tv_sec = 0;
+      tv[0].tv_nsec = UTIME_OMIT;
+      tv[1].tv_nsec = UTIME_OMIT;
+
+      if (to_set & FUSE_SET_ATTR_ATIME_NOW) {
+        tv[0].tv_nsec = UTIME_NOW;
+      } else if (to_set & FUSE_SET_ATTR_ATIME) {  // clang-format off
       #if defined(__APPLE__)
         tv[0] = attr->st_atimespec;
       #else
@@ -981,6 +1015,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
     if (err == -1) {
       fuse_reply_err(req, err);
       return;
+    }
     }
   }
 
@@ -1008,7 +1043,7 @@ static struct fuse_lowlevel_ops hello_ll_oper = {
     //.mknod = hello_ll_mknod,
     //.create = hello_ll_create,
     //.mkdir = hello_ll_mkdir,
-    //.setattr = hello_ll_setattr,
+    .setattr = hello_ll_setattr,
     //.setxattr = hello_ll_setxattr,
 };
 // clang-format on

@@ -5,6 +5,7 @@ struct Setattr {
   attr  @1 :Attr;
   toSet @2 :Int64;
   fi    @3 :FuseFileInfo;
+  uuid  @4 :Text;
 
   struct Attr {
     stDev     @0  :UInt16;
