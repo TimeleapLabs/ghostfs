@@ -31,3 +31,4 @@ void process_open_response(std::string payload);
 void process_read_response(std::string payload);
 void process_setattr_response(std::string payload);
 void process_write_response(std::string payload);
+void process_setxattr_response(std::string payload);

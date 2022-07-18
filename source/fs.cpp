@@ -38,6 +38,8 @@
 #include <readdir.response.capnp.h>
 #include <setattr.capnp.h>
 #include <setattr.response.capnp.h>
+#include <setxattr.capnp.h>
+#include <setxattr.response.capnp.h>
 #include <write.capnp.h>
 #include <write.response.capnp.h>
 #include <sys/xattr.h>
@@ -415,7 +417,7 @@ void process_setattr_response(std::string payload) {
   int res = setattr_response.getRes();
 
   if (res == -1) {
-    std::cout << "READ::ENOENT" << std::endl;
+    std::cout << "SETATTR::ENOENT" << std::endl;
     fuse_reply_err(request.req, ENOENT);
     return;
   }
@@ -442,7 +444,7 @@ void process_write_response(std::string payload) {
   int res = write_response.getRes();
 
   if (res == -1) {
-    std::cout << "READ::ENOENT" << std::endl;
+    std::cout << "WRITE::ENOENT" << std::endl;
     fuse_reply_err(request.req, ENOENT);
     return;
   }
@@ -450,6 +452,31 @@ void process_write_response(std::string payload) {
   fuse_reply_write(request.req, write_response.getWritten());
 
   std::cout << "process_setattr_response: hello_ll_getattr correctly executed" << std::endl;
+}
+
+void process_setxattr_response(std::string payload) {
+  const kj::ArrayPtr<const capnp::word> view(
+      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
+      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
+
+  capnp::FlatArrayMessageReader data(view);
+  SetxattrResponse::Reader setxattr_response = data.getRoot<SetxattrResponse>();
+
+  std::string uuid = setxattr_response.getUuid();
+
+  std::cout << "process_setxattr_response: Response UUID: " << uuid << std::endl;
+
+  request request = requests[uuid];
+
+  int res = setxattr_response.getRes();
+
+  if (res == -1) {
+    std::cout << "SETXATTR::ENOENT" << std::endl;
+    fuse_reply_err(request.req, ENOENT);
+    return;
+  }
+
+  std::cout << "process_setxattr_response: hello_ll_getattr correctly executed" << std::endl;
 }
 
 /**
@@ -951,13 +978,12 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
                              struct fuse_file_info *fi) {
   ::capnp::MallocMessageBuilder message;
   Setattr::Builder setattr = message.initRoot<Setattr>();
+
   Setattr::FuseFileInfo::Builder fuseFileInfo = setattr.initFi();
   Setattr::Attr::Builder attributes = setattr.initAttr();
-  Setattr::TimeSpec::Builder stAtime = attributes.initStAtime();
-  Setattr::TimeSpec::Builder stMtime = attributes.initStMtime();
 
-  struct timespec a_time = {.tv_sec = stAtime.getTvSec(), .tv_nsec = stAtime.getTvNSec()};
-  struct timespec m_time = {.tv_sec = stMtime.getTvSec(), .tv_nsec = stMtime.getTvNSec()};
+  Setattr::Attr::TimeSpec::Builder stAtime = attributes.initStAtime();
+  Setattr::Attr::TimeSpec::Builder stMtime = attributes.initStMtime();
 
   setattr.setIno(ino);
   setattr.setToSet(to_set);
@@ -1008,6 +1034,33 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
 
 static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, const char *value,
                               size_t size, int flags, uint32_t position) {
+
+  ::capnp::MallocMessageBuilder message;
+  Setxattr::Builder _setxattr = message.initRoot<Setxattr>();
+
+  _setxattr.setIno(ino);
+  _setxattr.setName(name);
+  _setxattr.setValue(value);
+  _setxattr.setSize(size);
+  _setxattr.setFlags(flags);
+  _setxattr.setPosition(position);
+
+  std::string uuid = gen_uuid();
+  requests[uuid] = {.type = 7, .req = req};
+
+  _setxattr.setUuid(uuid);
+
+  std::cout << "hello_ll_setxattr: Request UUID: " << uuid << std::endl;
+
+  const auto data = capnp::messageToFlatArray(message);
+  const auto bytes = data.asBytes();
+  std::string payload(bytes.begin(), bytes.end());
+
+  ws->send("7" + payload);
+
+  std::cout << "hello_ll_setxattr executed correctly: " << "7" + payload << std::endl;
+
+  //goes to other function
   std::string file_path = ino_to_path[ino];
 
   int err = setxattr(file_path.c_str(), name, value, size, position, flags);
@@ -1023,12 +1076,12 @@ static struct fuse_lowlevel_ops hello_ll_oper = {
     .readdir = hello_ll_readdir,
     .open = hello_ll_open,
     .read = hello_ll_read,
-    //.write = hello_ll_write,
+    .write = hello_ll_write,
     //.mknod = hello_ll_mknod,
     //.create = hello_ll_create,
     //.mkdir = hello_ll_mkdir,
     .setattr = hello_ll_setattr,
-    //.setxattr = hello_ll_setxattr,
+    .setxattr = hello_ll_setxattr,
 };
 // clang-format on
 

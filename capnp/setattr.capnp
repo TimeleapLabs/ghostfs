@@ -21,6 +21,11 @@ struct Setattr {
     stCtime   @10 :Int64;
     stBlksize @11 :UInt64;
     stBlocks  @12 :UInt64;
+
+    struct TimeSpec {
+      tvSec        @0 :Int64;
+      tvNSec       @1 :Int64;
+    }
   }
 
   struct FuseFileInfo {
@@ -36,10 +41,5 @@ struct Setattr {
     lockOwner     @9  :UInt64;
     pollEvents    @10 :UInt32;
     noflush       @11 :UInt64;
-  }
-
-  struct TimeSpec {
-    tvSec        @0 :Int64;
-    tvNSec       @1 :Int64;
   }
 }

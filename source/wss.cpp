@@ -3,6 +3,7 @@
 #include <fuse_lowlevel.h>
 #include <ghostfs/fs.h>
 #include <ghostfs/wss.h>
+#include <sys/xattr.h>
 
 // Cap'n'Proto
 
@@ -20,6 +21,8 @@
 #include <readdir.response.capnp.h>
 #include <setattr.capnp.h>
 #include <setattr.response.capnp.h>
+#include <setxattr.capnp.h>
+#include <setxattr.response.capnp.h>
 #include <write.capnp.h>
 #include <write.response.capnp.h>
 
@@ -441,8 +444,8 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         std::string file_path = ino_to_path[ino];
 
         Setattr::Attr::Reader attr = setattr.getAttr();
-        Setattr::TimeSpec::Reader stAtime = attr.getStAtime();
-        Setattr::TimeSpec::Reader stMtime = attr.getStMtime();
+        Setattr::Attr::TimeSpec::Reader stAtime = attr.getStAtime();
+        Setattr::Attr::TimeSpec::Reader stMtime = attr.getStMtime();
 
         struct timespec a_time = {.tv_sec = stAtime.getTvSec(), .tv_nsec = stAtime.getTvNSec()};
         struct timespec m_time = {.tv_sec = stMtime.getTvSec(), .tv_nsec = stMtime.getTvNSec()};
@@ -561,6 +564,42 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         std::string response_payload = send_message(write_response, message, 0, webSocket, "7");
 
         std::cout << "write_response sent correctly: " << response_payload << std::endl;
+
+        break;
+      }
+
+      case '8': {
+        const kj::ArrayPtr<const capnp::word> view(
+        reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
+        reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
+
+        capnp::FlatArrayMessageReader data(view);
+        Setxattr::Reader _setxattr = data.getRoot<Setxattr>();
+
+        std::cout << "setxattr: Received UUID: " << _setxattr.getUuid().cStr() << std::endl;
+
+        ::capnp::MallocMessageBuilder message;
+        SetxattrResponse::Builder setxattr_response = message.initRoot<SetxattrResponse>();
+
+        setxattr_response.setUuid(_setxattr.getUuid());
+
+        uint64_t ino = _setxattr.getIno();
+
+        std::string file_path = ino_to_path[ino];
+
+        int res = setxattr(file_path.c_str(), _setxattr.getName().cStr(), _setxattr.getValue().cStr(), (size_t) _setxattr.getSize(), _setxattr.getPosition(), _setxattr.getFlags());
+        if (res == -1) {
+            std::string response_payload = send_message(setxattr_response, message, res, webSocket, "7");
+
+            std::cout << "setxattr_response sent error: " << response_payload << std::endl;
+            return;
+        }
+
+        setxattr_response.setIno(ino);
+
+        std::string response_payload = send_message(setxattr_response, message, res, webSocket, "8");
+
+        std::cout << "setxattr_response sent correctly: " << response_payload << std::endl;
 
         break;
       }

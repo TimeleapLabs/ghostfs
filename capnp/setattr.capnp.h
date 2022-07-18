@@ -18,8 +18,8 @@ namespace schemas {
 
 CAPNP_DECLARE_SCHEMA(b84ce6026075f673);
 CAPNP_DECLARE_SCHEMA(a44457e54375dcde);
+CAPNP_DECLARE_SCHEMA(8031379ba6928a60);
 CAPNP_DECLARE_SCHEMA(f31d765ee6c1ba61);
-CAPNP_DECLARE_SCHEMA(876d586768713744);
 
 }  // namespace schemas
 }  // namespace capnp
@@ -33,7 +33,6 @@ struct Setattr {
   class Pipeline;
   struct Attr;
   struct FuseFileInfo;
-  struct TimeSpec;
 
   struct _capnpPrivate {
     CAPNP_DECLARE_STRUCT_HEADER(b84ce6026075f673, 2, 3)
@@ -49,9 +48,25 @@ struct Setattr::Attr {
   class Reader;
   class Builder;
   class Pipeline;
+  struct TimeSpec;
 
   struct _capnpPrivate {
     CAPNP_DECLARE_STRUCT_HEADER(a44457e54375dcde, 9, 2)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct Setattr::Attr::TimeSpec {
+  TimeSpec() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(8031379ba6928a60, 2, 0)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -67,21 +82,6 @@ struct Setattr::FuseFileInfo {
 
   struct _capnpPrivate {
     CAPNP_DECLARE_STRUCT_HEADER(f31d765ee6c1ba61, 11, 0)
-    #if !CAPNP_LITE
-    static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
-    #endif  // !CAPNP_LITE
-  };
-};
-
-struct Setattr::TimeSpec {
-  TimeSpec() = delete;
-
-  class Reader;
-  class Builder;
-  class Pipeline;
-
-  struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(876d586768713744, 2, 0)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -237,10 +237,10 @@ public:
   inline  ::int64_t getStSize() const;
 
   inline bool hasStAtime() const;
-  inline  ::Setattr::TimeSpec::Reader getStAtime() const;
+  inline  ::Setattr::Attr::TimeSpec::Reader getStAtime() const;
 
   inline bool hasStMtime() const;
-  inline  ::Setattr::TimeSpec::Reader getStMtime() const;
+  inline  ::Setattr::Attr::TimeSpec::Reader getStMtime() const;
 
   inline  ::int64_t getStCtime() const;
 
@@ -301,18 +301,18 @@ public:
   inline void setStSize( ::int64_t value);
 
   inline bool hasStAtime();
-  inline  ::Setattr::TimeSpec::Builder getStAtime();
-  inline void setStAtime( ::Setattr::TimeSpec::Reader value);
-  inline  ::Setattr::TimeSpec::Builder initStAtime();
-  inline void adoptStAtime(::capnp::Orphan< ::Setattr::TimeSpec>&& value);
-  inline ::capnp::Orphan< ::Setattr::TimeSpec> disownStAtime();
+  inline  ::Setattr::Attr::TimeSpec::Builder getStAtime();
+  inline void setStAtime( ::Setattr::Attr::TimeSpec::Reader value);
+  inline  ::Setattr::Attr::TimeSpec::Builder initStAtime();
+  inline void adoptStAtime(::capnp::Orphan< ::Setattr::Attr::TimeSpec>&& value);
+  inline ::capnp::Orphan< ::Setattr::Attr::TimeSpec> disownStAtime();
 
   inline bool hasStMtime();
-  inline  ::Setattr::TimeSpec::Builder getStMtime();
-  inline void setStMtime( ::Setattr::TimeSpec::Reader value);
-  inline  ::Setattr::TimeSpec::Builder initStMtime();
-  inline void adoptStMtime(::capnp::Orphan< ::Setattr::TimeSpec>&& value);
-  inline ::capnp::Orphan< ::Setattr::TimeSpec> disownStMtime();
+  inline  ::Setattr::Attr::TimeSpec::Builder getStMtime();
+  inline void setStMtime( ::Setattr::Attr::TimeSpec::Reader value);
+  inline  ::Setattr::Attr::TimeSpec::Builder initStMtime();
+  inline void adoptStMtime(::capnp::Orphan< ::Setattr::Attr::TimeSpec>&& value);
+  inline ::capnp::Orphan< ::Setattr::Attr::TimeSpec> disownStMtime();
 
   inline  ::int64_t getStCtime();
   inline void setStCtime( ::int64_t value);
@@ -341,8 +341,89 @@ public:
   inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
       : _typeless(kj::mv(typeless)) {}
 
-  inline  ::Setattr::TimeSpec::Pipeline getStAtime();
-  inline  ::Setattr::TimeSpec::Pipeline getStMtime();
+  inline  ::Setattr::Attr::TimeSpec::Pipeline getStAtime();
+  inline  ::Setattr::Attr::TimeSpec::Pipeline getStMtime();
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class Setattr::Attr::TimeSpec::Reader {
+public:
+  typedef TimeSpec Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand());
+  }
+#endif  // !CAPNP_LITE
+
+  inline  ::int64_t getTvSec() const;
+
+  inline  ::int64_t getTvNSec() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class Setattr::Attr::TimeSpec::Builder {
+public:
+  typedef TimeSpec Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline  ::int64_t getTvSec();
+  inline void setTvSec( ::int64_t value);
+
+  inline  ::int64_t getTvNSec();
+  inline void setTvNSec( ::int64_t value);
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class Setattr::Attr::TimeSpec::Pipeline {
+public:
+  typedef TimeSpec Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
 private:
   ::capnp::AnyPointer::Pipeline _typeless;
   friend class ::capnp::PipelineHook;
@@ -469,87 +550,6 @@ private:
 class Setattr::FuseFileInfo::Pipeline {
 public:
   typedef FuseFileInfo Pipelines;
-
-  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
-  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
-      : _typeless(kj::mv(typeless)) {}
-
-private:
-  ::capnp::AnyPointer::Pipeline _typeless;
-  friend class ::capnp::PipelineHook;
-  template <typename, ::capnp::Kind>
-  friend struct ::capnp::ToDynamic_;
-};
-#endif  // !CAPNP_LITE
-
-class Setattr::TimeSpec::Reader {
-public:
-  typedef TimeSpec Reads;
-
-  Reader() = default;
-  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
-
-  inline ::capnp::MessageSize totalSize() const {
-    return _reader.totalSize().asPublic();
-  }
-
-#if !CAPNP_LITE
-  inline ::kj::StringTree toString() const {
-    return ::capnp::_::structString(_reader, *_capnpPrivate::brand());
-  }
-#endif  // !CAPNP_LITE
-
-  inline  ::int64_t getTvSec() const;
-
-  inline  ::int64_t getTvNSec() const;
-
-private:
-  ::capnp::_::StructReader _reader;
-  template <typename, ::capnp::Kind>
-  friend struct ::capnp::ToDynamic_;
-  template <typename, ::capnp::Kind>
-  friend struct ::capnp::_::PointerHelpers;
-  template <typename, ::capnp::Kind>
-  friend struct ::capnp::List;
-  friend class ::capnp::MessageBuilder;
-  friend class ::capnp::Orphanage;
-};
-
-class Setattr::TimeSpec::Builder {
-public:
-  typedef TimeSpec Builds;
-
-  Builder() = delete;  // Deleted to discourage incorrect usage.
-                       // You can explicitly initialize to nullptr instead.
-  inline Builder(decltype(nullptr)) {}
-  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
-  inline operator Reader() const { return Reader(_builder.asReader()); }
-  inline Reader asReader() const { return *this; }
-
-  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
-#if !CAPNP_LITE
-  inline ::kj::StringTree toString() const { return asReader().toString(); }
-#endif  // !CAPNP_LITE
-
-  inline  ::int64_t getTvSec();
-  inline void setTvSec( ::int64_t value);
-
-  inline  ::int64_t getTvNSec();
-  inline void setTvNSec( ::int64_t value);
-
-private:
-  ::capnp::_::StructBuilder _builder;
-  template <typename, ::capnp::Kind>
-  friend struct ::capnp::ToDynamic_;
-  friend class ::capnp::Orphanage;
-  template <typename, ::capnp::Kind>
-  friend struct ::capnp::_::PointerHelpers;
-};
-
-#if !CAPNP_LITE
-class Setattr::TimeSpec::Pipeline {
-public:
-  typedef TimeSpec Pipelines;
 
   inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
   inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
@@ -825,34 +825,34 @@ inline bool Setattr::Attr::Builder::hasStAtime() {
   return !_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
 }
-inline  ::Setattr::TimeSpec::Reader Setattr::Attr::Reader::getStAtime() const {
-  return ::capnp::_::PointerHelpers< ::Setattr::TimeSpec>::get(_reader.getPointerField(
+inline  ::Setattr::Attr::TimeSpec::Reader Setattr::Attr::Reader::getStAtime() const {
+  return ::capnp::_::PointerHelpers< ::Setattr::Attr::TimeSpec>::get(_reader.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
-inline  ::Setattr::TimeSpec::Builder Setattr::Attr::Builder::getStAtime() {
-  return ::capnp::_::PointerHelpers< ::Setattr::TimeSpec>::get(_builder.getPointerField(
+inline  ::Setattr::Attr::TimeSpec::Builder Setattr::Attr::Builder::getStAtime() {
+  return ::capnp::_::PointerHelpers< ::Setattr::Attr::TimeSpec>::get(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 #if !CAPNP_LITE
-inline  ::Setattr::TimeSpec::Pipeline Setattr::Attr::Pipeline::getStAtime() {
-  return  ::Setattr::TimeSpec::Pipeline(_typeless.getPointerField(0));
+inline  ::Setattr::Attr::TimeSpec::Pipeline Setattr::Attr::Pipeline::getStAtime() {
+  return  ::Setattr::Attr::TimeSpec::Pipeline(_typeless.getPointerField(0));
 }
 #endif  // !CAPNP_LITE
-inline void Setattr::Attr::Builder::setStAtime( ::Setattr::TimeSpec::Reader value) {
-  ::capnp::_::PointerHelpers< ::Setattr::TimeSpec>::set(_builder.getPointerField(
+inline void Setattr::Attr::Builder::setStAtime( ::Setattr::Attr::TimeSpec::Reader value) {
+  ::capnp::_::PointerHelpers< ::Setattr::Attr::TimeSpec>::set(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS), value);
 }
-inline  ::Setattr::TimeSpec::Builder Setattr::Attr::Builder::initStAtime() {
-  return ::capnp::_::PointerHelpers< ::Setattr::TimeSpec>::init(_builder.getPointerField(
+inline  ::Setattr::Attr::TimeSpec::Builder Setattr::Attr::Builder::initStAtime() {
+  return ::capnp::_::PointerHelpers< ::Setattr::Attr::TimeSpec>::init(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 inline void Setattr::Attr::Builder::adoptStAtime(
-    ::capnp::Orphan< ::Setattr::TimeSpec>&& value) {
-  ::capnp::_::PointerHelpers< ::Setattr::TimeSpec>::adopt(_builder.getPointerField(
+    ::capnp::Orphan< ::Setattr::Attr::TimeSpec>&& value) {
+  ::capnp::_::PointerHelpers< ::Setattr::Attr::TimeSpec>::adopt(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
 }
-inline ::capnp::Orphan< ::Setattr::TimeSpec> Setattr::Attr::Builder::disownStAtime() {
-  return ::capnp::_::PointerHelpers< ::Setattr::TimeSpec>::disown(_builder.getPointerField(
+inline ::capnp::Orphan< ::Setattr::Attr::TimeSpec> Setattr::Attr::Builder::disownStAtime() {
+  return ::capnp::_::PointerHelpers< ::Setattr::Attr::TimeSpec>::disown(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 
@@ -864,34 +864,34 @@ inline bool Setattr::Attr::Builder::hasStMtime() {
   return !_builder.getPointerField(
       ::capnp::bounded<1>() * ::capnp::POINTERS).isNull();
 }
-inline  ::Setattr::TimeSpec::Reader Setattr::Attr::Reader::getStMtime() const {
-  return ::capnp::_::PointerHelpers< ::Setattr::TimeSpec>::get(_reader.getPointerField(
+inline  ::Setattr::Attr::TimeSpec::Reader Setattr::Attr::Reader::getStMtime() const {
+  return ::capnp::_::PointerHelpers< ::Setattr::Attr::TimeSpec>::get(_reader.getPointerField(
       ::capnp::bounded<1>() * ::capnp::POINTERS));
 }
-inline  ::Setattr::TimeSpec::Builder Setattr::Attr::Builder::getStMtime() {
-  return ::capnp::_::PointerHelpers< ::Setattr::TimeSpec>::get(_builder.getPointerField(
+inline  ::Setattr::Attr::TimeSpec::Builder Setattr::Attr::Builder::getStMtime() {
+  return ::capnp::_::PointerHelpers< ::Setattr::Attr::TimeSpec>::get(_builder.getPointerField(
       ::capnp::bounded<1>() * ::capnp::POINTERS));
 }
 #if !CAPNP_LITE
-inline  ::Setattr::TimeSpec::Pipeline Setattr::Attr::Pipeline::getStMtime() {
-  return  ::Setattr::TimeSpec::Pipeline(_typeless.getPointerField(1));
+inline  ::Setattr::Attr::TimeSpec::Pipeline Setattr::Attr::Pipeline::getStMtime() {
+  return  ::Setattr::Attr::TimeSpec::Pipeline(_typeless.getPointerField(1));
 }
 #endif  // !CAPNP_LITE
-inline void Setattr::Attr::Builder::setStMtime( ::Setattr::TimeSpec::Reader value) {
-  ::capnp::_::PointerHelpers< ::Setattr::TimeSpec>::set(_builder.getPointerField(
+inline void Setattr::Attr::Builder::setStMtime( ::Setattr::Attr::TimeSpec::Reader value) {
+  ::capnp::_::PointerHelpers< ::Setattr::Attr::TimeSpec>::set(_builder.getPointerField(
       ::capnp::bounded<1>() * ::capnp::POINTERS), value);
 }
-inline  ::Setattr::TimeSpec::Builder Setattr::Attr::Builder::initStMtime() {
-  return ::capnp::_::PointerHelpers< ::Setattr::TimeSpec>::init(_builder.getPointerField(
+inline  ::Setattr::Attr::TimeSpec::Builder Setattr::Attr::Builder::initStMtime() {
+  return ::capnp::_::PointerHelpers< ::Setattr::Attr::TimeSpec>::init(_builder.getPointerField(
       ::capnp::bounded<1>() * ::capnp::POINTERS));
 }
 inline void Setattr::Attr::Builder::adoptStMtime(
-    ::capnp::Orphan< ::Setattr::TimeSpec>&& value) {
-  ::capnp::_::PointerHelpers< ::Setattr::TimeSpec>::adopt(_builder.getPointerField(
+    ::capnp::Orphan< ::Setattr::Attr::TimeSpec>&& value) {
+  ::capnp::_::PointerHelpers< ::Setattr::Attr::TimeSpec>::adopt(_builder.getPointerField(
       ::capnp::bounded<1>() * ::capnp::POINTERS), kj::mv(value));
 }
-inline ::capnp::Orphan< ::Setattr::TimeSpec> Setattr::Attr::Builder::disownStMtime() {
-  return ::capnp::_::PointerHelpers< ::Setattr::TimeSpec>::disown(_builder.getPointerField(
+inline ::capnp::Orphan< ::Setattr::Attr::TimeSpec> Setattr::Attr::Builder::disownStMtime() {
+  return ::capnp::_::PointerHelpers< ::Setattr::Attr::TimeSpec>::disown(_builder.getPointerField(
       ::capnp::bounded<1>() * ::capnp::POINTERS));
 }
 
@@ -935,6 +935,34 @@ inline  ::uint64_t Setattr::Attr::Builder::getStBlocks() {
 inline void Setattr::Attr::Builder::setStBlocks( ::uint64_t value) {
   _builder.setDataField< ::uint64_t>(
       ::capnp::bounded<8>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int64_t Setattr::Attr::TimeSpec::Reader::getTvSec() const {
+  return _reader.getDataField< ::int64_t>(
+      ::capnp::bounded<0>() * ::capnp::ELEMENTS);
+}
+
+inline  ::int64_t Setattr::Attr::TimeSpec::Builder::getTvSec() {
+  return _builder.getDataField< ::int64_t>(
+      ::capnp::bounded<0>() * ::capnp::ELEMENTS);
+}
+inline void Setattr::Attr::TimeSpec::Builder::setTvSec( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
+      ::capnp::bounded<0>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int64_t Setattr::Attr::TimeSpec::Reader::getTvNSec() const {
+  return _reader.getDataField< ::int64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+
+inline  ::int64_t Setattr::Attr::TimeSpec::Builder::getTvNSec() {
+  return _builder.getDataField< ::int64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+inline void Setattr::Attr::TimeSpec::Builder::setTvNSec( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS, value);
 }
 
 inline  ::int8_t Setattr::FuseFileInfo::Reader::getFlags() const {
@@ -1103,34 +1131,6 @@ inline  ::uint64_t Setattr::FuseFileInfo::Builder::getNoflush() {
 inline void Setattr::FuseFileInfo::Builder::setNoflush( ::uint64_t value) {
   _builder.setDataField< ::uint64_t>(
       ::capnp::bounded<10>() * ::capnp::ELEMENTS, value);
-}
-
-inline  ::int64_t Setattr::TimeSpec::Reader::getTvSec() const {
-  return _reader.getDataField< ::int64_t>(
-      ::capnp::bounded<0>() * ::capnp::ELEMENTS);
-}
-
-inline  ::int64_t Setattr::TimeSpec::Builder::getTvSec() {
-  return _builder.getDataField< ::int64_t>(
-      ::capnp::bounded<0>() * ::capnp::ELEMENTS);
-}
-inline void Setattr::TimeSpec::Builder::setTvSec( ::int64_t value) {
-  _builder.setDataField< ::int64_t>(
-      ::capnp::bounded<0>() * ::capnp::ELEMENTS, value);
-}
-
-inline  ::int64_t Setattr::TimeSpec::Reader::getTvNSec() const {
-  return _reader.getDataField< ::int64_t>(
-      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
-}
-
-inline  ::int64_t Setattr::TimeSpec::Builder::getTvNSec() {
-  return _builder.getDataField< ::int64_t>(
-      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
-}
-inline void Setattr::TimeSpec::Builder::setTvNSec( ::int64_t value) {
-  _builder.setDataField< ::int64_t>(
-      ::capnp::bounded<1>() * ::capnp::ELEMENTS, value);
 }
 
 
