@@ -513,6 +513,8 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
   lookup.setParent(parent);
   lookup.setName(name);
 
+  std::cout << "LOOKUP name: " << name << std::endl;
+
   std::string uuid = gen_uuid();
   requests[uuid] = {.type = 2, .req = req};
 

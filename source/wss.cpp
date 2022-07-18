@@ -183,11 +183,13 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         uint64_t parent = lookup.getParent();
         std::string name = lookup.getName();
 
+        std::cout << "LOOKUP name: " << name << std::endl;
+
         std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
         std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
         std::filesystem::path file_path = parent_path / std::filesystem::path(name);
 
-        std::cout << "LOOKUP: " << file_path << std::endl;
+        std::cout << "LOOKUP filepath: " << file_path << std::endl;
 
         if (!std::filesystem::exists(file_path)) {
           std::string response_payload = send_message(lookup_response, message, -1, webSocket, "2");
