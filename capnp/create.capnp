@@ -5,6 +5,7 @@ struct Create {
   name   @1 :Text;
   mode   @2 :UInt64;
   fi     @3 :FuseFileInfo;
+  uuid   @4 :Text;
 
   struct FuseFileInfo {
     flags         @0  :Int8;

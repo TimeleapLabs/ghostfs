@@ -3,5 +3,5 @@
 struct SetxattrResponse {
   ino   @0  :UInt64;
   uuid  @1  :Text;
-  res   @2 :Int8;
+  res   @2  :Int8;
 }

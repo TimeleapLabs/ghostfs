@@ -23,6 +23,7 @@
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
 #include <create.capnp.h>
+#include <create.response.capnp.h>
 #include <getattr.capnp.h>
 #include <getattr.response.capnp.h>
 #include <ghostfs/ws.h>
@@ -451,7 +452,7 @@ void process_write_response(std::string payload) {
 
   fuse_reply_write(request.req, write_response.getWritten());
 
-  std::cout << "process_setattr_response: hello_ll_getattr correctly executed" << std::endl;
+  std::cout << "process_setattr_response: fuse_reply_write correctly executed" << std::endl;
 }
 
 void process_setxattr_response(std::string payload) {
@@ -476,7 +477,67 @@ void process_setxattr_response(std::string payload) {
     return;
   }
 
-  std::cout << "process_setxattr_response: hello_ll_getattr correctly executed" << std::endl;
+  std::cout << "process_setxattr_response: correctly executed" << std::endl;
+}
+
+void process_create_response(std::string payload) {
+  const kj::ArrayPtr<const capnp::word> view(
+      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
+      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
+
+  capnp::FlatArrayMessageReader data(view);
+  CreateResponse::Reader create_response = data.getRoot<CreateResponse>();
+
+  struct stat attr;
+
+  memset(&attr, 0, sizeof(attr));
+
+  std::string uuid = create_response.getUuid();
+
+  std::cout << "process_create_response: Response UUID: " << uuid << std::endl;
+
+  request request = requests[uuid];
+
+  int res = create_response.getRes();
+
+  if (res == -1) {
+    std::cout << "CREATE::ENOENT" << std::endl;
+    fuse_reply_err(request.req, ENOENT);
+    return;
+  }
+
+  struct fuse_entry_param e;
+
+  memset(&e, 0, sizeof(e));
+  e.ino = create_response.getIno();
+  e.attr_timeout = 1.0;
+  e.entry_timeout = 1.0;
+
+  CreateResponse::Attr::Reader attributes = create_response.getAttr();
+
+  e.attr.st_dev = attributes.getStDev();
+  e.attr.st_ino = attributes.getStIno();
+  e.attr.st_mode = attributes.getStMode();
+  e.attr.st_nlink = attributes.getStNlink();
+  e.attr.st_uid = attributes.getStUid();
+  e.attr.st_gid = attributes.getStGid();
+  e.attr.st_rdev = attributes.getStRdev();
+  e.attr.st_size = attributes.getStSize();
+  e.attr.st_atime = attributes.getStAtime();
+  e.attr.st_mtime = attributes.getStMtime();
+  e.attr.st_ctime = attributes.getStCtime();
+  e.attr.st_blksize = attributes.getStBlksize();
+  e.attr.st_blocks = attributes.getStBlocks();
+
+  std::cout << "process_create_response: Request: " << request.req << std::endl;
+
+  CreateResponse::FuseFileInfo::Reader fi_response = create_response.getFi();
+
+  request.fi->fh = fi_response.getFh();
+
+  fuse_reply_create(request.req, &e, request.fi);
+
+  std::cout << "process_create_response: fuse_reply_create correctly executed" << std::endl;
 }
 
 /**
@@ -864,33 +925,21 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
 
   fillFileInfo(&fuseFileInfo, fi);
 
-  std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
-  std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
-  std::filesystem::path file_path = parent_path / std::filesystem::path(name);
+  std::string uuid = gen_uuid();
+  requests[uuid] = {.type = 9, .req = req, .fi = fi};
 
-  int res = ::open(file_path.c_str(), (fi->flags | O_CREAT) & ~O_NOFOLLOW, mode);
+  create.setUuid(uuid);
 
-  if (res == -1) {
-    fuse_reply_err(req, res);
-  } else {
-    struct fuse_entry_param e;
-    memset(&e, 0, sizeof(e));
+  std::cout << "hello_ll_create: Request UUID: " << uuid << std::endl;
 
-    uint64_t file_ino;
+  const auto data = capnp::messageToFlatArray(message);
+  const auto bytes = data.asBytes();
+  std::string payload(bytes.begin(), bytes.end());
 
-    file_ino = ++current_ino;
-    ino_to_path[file_ino] = file_path;
-    path_to_ino[file_path] = file_ino;
+  ws->send("9" + payload);
 
-    e.ino = file_ino;
-    e.attr_timeout = 1.0;
-    e.entry_timeout = 1.0;
-
-    fi->fh = res;
-
-    hello_stat(e.ino, &e.attr);
-    fuse_reply_create(req, &e, fi);
-  }
+  std::cout << "hello_ll_create executed correctly: "
+            << "9" + payload << std::endl;
 }
 
 /**
@@ -1059,14 +1108,6 @@ static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, 
   ws->send("8" + payload);
 
   std::cout << "hello_ll_setxattr executed correctly: " << "8" + payload << std::endl;
-
-  //goes to other function
-  std::string file_path = ino_to_path[ino];
-
-  int err = setxattr(file_path.c_str(), name, value, size, position, flags);
-  if (err == -1) {
-    fuse_reply_err(req, err);
-  }
 }
 
 // clang-format off
@@ -1078,7 +1119,7 @@ static struct fuse_lowlevel_ops hello_ll_oper = {
     .read = hello_ll_read,
     .write = hello_ll_write,
     //.mknod = hello_ll_mknod,
-    //.create = hello_ll_create,
+    .create = hello_ll_create,
     //.mkdir = hello_ll_mkdir,
     .setattr = hello_ll_setattr,
     .setxattr = hello_ll_setxattr,
