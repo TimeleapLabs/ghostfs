@@ -15,10 +15,15 @@ struct LookupResponse {
     stGid     @5  :Int64;  
     stRdev    @6  :UInt16;
     stSize    @7  :Int64;
-    stAtime   @8  :Int64;
-    stMtime   @9  :Int64;
+    stAtime   @8  :TimeSpec;
+    stMtime   @9  :TimeSpec;
     stCtime   @10 :Int64;
     stBlksize @11 :UInt64;
     stBlocks  @12 :UInt64;
+
+    struct TimeSpec {
+      tvSec        @0 :Int64;
+      tvNSec       @1 :Int64;
+    }
   }
 }

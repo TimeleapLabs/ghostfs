@@ -18,6 +18,7 @@ namespace schemas {
 
 CAPNP_DECLARE_SCHEMA(dd821ab072c02b16);
 CAPNP_DECLARE_SCHEMA(83b19428b48c1bec);
+CAPNP_DECLARE_SCHEMA(c8a56cd729a4d668);
 
 }  // namespace schemas
 }  // namespace capnp
@@ -45,9 +46,25 @@ struct GetattrResponse::Attr {
   class Reader;
   class Builder;
   class Pipeline;
+  struct TimeSpec;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(83b19428b48c1bec, 11, 0)
+    CAPNP_DECLARE_STRUCT_HEADER(83b19428b48c1bec, 9, 2)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct GetattrResponse::Attr::TimeSpec {
+  TimeSpec() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(c8a56cd729a4d668, 2, 0)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -186,9 +203,11 @@ public:
 
   inline  ::int64_t getStSize() const;
 
-  inline  ::int64_t getStAtime() const;
+  inline bool hasStAtime() const;
+  inline  ::GetattrResponse::Attr::TimeSpec::Reader getStAtime() const;
 
-  inline  ::int64_t getStMtime() const;
+  inline bool hasStMtime() const;
+  inline  ::GetattrResponse::Attr::TimeSpec::Reader getStMtime() const;
 
   inline  ::int64_t getStCtime() const;
 
@@ -248,11 +267,19 @@ public:
   inline  ::int64_t getStSize();
   inline void setStSize( ::int64_t value);
 
-  inline  ::int64_t getStAtime();
-  inline void setStAtime( ::int64_t value);
+  inline bool hasStAtime();
+  inline  ::GetattrResponse::Attr::TimeSpec::Builder getStAtime();
+  inline void setStAtime( ::GetattrResponse::Attr::TimeSpec::Reader value);
+  inline  ::GetattrResponse::Attr::TimeSpec::Builder initStAtime();
+  inline void adoptStAtime(::capnp::Orphan< ::GetattrResponse::Attr::TimeSpec>&& value);
+  inline ::capnp::Orphan< ::GetattrResponse::Attr::TimeSpec> disownStAtime();
 
-  inline  ::int64_t getStMtime();
-  inline void setStMtime( ::int64_t value);
+  inline bool hasStMtime();
+  inline  ::GetattrResponse::Attr::TimeSpec::Builder getStMtime();
+  inline void setStMtime( ::GetattrResponse::Attr::TimeSpec::Reader value);
+  inline  ::GetattrResponse::Attr::TimeSpec::Builder initStMtime();
+  inline void adoptStMtime(::capnp::Orphan< ::GetattrResponse::Attr::TimeSpec>&& value);
+  inline ::capnp::Orphan< ::GetattrResponse::Attr::TimeSpec> disownStMtime();
 
   inline  ::int64_t getStCtime();
   inline void setStCtime( ::int64_t value);
@@ -276,6 +303,89 @@ private:
 class GetattrResponse::Attr::Pipeline {
 public:
   typedef Attr Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+  inline  ::GetattrResponse::Attr::TimeSpec::Pipeline getStAtime();
+  inline  ::GetattrResponse::Attr::TimeSpec::Pipeline getStMtime();
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class GetattrResponse::Attr::TimeSpec::Reader {
+public:
+  typedef TimeSpec Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand());
+  }
+#endif  // !CAPNP_LITE
+
+  inline  ::int64_t getTvSec() const;
+
+  inline  ::int64_t getTvNSec() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class GetattrResponse::Attr::TimeSpec::Builder {
+public:
+  typedef TimeSpec Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline  ::int64_t getTvSec();
+  inline void setTvSec( ::int64_t value);
+
+  inline  ::int64_t getTvNSec();
+  inline void setTvNSec( ::int64_t value);
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class GetattrResponse::Attr::TimeSpec::Pipeline {
+public:
+  typedef TimeSpec Pipelines;
 
   inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
   inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
@@ -490,74 +600,152 @@ inline void GetattrResponse::Attr::Builder::setStSize( ::int64_t value) {
       ::capnp::bounded<5>() * ::capnp::ELEMENTS, value);
 }
 
-inline  ::int64_t GetattrResponse::Attr::Reader::getStAtime() const {
-  return _reader.getDataField< ::int64_t>(
-      ::capnp::bounded<6>() * ::capnp::ELEMENTS);
+inline bool GetattrResponse::Attr::Reader::hasStAtime() const {
+  return !_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline bool GetattrResponse::Attr::Builder::hasStAtime() {
+  return !_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline  ::GetattrResponse::Attr::TimeSpec::Reader GetattrResponse::Attr::Reader::getStAtime() const {
+  return ::capnp::_::PointerHelpers< ::GetattrResponse::Attr::TimeSpec>::get(_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline  ::GetattrResponse::Attr::TimeSpec::Builder GetattrResponse::Attr::Builder::getStAtime() {
+  return ::capnp::_::PointerHelpers< ::GetattrResponse::Attr::TimeSpec>::get(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+#if !CAPNP_LITE
+inline  ::GetattrResponse::Attr::TimeSpec::Pipeline GetattrResponse::Attr::Pipeline::getStAtime() {
+  return  ::GetattrResponse::Attr::TimeSpec::Pipeline(_typeless.getPointerField(0));
+}
+#endif  // !CAPNP_LITE
+inline void GetattrResponse::Attr::Builder::setStAtime( ::GetattrResponse::Attr::TimeSpec::Reader value) {
+  ::capnp::_::PointerHelpers< ::GetattrResponse::Attr::TimeSpec>::set(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), value);
+}
+inline  ::GetattrResponse::Attr::TimeSpec::Builder GetattrResponse::Attr::Builder::initStAtime() {
+  return ::capnp::_::PointerHelpers< ::GetattrResponse::Attr::TimeSpec>::init(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline void GetattrResponse::Attr::Builder::adoptStAtime(
+    ::capnp::Orphan< ::GetattrResponse::Attr::TimeSpec>&& value) {
+  ::capnp::_::PointerHelpers< ::GetattrResponse::Attr::TimeSpec>::adopt(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::GetattrResponse::Attr::TimeSpec> GetattrResponse::Attr::Builder::disownStAtime() {
+  return ::capnp::_::PointerHelpers< ::GetattrResponse::Attr::TimeSpec>::disown(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 
-inline  ::int64_t GetattrResponse::Attr::Builder::getStAtime() {
-  return _builder.getDataField< ::int64_t>(
-      ::capnp::bounded<6>() * ::capnp::ELEMENTS);
+inline bool GetattrResponse::Attr::Reader::hasStMtime() const {
+  return !_reader.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS).isNull();
 }
-inline void GetattrResponse::Attr::Builder::setStAtime( ::int64_t value) {
-  _builder.setDataField< ::int64_t>(
-      ::capnp::bounded<6>() * ::capnp::ELEMENTS, value);
+inline bool GetattrResponse::Attr::Builder::hasStMtime() {
+  return !_builder.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS).isNull();
 }
-
-inline  ::int64_t GetattrResponse::Attr::Reader::getStMtime() const {
-  return _reader.getDataField< ::int64_t>(
-      ::capnp::bounded<7>() * ::capnp::ELEMENTS);
+inline  ::GetattrResponse::Attr::TimeSpec::Reader GetattrResponse::Attr::Reader::getStMtime() const {
+  return ::capnp::_::PointerHelpers< ::GetattrResponse::Attr::TimeSpec>::get(_reader.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS));
 }
-
-inline  ::int64_t GetattrResponse::Attr::Builder::getStMtime() {
-  return _builder.getDataField< ::int64_t>(
-      ::capnp::bounded<7>() * ::capnp::ELEMENTS);
+inline  ::GetattrResponse::Attr::TimeSpec::Builder GetattrResponse::Attr::Builder::getStMtime() {
+  return ::capnp::_::PointerHelpers< ::GetattrResponse::Attr::TimeSpec>::get(_builder.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS));
 }
-inline void GetattrResponse::Attr::Builder::setStMtime( ::int64_t value) {
-  _builder.setDataField< ::int64_t>(
-      ::capnp::bounded<7>() * ::capnp::ELEMENTS, value);
+#if !CAPNP_LITE
+inline  ::GetattrResponse::Attr::TimeSpec::Pipeline GetattrResponse::Attr::Pipeline::getStMtime() {
+  return  ::GetattrResponse::Attr::TimeSpec::Pipeline(_typeless.getPointerField(1));
+}
+#endif  // !CAPNP_LITE
+inline void GetattrResponse::Attr::Builder::setStMtime( ::GetattrResponse::Attr::TimeSpec::Reader value) {
+  ::capnp::_::PointerHelpers< ::GetattrResponse::Attr::TimeSpec>::set(_builder.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS), value);
+}
+inline  ::GetattrResponse::Attr::TimeSpec::Builder GetattrResponse::Attr::Builder::initStMtime() {
+  return ::capnp::_::PointerHelpers< ::GetattrResponse::Attr::TimeSpec>::init(_builder.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS));
+}
+inline void GetattrResponse::Attr::Builder::adoptStMtime(
+    ::capnp::Orphan< ::GetattrResponse::Attr::TimeSpec>&& value) {
+  ::capnp::_::PointerHelpers< ::GetattrResponse::Attr::TimeSpec>::adopt(_builder.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::GetattrResponse::Attr::TimeSpec> GetattrResponse::Attr::Builder::disownStMtime() {
+  return ::capnp::_::PointerHelpers< ::GetattrResponse::Attr::TimeSpec>::disown(_builder.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS));
 }
 
 inline  ::int64_t GetattrResponse::Attr::Reader::getStCtime() const {
   return _reader.getDataField< ::int64_t>(
-      ::capnp::bounded<8>() * ::capnp::ELEMENTS);
+      ::capnp::bounded<6>() * ::capnp::ELEMENTS);
 }
 
 inline  ::int64_t GetattrResponse::Attr::Builder::getStCtime() {
   return _builder.getDataField< ::int64_t>(
-      ::capnp::bounded<8>() * ::capnp::ELEMENTS);
+      ::capnp::bounded<6>() * ::capnp::ELEMENTS);
 }
 inline void GetattrResponse::Attr::Builder::setStCtime( ::int64_t value) {
   _builder.setDataField< ::int64_t>(
-      ::capnp::bounded<8>() * ::capnp::ELEMENTS, value);
+      ::capnp::bounded<6>() * ::capnp::ELEMENTS, value);
 }
 
 inline  ::uint64_t GetattrResponse::Attr::Reader::getStBlksize() const {
   return _reader.getDataField< ::uint64_t>(
-      ::capnp::bounded<9>() * ::capnp::ELEMENTS);
+      ::capnp::bounded<7>() * ::capnp::ELEMENTS);
 }
 
 inline  ::uint64_t GetattrResponse::Attr::Builder::getStBlksize() {
   return _builder.getDataField< ::uint64_t>(
-      ::capnp::bounded<9>() * ::capnp::ELEMENTS);
+      ::capnp::bounded<7>() * ::capnp::ELEMENTS);
 }
 inline void GetattrResponse::Attr::Builder::setStBlksize( ::uint64_t value) {
   _builder.setDataField< ::uint64_t>(
-      ::capnp::bounded<9>() * ::capnp::ELEMENTS, value);
+      ::capnp::bounded<7>() * ::capnp::ELEMENTS, value);
 }
 
 inline  ::uint64_t GetattrResponse::Attr::Reader::getStBlocks() const {
   return _reader.getDataField< ::uint64_t>(
-      ::capnp::bounded<10>() * ::capnp::ELEMENTS);
+      ::capnp::bounded<8>() * ::capnp::ELEMENTS);
 }
 
 inline  ::uint64_t GetattrResponse::Attr::Builder::getStBlocks() {
   return _builder.getDataField< ::uint64_t>(
-      ::capnp::bounded<10>() * ::capnp::ELEMENTS);
+      ::capnp::bounded<8>() * ::capnp::ELEMENTS);
 }
 inline void GetattrResponse::Attr::Builder::setStBlocks( ::uint64_t value) {
   _builder.setDataField< ::uint64_t>(
-      ::capnp::bounded<10>() * ::capnp::ELEMENTS, value);
+      ::capnp::bounded<8>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int64_t GetattrResponse::Attr::TimeSpec::Reader::getTvSec() const {
+  return _reader.getDataField< ::int64_t>(
+      ::capnp::bounded<0>() * ::capnp::ELEMENTS);
+}
+
+inline  ::int64_t GetattrResponse::Attr::TimeSpec::Builder::getTvSec() {
+  return _builder.getDataField< ::int64_t>(
+      ::capnp::bounded<0>() * ::capnp::ELEMENTS);
+}
+inline void GetattrResponse::Attr::TimeSpec::Builder::setTvSec( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
+      ::capnp::bounded<0>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int64_t GetattrResponse::Attr::TimeSpec::Reader::getTvNSec() const {
+  return _reader.getDataField< ::int64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+
+inline  ::int64_t GetattrResponse::Attr::TimeSpec::Builder::getTvNSec() {
+  return _builder.getDataField< ::int64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+inline void GetattrResponse::Attr::TimeSpec::Builder::setTvNSec( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS, value);
 }
 
 

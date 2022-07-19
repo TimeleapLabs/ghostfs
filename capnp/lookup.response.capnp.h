@@ -18,6 +18,7 @@ namespace schemas {
 
 CAPNP_DECLARE_SCHEMA(a367173469ff7212);
 CAPNP_DECLARE_SCHEMA(df3731924f2ff0df);
+CAPNP_DECLARE_SCHEMA(b78ca585d978d3f6);
 
 }  // namespace schemas
 }  // namespace capnp
@@ -45,9 +46,25 @@ struct LookupResponse::Attr {
   class Reader;
   class Builder;
   class Pipeline;
+  struct TimeSpec;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(df3731924f2ff0df, 11, 0)
+    CAPNP_DECLARE_STRUCT_HEADER(df3731924f2ff0df, 9, 2)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct LookupResponse::Attr::TimeSpec {
+  TimeSpec() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(b78ca585d978d3f6, 2, 0)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -191,9 +208,11 @@ public:
 
   inline  ::int64_t getStSize() const;
 
-  inline  ::int64_t getStAtime() const;
+  inline bool hasStAtime() const;
+  inline  ::LookupResponse::Attr::TimeSpec::Reader getStAtime() const;
 
-  inline  ::int64_t getStMtime() const;
+  inline bool hasStMtime() const;
+  inline  ::LookupResponse::Attr::TimeSpec::Reader getStMtime() const;
 
   inline  ::int64_t getStCtime() const;
 
@@ -253,11 +272,19 @@ public:
   inline  ::int64_t getStSize();
   inline void setStSize( ::int64_t value);
 
-  inline  ::int64_t getStAtime();
-  inline void setStAtime( ::int64_t value);
+  inline bool hasStAtime();
+  inline  ::LookupResponse::Attr::TimeSpec::Builder getStAtime();
+  inline void setStAtime( ::LookupResponse::Attr::TimeSpec::Reader value);
+  inline  ::LookupResponse::Attr::TimeSpec::Builder initStAtime();
+  inline void adoptStAtime(::capnp::Orphan< ::LookupResponse::Attr::TimeSpec>&& value);
+  inline ::capnp::Orphan< ::LookupResponse::Attr::TimeSpec> disownStAtime();
 
-  inline  ::int64_t getStMtime();
-  inline void setStMtime( ::int64_t value);
+  inline bool hasStMtime();
+  inline  ::LookupResponse::Attr::TimeSpec::Builder getStMtime();
+  inline void setStMtime( ::LookupResponse::Attr::TimeSpec::Reader value);
+  inline  ::LookupResponse::Attr::TimeSpec::Builder initStMtime();
+  inline void adoptStMtime(::capnp::Orphan< ::LookupResponse::Attr::TimeSpec>&& value);
+  inline ::capnp::Orphan< ::LookupResponse::Attr::TimeSpec> disownStMtime();
 
   inline  ::int64_t getStCtime();
   inline void setStCtime( ::int64_t value);
@@ -281,6 +308,89 @@ private:
 class LookupResponse::Attr::Pipeline {
 public:
   typedef Attr Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+  inline  ::LookupResponse::Attr::TimeSpec::Pipeline getStAtime();
+  inline  ::LookupResponse::Attr::TimeSpec::Pipeline getStMtime();
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class LookupResponse::Attr::TimeSpec::Reader {
+public:
+  typedef TimeSpec Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand());
+  }
+#endif  // !CAPNP_LITE
+
+  inline  ::int64_t getTvSec() const;
+
+  inline  ::int64_t getTvNSec() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class LookupResponse::Attr::TimeSpec::Builder {
+public:
+  typedef TimeSpec Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline  ::int64_t getTvSec();
+  inline void setTvSec( ::int64_t value);
+
+  inline  ::int64_t getTvNSec();
+  inline void setTvNSec( ::int64_t value);
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class LookupResponse::Attr::TimeSpec::Pipeline {
+public:
+  typedef TimeSpec Pipelines;
 
   inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
   inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
@@ -509,74 +619,152 @@ inline void LookupResponse::Attr::Builder::setStSize( ::int64_t value) {
       ::capnp::bounded<5>() * ::capnp::ELEMENTS, value);
 }
 
-inline  ::int64_t LookupResponse::Attr::Reader::getStAtime() const {
-  return _reader.getDataField< ::int64_t>(
-      ::capnp::bounded<6>() * ::capnp::ELEMENTS);
+inline bool LookupResponse::Attr::Reader::hasStAtime() const {
+  return !_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline bool LookupResponse::Attr::Builder::hasStAtime() {
+  return !_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline  ::LookupResponse::Attr::TimeSpec::Reader LookupResponse::Attr::Reader::getStAtime() const {
+  return ::capnp::_::PointerHelpers< ::LookupResponse::Attr::TimeSpec>::get(_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline  ::LookupResponse::Attr::TimeSpec::Builder LookupResponse::Attr::Builder::getStAtime() {
+  return ::capnp::_::PointerHelpers< ::LookupResponse::Attr::TimeSpec>::get(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+#if !CAPNP_LITE
+inline  ::LookupResponse::Attr::TimeSpec::Pipeline LookupResponse::Attr::Pipeline::getStAtime() {
+  return  ::LookupResponse::Attr::TimeSpec::Pipeline(_typeless.getPointerField(0));
+}
+#endif  // !CAPNP_LITE
+inline void LookupResponse::Attr::Builder::setStAtime( ::LookupResponse::Attr::TimeSpec::Reader value) {
+  ::capnp::_::PointerHelpers< ::LookupResponse::Attr::TimeSpec>::set(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), value);
+}
+inline  ::LookupResponse::Attr::TimeSpec::Builder LookupResponse::Attr::Builder::initStAtime() {
+  return ::capnp::_::PointerHelpers< ::LookupResponse::Attr::TimeSpec>::init(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline void LookupResponse::Attr::Builder::adoptStAtime(
+    ::capnp::Orphan< ::LookupResponse::Attr::TimeSpec>&& value) {
+  ::capnp::_::PointerHelpers< ::LookupResponse::Attr::TimeSpec>::adopt(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::LookupResponse::Attr::TimeSpec> LookupResponse::Attr::Builder::disownStAtime() {
+  return ::capnp::_::PointerHelpers< ::LookupResponse::Attr::TimeSpec>::disown(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 
-inline  ::int64_t LookupResponse::Attr::Builder::getStAtime() {
-  return _builder.getDataField< ::int64_t>(
-      ::capnp::bounded<6>() * ::capnp::ELEMENTS);
+inline bool LookupResponse::Attr::Reader::hasStMtime() const {
+  return !_reader.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS).isNull();
 }
-inline void LookupResponse::Attr::Builder::setStAtime( ::int64_t value) {
-  _builder.setDataField< ::int64_t>(
-      ::capnp::bounded<6>() * ::capnp::ELEMENTS, value);
+inline bool LookupResponse::Attr::Builder::hasStMtime() {
+  return !_builder.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS).isNull();
 }
-
-inline  ::int64_t LookupResponse::Attr::Reader::getStMtime() const {
-  return _reader.getDataField< ::int64_t>(
-      ::capnp::bounded<7>() * ::capnp::ELEMENTS);
+inline  ::LookupResponse::Attr::TimeSpec::Reader LookupResponse::Attr::Reader::getStMtime() const {
+  return ::capnp::_::PointerHelpers< ::LookupResponse::Attr::TimeSpec>::get(_reader.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS));
 }
-
-inline  ::int64_t LookupResponse::Attr::Builder::getStMtime() {
-  return _builder.getDataField< ::int64_t>(
-      ::capnp::bounded<7>() * ::capnp::ELEMENTS);
+inline  ::LookupResponse::Attr::TimeSpec::Builder LookupResponse::Attr::Builder::getStMtime() {
+  return ::capnp::_::PointerHelpers< ::LookupResponse::Attr::TimeSpec>::get(_builder.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS));
 }
-inline void LookupResponse::Attr::Builder::setStMtime( ::int64_t value) {
-  _builder.setDataField< ::int64_t>(
-      ::capnp::bounded<7>() * ::capnp::ELEMENTS, value);
+#if !CAPNP_LITE
+inline  ::LookupResponse::Attr::TimeSpec::Pipeline LookupResponse::Attr::Pipeline::getStMtime() {
+  return  ::LookupResponse::Attr::TimeSpec::Pipeline(_typeless.getPointerField(1));
+}
+#endif  // !CAPNP_LITE
+inline void LookupResponse::Attr::Builder::setStMtime( ::LookupResponse::Attr::TimeSpec::Reader value) {
+  ::capnp::_::PointerHelpers< ::LookupResponse::Attr::TimeSpec>::set(_builder.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS), value);
+}
+inline  ::LookupResponse::Attr::TimeSpec::Builder LookupResponse::Attr::Builder::initStMtime() {
+  return ::capnp::_::PointerHelpers< ::LookupResponse::Attr::TimeSpec>::init(_builder.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS));
+}
+inline void LookupResponse::Attr::Builder::adoptStMtime(
+    ::capnp::Orphan< ::LookupResponse::Attr::TimeSpec>&& value) {
+  ::capnp::_::PointerHelpers< ::LookupResponse::Attr::TimeSpec>::adopt(_builder.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::LookupResponse::Attr::TimeSpec> LookupResponse::Attr::Builder::disownStMtime() {
+  return ::capnp::_::PointerHelpers< ::LookupResponse::Attr::TimeSpec>::disown(_builder.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS));
 }
 
 inline  ::int64_t LookupResponse::Attr::Reader::getStCtime() const {
   return _reader.getDataField< ::int64_t>(
-      ::capnp::bounded<8>() * ::capnp::ELEMENTS);
+      ::capnp::bounded<6>() * ::capnp::ELEMENTS);
 }
 
 inline  ::int64_t LookupResponse::Attr::Builder::getStCtime() {
   return _builder.getDataField< ::int64_t>(
-      ::capnp::bounded<8>() * ::capnp::ELEMENTS);
+      ::capnp::bounded<6>() * ::capnp::ELEMENTS);
 }
 inline void LookupResponse::Attr::Builder::setStCtime( ::int64_t value) {
   _builder.setDataField< ::int64_t>(
-      ::capnp::bounded<8>() * ::capnp::ELEMENTS, value);
+      ::capnp::bounded<6>() * ::capnp::ELEMENTS, value);
 }
 
 inline  ::uint64_t LookupResponse::Attr::Reader::getStBlksize() const {
   return _reader.getDataField< ::uint64_t>(
-      ::capnp::bounded<9>() * ::capnp::ELEMENTS);
+      ::capnp::bounded<7>() * ::capnp::ELEMENTS);
 }
 
 inline  ::uint64_t LookupResponse::Attr::Builder::getStBlksize() {
   return _builder.getDataField< ::uint64_t>(
-      ::capnp::bounded<9>() * ::capnp::ELEMENTS);
+      ::capnp::bounded<7>() * ::capnp::ELEMENTS);
 }
 inline void LookupResponse::Attr::Builder::setStBlksize( ::uint64_t value) {
   _builder.setDataField< ::uint64_t>(
-      ::capnp::bounded<9>() * ::capnp::ELEMENTS, value);
+      ::capnp::bounded<7>() * ::capnp::ELEMENTS, value);
 }
 
 inline  ::uint64_t LookupResponse::Attr::Reader::getStBlocks() const {
   return _reader.getDataField< ::uint64_t>(
-      ::capnp::bounded<10>() * ::capnp::ELEMENTS);
+      ::capnp::bounded<8>() * ::capnp::ELEMENTS);
 }
 
 inline  ::uint64_t LookupResponse::Attr::Builder::getStBlocks() {
   return _builder.getDataField< ::uint64_t>(
-      ::capnp::bounded<10>() * ::capnp::ELEMENTS);
+      ::capnp::bounded<8>() * ::capnp::ELEMENTS);
 }
 inline void LookupResponse::Attr::Builder::setStBlocks( ::uint64_t value) {
   _builder.setDataField< ::uint64_t>(
-      ::capnp::bounded<10>() * ::capnp::ELEMENTS, value);
+      ::capnp::bounded<8>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int64_t LookupResponse::Attr::TimeSpec::Reader::getTvSec() const {
+  return _reader.getDataField< ::int64_t>(
+      ::capnp::bounded<0>() * ::capnp::ELEMENTS);
+}
+
+inline  ::int64_t LookupResponse::Attr::TimeSpec::Builder::getTvSec() {
+  return _builder.getDataField< ::int64_t>(
+      ::capnp::bounded<0>() * ::capnp::ELEMENTS);
+}
+inline void LookupResponse::Attr::TimeSpec::Builder::setTvSec( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
+      ::capnp::bounded<0>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int64_t LookupResponse::Attr::TimeSpec::Reader::getTvNSec() const {
+  return _reader.getDataField< ::int64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+
+inline  ::int64_t LookupResponse::Attr::TimeSpec::Builder::getTvNSec() {
+  return _builder.getDataField< ::int64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+inline void LookupResponse::Attr::TimeSpec::Builder::setTvNSec( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS, value);
 }
 
 
