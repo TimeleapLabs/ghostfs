@@ -186,11 +186,6 @@ void process_lookup_response(std::string payload) {
   e.entry_timeout = 1.0;
 
   LookupResponse::Attr::Reader attributes = lookup_response.getAttr();
-  LookupResponse::Attr::TimeSpec::Reader stAtime = attributes.getStAtime();
-  LookupResponse::Attr::TimeSpec::Reader stMtime = attributes.getStMtime();
-
-  struct timespec a_time = {.tv_sec = stAtime.getTvSec(), .tv_nsec = stAtime.getTvNSec()};
-  struct timespec m_time = {.tv_sec = stMtime.getTvSec(), .tv_nsec = stMtime.getTvNSec()};
 
   e.attr.st_dev = attributes.getStDev();
   e.attr.st_ino = attributes.getStIno();
@@ -200,8 +195,8 @@ void process_lookup_response(std::string payload) {
   e.attr.st_gid = attributes.getStGid();
   e.attr.st_rdev = attributes.getStRdev();
   e.attr.st_size = attributes.getStSize();
-  e.attr.st_atime = a_time;
-  e.attr.st_mtime = m_time;
+  e.attr.st_atime = attributes.getStAtime();
+  e.attr.st_mtime = attributes.getStMtime();
   e.attr.st_ctime = attributes.getStCtime();
   e.attr.st_blksize = attributes.getStBlksize();
   e.attr.st_blocks = attributes.getStBlocks();
@@ -239,11 +234,6 @@ void process_getattr_response(std::string payload) {
   }
 
   GetattrResponse::Attr::Reader attributes = getattr_response.getAttr();
-  GetattrResponse::Attr::TimeSpec::Reader stAtime = attributes.getStAtime();
-  GetattrResponse::Attr::TimeSpec::Reader stMtime = attributes.getStMtime();
-
-  struct timespec a_time = {.tv_sec = stAtime.getTvSec(), .tv_nsec = stAtime.getTvNSec()};
-  struct timespec m_time = {.tv_sec = stMtime.getTvSec(), .tv_nsec = stMtime.getTvNSec()};
 
   attr.st_dev = attributes.getStDev();
   attr.st_ino = attributes.getStIno();
@@ -253,8 +243,8 @@ void process_getattr_response(std::string payload) {
   attr.st_gid = attributes.getStGid();
   attr.st_rdev = attributes.getStRdev();
   attr.st_size = attributes.getStSize();
-  attr.st_atime = a_time;
-  attr.st_mtime = m_time;
+  attr.st_atime = attributes.getStAtime();
+  attr.st_mtime = attributes.getStMtime();
   attr.st_ctime = attributes.getStCtime();
   attr.st_blksize = attributes.getStBlksize();
   attr.st_blocks = attributes.getStBlocks();

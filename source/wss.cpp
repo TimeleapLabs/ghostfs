@@ -126,8 +126,6 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         ::capnp::MallocMessageBuilder message;
         GetattrResponse::Builder getattr_response = message.initRoot<GetattrResponse>();
         GetattrResponse::Attr::Builder attributes = getattr_response.initAttr();
-        GetattrResponse::Attr::TimeSpec::Builder stAtime = attributes.initStAtime();
-        GetattrResponse::Attr::TimeSpec::Builder stMtime = attributes.initStMtime();
 
         getattr_response.setUuid(getattr.getUuid());
 
@@ -139,22 +137,11 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         attributes.setStGid(attr.st_gid);
         attributes.setStRdev(attr.st_rdev);
         attributes.setStSize(attr.st_size);
+        attributes.setStAtime(attr.st_atime);
+        attributes.setStMtime(attr.st_mtime);
         attributes.setStCtime(attr.st_ctime);
         attributes.setStBlksize(attr.st_blksize);
         attributes.setStBlocks(attr.st_blocks);
-
-        // clang-format off
-        #if defined(__APPLE__)
-          stAtime.setTvSec(attr.st_atimespec.tv_sec);
-          stAtime.setTvNSec(attr.st_atimespec.tv_nsec);
-          stMtime.setTvSec(attr.st_mtimespec.tv_sec);
-          stMtime.setTvNSec(attr.st_mtimespec.tv_nsec);
-        #else
-          stAtime.setTvSec(attr.st_atim.tv_sec);
-          stAtime.setTvNSec(attr.st_atim.tv_nsec);
-          stMtime.setTvSec(attr.st_mtim.tv_sec);
-          stMtime.setTvNSec(attr.st_mtim.tv_nsec);
-        #endif
 
         // std::cout << "st_dev " << attr.st_dev << " " << attributes.getStDev() << std::endl;
         // std::cout << "st_ino " << attr.st_ino << " " << attributes.getStIno() << std::endl;
@@ -235,8 +222,6 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         int res = hello_stat(ino, &attr);
 
         LookupResponse::Attr::Builder attributes = lookup_response.initAttr();
-        LookupResponse::Attr::TimeSpec::Builder stAtime = attributes.initStAtime();
-        LookupResponse::Attr::TimeSpec::Builder stMtime = attributes.initStMtime();
 
         attributes.setStDev(attr.st_dev);
         attributes.setStIno(attr.st_ino);
@@ -246,22 +231,11 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         attributes.setStGid(attr.st_gid);
         attributes.setStRdev(attr.st_rdev);
         attributes.setStSize(attr.st_size);
+        attributes.setStAtime(attr.st_atime);
+        attributes.setStMtime(attr.st_mtime);
         attributes.setStCtime(attr.st_ctime);
         attributes.setStBlksize(attr.st_blksize);
         attributes.setStBlocks(attr.st_blocks);
-
-                // clang-format off
-        #if defined(__APPLE__)
-          stAtime.setTvSec(attr.st_atimespec.tv_sec);
-          stAtime.setTvNSec(attr.st_atimespec.tv_nsec);
-          stMtime.setTvSec(attr.st_mtimespec.tv_sec);
-          stMtime.setTvNSec(attr.st_mtimespec.tv_nsec);
-        #else
-          stAtime.setTvSec(attr.st_atim.tv_sec);
-          stAtime.setTvNSec(attr.st_atim.tv_nsec);
-          stMtime.setTvSec(attr.st_mtim.tv_sec);
-          stMtime.setTvNSec(attr.st_mtim.tv_nsec);
-        #endif
 
         std::string response_payload = send_message(lookup_response, message, res, webSocket, "2");
 
