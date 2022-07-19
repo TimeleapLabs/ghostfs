@@ -77,6 +77,10 @@ void WSClient::onMessage(const ix::WebSocketMessagePtr& msg) {
         process_write_response(payload);
         break;
       }
+      case '8': {
+        process_setxattr_response(payload);
+        break;
+      }
       default:
         break;
     }

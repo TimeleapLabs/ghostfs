@@ -760,7 +760,7 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
   fillFileInfo(&fuseFileInfo, fi);
 
   std::string uuid = gen_uuid();
-  requests[uuid] = {.type = 6, .req = req};
+  requests[uuid] = {.type = 7, .req = req};
 
   write.setUuid(uuid);
 
@@ -770,7 +770,7 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
   const auto bytes = data.asBytes();
   std::string payload(bytes.begin(), bytes.end());
 
-  ws->send("6" + payload);
+  ws->send("7" + payload);
 
   std::cout << "hello_ll_write executed correctly: " << "6" + payload << std::endl;
 }
@@ -1046,7 +1046,7 @@ static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, 
   _setxattr.setPosition(position);
 
   std::string uuid = gen_uuid();
-  requests[uuid] = {.type = 7, .req = req};
+  requests[uuid] = {.type = 8, .req = req};
 
   _setxattr.setUuid(uuid);
 
@@ -1056,9 +1056,9 @@ static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, 
   const auto bytes = data.asBytes();
   std::string payload(bytes.begin(), bytes.end());
 
-  ws->send("7" + payload);
+  ws->send("8" + payload);
 
-  std::cout << "hello_ll_setxattr executed correctly: " << "7" + payload << std::endl;
+  std::cout << "hello_ll_setxattr executed correctly: " << "8" + payload << std::endl;
 
   //goes to other function
   std::string file_path = ino_to_path[ino];
