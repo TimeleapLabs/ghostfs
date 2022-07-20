@@ -49,40 +49,44 @@ void WSClient::onMessage(const ix::WebSocketMessagePtr& msg) {
     std::string payload = msg->str.substr(1);
 
     switch (command) {
-      case '1': {
+      case (char)Ops::Getattr: {
         process_getattr_response(payload);
         break;
       }
-      case '2': {
+      case (char)Ops::Lookup: {
         process_lookup_response(payload);
         break;
       }
-      case '3': {
+      case (char)Ops::Readdir: {
         process_readdir_response(payload);
         break;
       }
-      case '4': {
+      case (char)Ops::Open: {
         process_open_response(payload);
         break;
       }
-      case '5': {
+      case (char)Ops::Read: {
         process_read_response(payload);
         break;
       }
-      case '6': {
+      case (char)Ops::Setattr: {
         process_setattr_response(payload);
         break;
       }
-      case '7': {
+      case (char)Ops::Write: {
         process_write_response(payload);
         break;
       }
-      case '8': {
+      case (char)Ops::Setxattr: {
         process_setxattr_response(payload);
         break;
       }
-      case '9': {
+      case (char)Ops::Create: {
         process_create_response(payload);
+        break;
+      }
+      case (char)Ops::Mknod: {
+        process_mknod_response(payload);
         break;
       }
       default:

@@ -15,6 +15,8 @@
 #include <getattr.response.capnp.h>
 #include <lookup.capnp.h>
 #include <lookup.response.capnp.h>
+#include <mknod.capnp.h>
+#include <mknod.response.capnp.h>
 #include <open.capnp.h>
 #include <open.response.capnp.h>
 #include <read.capnp.h>
@@ -65,14 +67,14 @@ void WSServer::start() {
 }
 
 template <class T> std::string send_message(T& response, ::capnp::MallocMessageBuilder& message,
-                                            int res, ix::WebSocket& webSocket, std::string opcode) {
+                                            int res, ix::WebSocket& webSocket, Ops opcode) {
   response.setRes(res);
 
   const auto response_data = capnp::messageToFlatArray(message);
   const auto bytes = response_data.asBytes();
   std::string response_payload(bytes.begin(), bytes.end());
 
-  webSocket.send(opcode + response_payload, true);
+  webSocket.send((char)opcode + response_payload, true);
 
   return response_payload;
 }
@@ -110,7 +112,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
     std::string payload = msg->str.substr(1);
 
     switch (command) {
-      case '1': {
+      case (char)Ops::Getattr: {
         const kj::ArrayPtr<const capnp::word> view(
             reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
             reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
@@ -160,14 +162,15 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         // std::endl; std::cout << "st_blocks " << attr.st_blocks << " " << attributes.getStBlocks()
         // << std::endl;
 
-        std::string response_payload = send_message(getattr_response, message, res, webSocket, "1");
+        std::string response_payload
+            = send_message(getattr_response, message, res, webSocket, Ops::Getattr);
 
         std::cout << "getattr_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
 
-      case '2': {
+      case (char)Ops::Lookup: {
         const kj::ArrayPtr<const capnp::word> view(
             reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
             reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
@@ -197,7 +200,8 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         std::cout << "LOOKUP filepath: " << file_path << std::endl;
 
         if (!std::filesystem::exists(file_path)) {
-          std::string response_payload = send_message(lookup_response, message, -1, webSocket, "2");
+          std::string response_payload
+              = send_message(lookup_response, message, -1, webSocket, Ops::Lookup);
           std::cout << "lookup_response sent error: " << response_payload << std::endl;
           return;
         }
@@ -239,14 +243,15 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         attributes.setStBlksize(attr.st_blksize);
         attributes.setStBlocks(attr.st_blocks);
 
-        std::string response_payload = send_message(lookup_response, message, res, webSocket, "2");
+        std::string response_payload
+            = send_message(lookup_response, message, res, webSocket, Ops::Lookup);
 
         std::cout << "lookup_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
 
-      case '3': {
+      case (char)Ops::Readdir: {
         const kj::ArrayPtr<const capnp::word> view(
             reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
             reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
@@ -275,7 +280,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           path = ino_to_path[ino];
         } else {
           std::string response_payload
-              = send_message(readdir_response, message, -1, webSocket, "3");
+              = send_message(readdir_response, message, -1, webSocket, Ops::Readdir);
 
           std::cout << "readdir_response sent error: " << response_payload << std::endl;
 
@@ -316,13 +321,14 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           index++;
         }
 
-        std::string response_payload = send_message(readdir_response, message, 0, webSocket, "3");
+        std::string response_payload
+            = send_message(readdir_response, message, 0, webSocket, Ops::Readdir);
 
         std::cout << "readdir_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
-      case '4': {
+      case (char)Ops::Open: {
         const kj::ArrayPtr<const capnp::word> view(
             reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
             reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
@@ -339,7 +345,8 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         if (ino_to_path.find(open.getIno()) == ino_to_path.end()) {
           // File is unknown
-          std::string response_payload = send_message(open_response, message, -1, webSocket, "4");
+          std::string response_payload
+              = send_message(open_response, message, -1, webSocket, Ops::Open);
 
           std::cout << "readdir_response sent error: " << response_payload << std::endl;
           return;
@@ -366,13 +373,14 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         fi_response.setPollEvents(fi.getPollEvents());
         fi_response.setWritepage(fi.getWritepage());
 
-        std::string response_payload = send_message(open_response, message, 0, webSocket, "4");
+        std::string response_payload
+            = send_message(open_response, message, 0, webSocket, Ops::Open);
 
         std::cout << "open_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
-      case '5': {
+      case (char)Ops::Read: {
         const kj::ArrayPtr<const capnp::word> view(
             reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
             reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
@@ -389,7 +397,8 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         if (ino_to_path.find(read.getIno()) == ino_to_path.end()) {
           // File is unknown
-          std::string response_payload = send_message(read_response, message, -1, webSocket, "5");
+          std::string response_payload
+              = send_message(read_response, message, -1, webSocket, Ops::Read);
 
           std::cout << "read_response sent error: " << response_payload << std::endl;
         }
@@ -409,13 +418,14 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         read_response.setBuf(buf_reader);
 
-        std::string response_payload = send_message(read_response, message, 0, webSocket, "5");
+        std::string response_payload
+            = send_message(read_response, message, 0, webSocket, Ops::Read);
 
         std::cout << "read_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
-      case '6': {
+      case (char)Ops::Setattr: {
         const kj::ArrayPtr<const capnp::word> view(
             reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
             reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
@@ -435,7 +445,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         if (ino_to_path.find(ino) == ino_to_path.end()) {
           // Parent is unknown
           std::string response_payload
-              = send_message(setattr_response, message, -1, webSocket, "6");
+              = send_message(setattr_response, message, -1, webSocket, Ops::Setattr);
 
           std::cout << "setattr_response sent error: " << response_payload << std::endl;
 
@@ -458,7 +468,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           err = chmod(file_path.c_str(), attr.getStMode());
           if (err == -1) {
             std::string response_payload
-                = send_message(setattr_response, message, -1, webSocket, "6");
+                = send_message(setattr_response, message, -1, webSocket, Ops::Setattr);
 
             std::cout << "setattr_response sent error: " << response_payload << std::endl;
 
@@ -473,7 +483,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           err = lchown(file_path.c_str(), uid, gid);
           if (err == -1) {
             std::string response_payload
-                = send_message(setattr_response, message, -1, webSocket, "6");
+                = send_message(setattr_response, message, -1, webSocket, Ops::Setattr);
 
             std::cout << "setattr_response sent error: " << response_payload << std::endl;
             return;
@@ -484,14 +494,12 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           err = truncate(file_path.c_str(), attr.getStSize());
           if (err == -1) {
             std::string response_payload
-                = send_message(setattr_response, message, -1, webSocket, "6");
+                = send_message(setattr_response, message, -1, webSocket, Ops::Setattr);
 
             std::cout << "setattr_response sent error: " << response_payload << std::endl;
             return;
           }
         }
-
-        // todo from here
 
         if (to_set & (FUSE_SET_ATTR_ATIME | FUSE_SET_ATTR_MTIME)) {
           struct timespec tv[2];
@@ -504,29 +512,29 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           if (to_set & FUSE_SET_ATTR_ATIME_NOW) {
             tv[0].tv_nsec = UTIME_NOW;
           } else if (to_set & FUSE_SET_ATTR_ATIME) {  // clang-format off
-      // #if defined(__APPLE__)
-      //   tv[0] = attr->st_atimespec;
-      // #else
-      //   tv[0] = attr->st_atim;
-      // #endif  // clang-format on
+            // #if defined(__APPLE__)
+            //   tv[0] = attr->st_atimespec;
+            // #else
+            //   tv[0] = attr->st_atim;
+            // #endif  // clang-format on
             tv[0] = a_time;
           }
 
           if (to_set & FUSE_SET_ATTR_MTIME_NOW) {
             tv[1].tv_nsec = UTIME_NOW;
           } else if (to_set & FUSE_SET_ATTR_MTIME) {  // clang-format off
-      // #if defined(__APPLE__)
-      //   tv[1] = attr->st_mtimespec;
-      // #else
-      //   tv[1] = attr->st_mtim;
-      // #endif  // clang-format on
+            // #if defined(__APPLE__)
+            //   tv[1] = attr->st_mtimespec;
+            // #else
+            //   tv[1] = attr->st_mtim;
+            // #endif  // clang-format on
             tv[1] = m_time;
           }
 
           err = utimensat(AT_FDCWD, file_path.c_str(), tv, 0);
 
           if (err == -1) {
-            std::string response_payload = send_message(setattr_response, message, -1, webSocket, "6");
+            std::string response_payload = send_message(setattr_response, message, -1, webSocket, Ops::Setattr);
 
             std::cout << "setattr_response sent error: " << response_payload << std::endl;
             return;
@@ -535,13 +543,13 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         setattr_response.setIno(ino);
         
-        std::string response_payload = send_message(setattr_response, message, 0, webSocket, "6");
+        std::string response_payload = send_message(setattr_response, message, 0, webSocket, Ops::Setattr);
 
         std::cout << "setattr_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
-      case '7': {
+      case (char)Ops::Write: {
         const kj::ArrayPtr<const capnp::word> view(
         reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
         reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
@@ -563,13 +571,13 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         write_response.setIno(write.getIno());
         write_response.setWritten(written);
 
-        std::string response_payload = send_message(write_response, message, 0, webSocket, "7");
+        std::string response_payload = send_message(write_response, message, 0, webSocket, Ops::Write);
 
         std::cout << "write_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
-      case '8': {
+      case (char)Ops::Setxattr: {
         const kj::ArrayPtr<const capnp::word> view(
         reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
         reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
@@ -590,7 +598,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         int res = setxattr(file_path.c_str(), _setxattr.getName().cStr(), _setxattr.getValue().cStr(), (size_t) _setxattr.getSize(), _setxattr.getPosition(), _setxattr.getFlags());
         if (res == -1) {
-            std::string response_payload = send_message(setxattr_response, message, res, webSocket, "7");
+            std::string response_payload = send_message(setxattr_response, message, res, webSocket, Ops::Setxattr);
 
             std::cout << "setxattr_response sent error: " << response_payload << std::endl;
             return;
@@ -598,13 +606,13 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         setxattr_response.setIno(ino);
 
-        std::string response_payload = send_message(setxattr_response, message, res, webSocket, "8");
+        std::string response_payload = send_message(setxattr_response, message, res, webSocket, Ops::Setxattr);
 
         std::cout << "setxattr_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
-      case '9': {
+      case (char)Ops::Create: {
         const kj::ArrayPtr<const capnp::word> view(
             reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
             reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
@@ -629,7 +637,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         int res = ::open(file_path.c_str(), (fi.getFlags() | O_CREAT) & ~O_NOFOLLOW, create.getMode());
 
         if (res == -1) {
-            std::string response_payload = send_message(create_response, message, res, webSocket, "9");
+            std::string response_payload = send_message(create_response, message, res, webSocket, Ops::Create);
 
             std::cout << "create_response sent error: " << response_payload << std::endl;
             return;
@@ -682,9 +690,80 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           attributes.setStBlocks(attr.st_blocks);
         }
         
-        std::string response_payload = send_message(create_response, message, res, webSocket, "9");
+        std::string response_payload = send_message(create_response, message, res, webSocket, Ops::Create);
 
         std::cout << "create_response sent correctly: " << response_payload << std::endl;
+
+        break;
+      }
+      case (char)Ops::Mknod: {
+        const kj::ArrayPtr<const capnp::word> view(
+            reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
+            reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
+
+        capnp::FlatArrayMessageReader data(view);
+        Mknod::Reader mknod = data.getRoot<Mknod>();
+
+        std::cout << "mknod: Received UUID: " << mknod.getUuid().cStr() << std::endl;
+
+        ::capnp::MallocMessageBuilder message;
+        MknodResponse::Builder mknod_response = message.initRoot<MknodResponse>();
+
+        mknod_response.setUuid(mknod.getUuid());
+
+        uint64_t parent = mknod.getParent();
+
+        std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
+        std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
+        std::filesystem::path file_path = parent_path / std::filesystem::path(mknod.getName());
+
+        uint64_t file_ino;
+
+        file_ino = ++current_ino;
+        ino_to_path[file_ino] = file_path;
+        path_to_ino[file_path] = file_ino;
+
+        int res = ::mknod(file_path.c_str(), mknod.getMode(), mknod.getRdev());
+
+        if (res == -1) {
+          ino_to_path.erase(file_ino);
+          path_to_ino.erase(file_path);
+
+          std::string response_payload = send_message(mknod_response, message, res, webSocket, Ops::Mknod);
+
+          std::cout << "mknod_response sent error: " << response_payload << std::endl;
+          return;
+        } else {
+          mknod_response.setIno(file_ino);
+
+          struct stat attr;
+          memset(&attr, 0, sizeof(attr));
+
+          //e.attr_timeout = 1.0;
+          //e.entry_timeout = 1.0;
+
+          hello_stat(file_ino, &attr);
+          
+          MknodResponse::Attr::Builder attributes = mknod_response.initAttr();
+
+          attributes.setStDev(attr.st_dev);
+          attributes.setStIno(attr.st_ino);
+          attributes.setStMode(attr.st_mode);
+          attributes.setStNlink(attr.st_nlink);
+          attributes.setStUid(attr.st_uid);
+          attributes.setStGid(attr.st_gid);
+          attributes.setStRdev(attr.st_rdev);
+          attributes.setStSize(attr.st_size);
+          attributes.setStAtime(attr.st_atime);
+          attributes.setStMtime(attr.st_mtime);
+          attributes.setStCtime(attr.st_ctime);
+          attributes.setStBlksize(attr.st_blksize);
+          attributes.setStBlocks(attr.st_blocks);
+        }
+        
+        std::string response_payload = send_message(mknod_response, message, res, webSocket, Ops::Mknod);
+
+        std::cout << "mknod_response sent correctly: " << response_payload << std::endl;
 
         break;
       }

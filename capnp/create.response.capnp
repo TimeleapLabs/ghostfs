@@ -2,11 +2,10 @@
 
 struct CreateResponse {
   ino    @0 :UInt64;
-  parent @1 :UInt64;
-  res    @2 :Int8;
-  fi     @3 :FuseFileInfo;
-  attr   @4 :Attr;
-  uuid   @5 :Text;
+  res    @1 :Int8;
+  fi     @2 :FuseFileInfo;
+  attr   @3 :Attr;
+  uuid   @4 :Text;
 
   struct FuseFileInfo {
     flags         @0  :Int8;

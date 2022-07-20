@@ -23,13 +23,27 @@ struct dirbuf {
 
 void dirbuf_add(fuse_req_t req, struct dirbuf* b, const char* name, fuse_ino_t ino);
 
+enum class Ops : char {
+  Getattr = 1,
+  Lookup = 2,
+  Readdir = 3,
+  Open = 4,
+  Read = 5,
+  Setattr = 6,
+  Write = 7,
+  Setxattr = 8,
+  Create = 9,
+  Mknod = 10
+};
+
 // Responses
 void process_getattr_response(std::string payload);
-void process_readdir_response(std::string payload);
 void process_lookup_response(std::string payload);
+void process_readdir_response(std::string payload);
 void process_open_response(std::string payload);
 void process_read_response(std::string payload);
 void process_setattr_response(std::string payload);
 void process_write_response(std::string payload);
 void process_setxattr_response(std::string payload);
 void process_create_response(std::string payload);
+void process_mknod_response(std::string payload);

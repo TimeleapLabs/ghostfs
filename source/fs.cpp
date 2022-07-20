@@ -17,6 +17,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <uuid_v4.h>
+#include <ghostfs/fs.h>
 
 // CAPNPROTO
 
@@ -31,6 +32,7 @@
 #include <lookup.response.capnp.h>
 #include <mkdir.capnp.h>
 #include <mknod.capnp.h>
+#include <mknod.response.capnp.h>
 #include <open.capnp.h>
 #include <open.response.capnp.h>
 #include <read.capnp.h>
@@ -70,14 +72,9 @@ std::string gen_uuid() {
 
 std::string ROOT = "/Users/ncasati/.ghostfs/root";
 
-struct dirbuf {
-  char *p;
-  size_t size;
-};
-
 struct request {
   char *name;
-  uint8_t type;
+  Ops type;
   fuse_req_t req;
   fuse_file_info *fi;
   size_t size;
@@ -540,6 +537,62 @@ void process_create_response(std::string payload) {
   std::cout << "process_create_response: fuse_reply_create correctly executed" << std::endl;
 }
 
+void process_mknod_response(std::string payload) {
+  const kj::ArrayPtr<const capnp::word> view(
+      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
+      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
+
+  capnp::FlatArrayMessageReader data(view);
+  MknodResponse::Reader mknod_response = data.getRoot<MknodResponse>();
+
+  struct stat attr;
+
+  memset(&attr, 0, sizeof(attr));
+
+  std::string uuid = mknod_response.getUuid();
+
+  std::cout << "process_mknod_response: Response UUID: " << uuid << std::endl;
+
+  request request = requests[uuid];
+
+  int res = mknod_response.getRes();
+
+  if (res == -1) {
+    std::cout << "CREATE::ENOENT" << std::endl;
+    fuse_reply_err(request.req, ENOENT);
+    return;
+  }
+
+  struct fuse_entry_param e;
+
+  memset(&e, 0, sizeof(e));
+  e.ino = mknod_response.getIno();
+  e.attr_timeout = 1.0;
+  e.entry_timeout = 1.0;
+
+  MknodResponse::Attr::Reader attributes = mknod_response.getAttr();
+
+  e.attr.st_dev = attributes.getStDev();
+  e.attr.st_ino = attributes.getStIno();
+  e.attr.st_mode = attributes.getStMode();
+  e.attr.st_nlink = attributes.getStNlink();
+  e.attr.st_uid = attributes.getStUid();
+  e.attr.st_gid = attributes.getStGid();
+  e.attr.st_rdev = attributes.getStRdev();
+  e.attr.st_size = attributes.getStSize();
+  e.attr.st_atime = attributes.getStAtime();
+  e.attr.st_mtime = attributes.getStMtime();
+  e.attr.st_ctime = attributes.getStCtime();
+  e.attr.st_blksize = attributes.getStBlksize();
+  e.attr.st_blocks = attributes.getStBlocks();
+
+  std::cout << "process_mknod_response: Request: " << request.req << std::endl;
+
+  fuse_reply_entry(request.req, &e);
+
+  std::cout << "process_mknod_response: fuse_reply_entry correctly executed" << std::endl;
+}
+
 /**
  * @brief
  *
@@ -570,7 +623,7 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
   fillFileInfo(&fuseFileInfo, fi);
 
   std::string uuid = gen_uuid();
-  requests[uuid] = {.type = 1, .req = req};
+  requests[uuid] = {.type = Ops::Getattr, .req = req};
 
   std::cout << "hello_ll_getattr: Request UUID: " << uuid << std::endl;
 
@@ -580,7 +633,7 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
   const auto bytes = data.asBytes();
   std::string payload(bytes.begin(), bytes.end());
 
-  ws->send("1" + payload);
+  ws->send((char)Ops::Getattr + payload);
 
   std::cout << "hello_ll_getattr executed correctly: " << payload << std::endl;
 }
@@ -604,7 +657,7 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
   std::cout << "LOOKUP name: " << name << std::endl;
 
   std::string uuid = gen_uuid();
-  requests[uuid] = {.type = 2, .req = req};
+  requests[uuid] = {.type = Ops::Lookup, .req = req};
 
   lookup.setUuid(uuid);
 
@@ -614,7 +667,7 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
   const auto bytes = data.asBytes();
   std::string payload(bytes.begin(), bytes.end());
 
-  ws->send("2" + payload);
+  ws->send((char)Ops::Lookup + payload);
 
   std::cout << "hello_ll_lookup executed correctly: " << payload << std::endl;
 }
@@ -663,7 +716,7 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
   // printf("Called .readdir\n");
 
   std::string uuid = gen_uuid();
-  requests[uuid] = {.type = 3, .req = req, .size = size, .off = off};
+  requests[uuid] = {.type = Ops::Readdir, .req = req, .size = size, .off = off};
 
   readdir.setUuid(uuid);
 
@@ -673,10 +726,9 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
   const auto bytes = data.asBytes();
   std::string payload(bytes.begin(), bytes.end());
 
-  ws->send("3" + payload);
+  ws->send((char)Ops::Readdir + payload);
 
-  std::cout << "hello_ll_readdir executed correctly: "
-            << "3" + payload << std::endl;
+  std::cout << "hello_ll_readdir executed correctly: " << payload << std::endl;
 }
 
 /**
@@ -709,7 +761,7 @@ static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info 
   open.setIno(ino);
 
   std::string uuid = gen_uuid();
-  requests[uuid] = {.type = 4, .req = req, .fi = fi};
+  requests[uuid] = {.type = Ops::Open, .req = req, .fi = fi};
 
   open.setUuid(uuid);
 
@@ -721,10 +773,10 @@ static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info 
   const auto bytes = data.asBytes();
   std::string payload(bytes.begin(), bytes.end());
 
-  ws->send("4" + payload);
+  ws->send((char)Ops::Open + payload);
 
   std::cout << "hello_ll_open executed correctly: "
-            << "4" + payload << std::endl;
+            << payload << std::endl;
 }
 
 /**
@@ -766,7 +818,7 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
   fillFileInfo(&fuseFileInfo, fi);
 
   std::string uuid = gen_uuid();
-  requests[uuid] = {.type = 5, .req = req, .size = size, .off = off};
+  requests[uuid] = {.type = Ops::Read, .req = req, .size = size, .off = off};
 
   read.setUuid(uuid);
 
@@ -776,10 +828,10 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
   const auto bytes = data.asBytes();
   std::string payload(bytes.begin(), bytes.end());
 
-  ws->send("5" + payload);
+  ws->send((char)Ops::Read + payload);
 
   std::cout << "hello_ll_read executed correctly: "
-            << "5" + payload << std::endl;
+            << payload << std::endl;
 }
 
 /**
@@ -821,7 +873,7 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
   fillFileInfo(&fuseFileInfo, fi);
 
   std::string uuid = gen_uuid();
-  requests[uuid] = {.type = 7, .req = req};
+  requests[uuid] = {.type = Ops::Write, .req = req};
 
   write.setUuid(uuid);
 
@@ -831,9 +883,9 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
   const auto bytes = data.asBytes();
   std::string payload(bytes.begin(), bytes.end());
 
-  ws->send("7" + payload);
+  ws->send((char)Ops::Write + payload);
 
-  std::cout << "hello_ll_write executed correctly: " << "6" + payload << std::endl;
+  std::cout << "hello_ll_write executed correctly: " << payload << std::endl;
 }
 
 /**
@@ -857,34 +909,20 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
   mknod.setMode(mode);
   mknod.setRdev(rdev);
 
-  std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
-  std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
-  std::filesystem::path file_path = parent_path / std::filesystem::path(name);
+  std::string uuid = gen_uuid();
+  requests[uuid] = {.type = Ops::Mknod, .req = req};
 
-  uint64_t file_ino;
+  mknod.setUuid(uuid);
 
-  file_ino = ++current_ino;
-  ino_to_path[file_ino] = file_path;
-  path_to_ino[file_path] = file_ino;
+  std::cout << "hello_ll_mknod: Request UUID: " << uuid << std::endl;
 
-  int err = ::mknod(file_path.c_str(), mode, rdev);
+  const auto data = capnp::messageToFlatArray(message);
+  const auto bytes = data.asBytes();
+  std::string payload(bytes.begin(), bytes.end());
 
-  if (err == -1) {
-    ino_to_path.erase(file_ino);
-    path_to_ino.erase(file_path);
+  ws->send((char)Ops::Mknod + payload);
 
-    fuse_reply_err(req, err);
-  } else {
-    struct fuse_entry_param e;
-    memset(&e, 0, sizeof(e));
-
-    e.ino = file_ino;
-    e.attr_timeout = 1.0;
-    e.entry_timeout = 1.0;
-
-    hello_stat(e.ino, &e.attr);
-    fuse_reply_entry(req, &e);
-  }
+  std::cout << "hello_ll_mknod executed correctly: " << payload << std::endl;
 }
 
 /**
@@ -926,7 +964,7 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
   fillFileInfo(&fuseFileInfo, fi);
 
   std::string uuid = gen_uuid();
-  requests[uuid] = {.type = 9, .req = req, .fi = fi};
+  requests[uuid] = {.type = Ops::Create, .req = req, .fi = fi};
 
   create.setUuid(uuid);
 
@@ -936,10 +974,10 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
   const auto bytes = data.asBytes();
   std::string payload(bytes.begin(), bytes.end());
 
-  ws->send("9" + payload);
+  ws->send((char)Ops::Create + payload);
 
   std::cout << "hello_ll_create executed correctly: "
-            << "9" + payload << std::endl;
+            << payload << std::endl;
 }
 
 /**
@@ -1065,7 +1103,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   fillFileInfo(&fuseFileInfo, fi);
 
   std::string uuid = gen_uuid();
-  requests[uuid] = {.type = 6, .req = req, .fi = fi};
+  requests[uuid] = {.type = Ops::Setattr, .req = req, .fi = fi};
 
   setattr.setUuid(uuid);
 
@@ -1075,10 +1113,10 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   const auto bytes = data.asBytes();
   std::string payload(bytes.begin(), bytes.end());
 
-  ws->send("6" + payload);
+  ws->send((char)Ops::Setattr + payload);
 
   std::cout << "hello_ll_setattr executed correctly: "
-            << "6" + payload << std::endl;
+            << payload << std::endl;
 }
 
 static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, const char *value,
@@ -1095,7 +1133,7 @@ static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, 
   _setxattr.setPosition(position);
 
   std::string uuid = gen_uuid();
-  requests[uuid] = {.type = 8, .req = req};
+  requests[uuid] = {.type = Ops::Setxattr, .req = req};
 
   _setxattr.setUuid(uuid);
 
@@ -1105,9 +1143,9 @@ static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, 
   const auto bytes = data.asBytes();
   std::string payload(bytes.begin(), bytes.end());
 
-  ws->send("8" + payload);
+  ws->send((char)Ops::Setxattr + payload);
 
-  std::cout << "hello_ll_setxattr executed correctly: " << "8" + payload << std::endl;
+  std::cout << "hello_ll_setxattr executed correctly: " << payload << std::endl;
 }
 
 // clang-format off
@@ -1118,7 +1156,7 @@ static struct fuse_lowlevel_ops hello_ll_oper = {
     .open = hello_ll_open,
     .read = hello_ll_read,
     .write = hello_ll_write,
-    //.mknod = hello_ll_mknod,
+    .mknod = hello_ll_mknod,
     .create = hello_ll_create,
     //.mkdir = hello_ll_mkdir,
     .setattr = hello_ll_setattr,

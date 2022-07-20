@@ -34,7 +34,7 @@ struct CreateResponse {
   struct Attr;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(82ccc8c4cceb633f, 3, 3)
+    CAPNP_DECLARE_STRUCT_HEADER(82ccc8c4cceb633f, 2, 3)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -92,8 +92,6 @@ public:
 
   inline  ::uint64_t getIno() const;
 
-  inline  ::uint64_t getParent() const;
-
   inline  ::int8_t getRes() const;
 
   inline bool hasFi() const;
@@ -135,9 +133,6 @@ public:
 
   inline  ::uint64_t getIno();
   inline void setIno( ::uint64_t value);
-
-  inline  ::uint64_t getParent();
-  inline void setParent( ::uint64_t value);
 
   inline  ::int8_t getRes();
   inline void setRes( ::int8_t value);
@@ -474,32 +469,18 @@ inline void CreateResponse::Builder::setIno( ::uint64_t value) {
       ::capnp::bounded<0>() * ::capnp::ELEMENTS, value);
 }
 
-inline  ::uint64_t CreateResponse::Reader::getParent() const {
-  return _reader.getDataField< ::uint64_t>(
-      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
-}
-
-inline  ::uint64_t CreateResponse::Builder::getParent() {
-  return _builder.getDataField< ::uint64_t>(
-      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
-}
-inline void CreateResponse::Builder::setParent( ::uint64_t value) {
-  _builder.setDataField< ::uint64_t>(
-      ::capnp::bounded<1>() * ::capnp::ELEMENTS, value);
-}
-
 inline  ::int8_t CreateResponse::Reader::getRes() const {
   return _reader.getDataField< ::int8_t>(
-      ::capnp::bounded<16>() * ::capnp::ELEMENTS);
+      ::capnp::bounded<8>() * ::capnp::ELEMENTS);
 }
 
 inline  ::int8_t CreateResponse::Builder::getRes() {
   return _builder.getDataField< ::int8_t>(
-      ::capnp::bounded<16>() * ::capnp::ELEMENTS);
+      ::capnp::bounded<8>() * ::capnp::ELEMENTS);
 }
 inline void CreateResponse::Builder::setRes( ::int8_t value) {
   _builder.setDataField< ::int8_t>(
-      ::capnp::bounded<16>() * ::capnp::ELEMENTS, value);
+      ::capnp::bounded<8>() * ::capnp::ELEMENTS, value);
 }
 
 inline bool CreateResponse::Reader::hasFi() const {
