@@ -31,6 +31,7 @@
 #include <lookup.capnp.h>
 #include <lookup.response.capnp.h>
 #include <mkdir.capnp.h>
+#include <mkdir.response.capnp.h>
 #include <mknod.capnp.h>
 #include <mknod.response.capnp.h>
 #include <open.capnp.h>
@@ -564,7 +565,7 @@ void process_mknod_response(std::string payload) {
   int res = mknod_response.getRes();
 
   if (res == -1) {
-    std::cout << "CREATE::ENOENT" << std::endl;
+    std::cout << "MKNOD::ENOENT" << std::endl;
     fuse_reply_err(request.req, ENOENT);
     return;
   }
@@ -597,6 +598,62 @@ void process_mknod_response(std::string payload) {
   fuse_reply_entry(request.req, &e);
 
   std::cout << "process_mknod_response: fuse_reply_entry correctly executed" << std::endl;
+}
+
+void process_mkdir_response(std::string payload) {
+  const kj::ArrayPtr<const capnp::word> view(
+      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
+      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
+
+  capnp::FlatArrayMessageReader data(view);
+  MkdirResponse::Reader mkdir_response = data.getRoot<MkdirResponse>();
+
+  struct stat attr;
+
+  memset(&attr, 0, sizeof(attr));
+
+  std::string uuid = mkdir_response.getUuid();
+
+  std::cout << "process_mkdir_response: Response UUID: " << uuid << std::endl;
+
+  request request = requests[uuid];
+
+  int res = mkdir_response.getRes();
+
+  if (res == -1) {
+    std::cout << "MKDIR::ENOENT" << std::endl;
+    fuse_reply_err(request.req, ENOENT);
+    return;
+  }
+
+  struct fuse_entry_param e;
+
+  memset(&e, 0, sizeof(e));
+  e.ino = mkdir_response.getIno();
+  e.attr_timeout = 1.0;
+  e.entry_timeout = 1.0;
+
+  MkdirResponse::Attr::Reader attributes = mkdir_response.getAttr();
+
+  e.attr.st_dev = attributes.getStDev();
+  e.attr.st_ino = attributes.getStIno();
+  e.attr.st_mode = attributes.getStMode();
+  e.attr.st_nlink = attributes.getStNlink();
+  e.attr.st_uid = attributes.getStUid();
+  e.attr.st_gid = attributes.getStGid();
+  e.attr.st_rdev = attributes.getStRdev();
+  e.attr.st_size = attributes.getStSize();
+  e.attr.st_atime = attributes.getStAtime();
+  e.attr.st_mtime = attributes.getStMtime();
+  e.attr.st_ctime = attributes.getStCtime();
+  e.attr.st_blksize = attributes.getStBlksize();
+  e.attr.st_blocks = attributes.getStBlocks();
+
+  std::cout << "process_mkdir_response: Request: " << request.req << std::endl;
+
+  fuse_reply_entry(request.req, &e);
+
+  std::cout << "process_mkdir_response: fuse_reply_entry correctly executed" << std::endl;
 }
 
 /**
@@ -1004,31 +1061,20 @@ static void hello_ll_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, 
   mkdir.setName(name);
   mkdir.setMode(mode);
 
-  std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
-  std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
-  std::filesystem::path file_path = parent_path / std::filesystem::path(name);
+  std::string uuid = gen_uuid();
+  requests[uuid] = {.type = Ops::Mkdir, .req = req};
 
-  int res = ::mkdir(file_path.c_str(), mode);
+  mkdir.setUuid(uuid);
 
-  if (res == -1)
-    fuse_reply_err(req, ENOENT);
-  else {
-    struct fuse_entry_param e;
-    memset(&e, 0, sizeof(e));
+  std::cout << "hello_ll_mkdir: Request UUID: " << uuid << std::endl;
 
-    uint64_t file_ino;
+  const auto data = capnp::messageToFlatArray(message);
+  const auto bytes = data.asBytes();
+  std::string payload(bytes.begin(), bytes.end());
 
-    file_ino = ++current_ino;
-    ino_to_path[file_ino] = file_path;
-    path_to_ino[file_path] = file_ino;
+  ws->send((char)Ops::Mkdir + payload);
 
-    e.ino = file_ino;
-    e.attr_timeout = 1.0;
-    e.entry_timeout = 1.0;
-
-    hello_stat(e.ino, &e.attr);
-    fuse_reply_entry(req, &e);
-  }
+  std::cout << "hello_ll_mkdir executed correctly: " << payload << std::endl;
 }
 
 /**
@@ -1164,7 +1210,7 @@ static struct fuse_lowlevel_ops hello_ll_oper = {
     .write = hello_ll_write,
     .mknod = hello_ll_mknod,
     .create = hello_ll_create,
-    //.mkdir = hello_ll_mkdir,
+    .mkdir = hello_ll_mkdir,
     .setattr = hello_ll_setattr,
     .setxattr = hello_ll_setxattr,
 };

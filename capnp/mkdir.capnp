@@ -4,4 +4,5 @@ struct Mkdir {
     parent @0 :UInt64;
     name   @1 :Text;
     mode   @2 :UInt64;
+    uuid   @3 :Text;
 }

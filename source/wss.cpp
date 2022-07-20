@@ -15,6 +15,8 @@
 #include <getattr.response.capnp.h>
 #include <lookup.capnp.h>
 #include <lookup.response.capnp.h>
+#include <mkdir.capnp.h>
+#include <mkdir.response.capnp.h>
 #include <mknod.capnp.h>
 #include <mknod.response.capnp.h>
 #include <open.capnp.h>
@@ -770,6 +772,75 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         }
         
         std::string response_payload = send_message(mknod_response, message, res, webSocket, Ops::Mknod);
+
+        std::cout << "mknod_response sent correctly: " << response_payload << std::endl;
+
+        break;
+      }
+      case (char)Ops::Mkdir: {
+        const kj::ArrayPtr<const capnp::word> view(
+            reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
+            reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
+
+        capnp::FlatArrayMessageReader data(view);
+        Mkdir::Reader mkdir = data.getRoot<Mkdir>();
+
+        std::cout << "mkdir: Received UUID: " << mkdir.getUuid().cStr() << std::endl;
+
+        ::capnp::MallocMessageBuilder message;
+        MkdirResponse::Builder mkdir_response = message.initRoot<MkdirResponse>();
+
+        mkdir_response.setUuid(mkdir.getUuid());
+
+        uint64_t parent = mkdir.getParent();
+
+        std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
+        std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
+        std::filesystem::path file_path = parent_path / std::filesystem::path(mkdir.getName());
+
+        int res = ::mkdir(file_path.c_str(), mkdir.getMode());
+
+        if (res == -1) {
+          std::string response_payload = send_message(mkdir_response, message, res, webSocket, Ops::Mkdir);
+
+          std::cout << "mkdir_response sent error: " << response_payload << std::endl;
+          return;
+        }
+        else {
+          struct stat attr;
+          memset(&attr, 0, sizeof(attr));
+
+          uint64_t file_ino;
+
+          file_ino = ++current_ino;
+          ino_to_path[file_ino] = file_path;
+          path_to_ino[file_path] = file_ino;
+
+          //e.attr_timeout = 1.0;
+          //e.entry_timeout = 1.0;
+          
+          mkdir_response.setIno(file_ino);
+
+          hello_stat(file_ino, &attr);
+
+          MkdirResponse::Attr::Builder attributes = mkdir_response.initAttr();
+
+          attributes.setStDev(attr.st_dev);
+          attributes.setStIno(attr.st_ino);
+          attributes.setStMode(attr.st_mode);
+          attributes.setStNlink(attr.st_nlink);
+          attributes.setStUid(attr.st_uid);
+          attributes.setStGid(attr.st_gid);
+          attributes.setStRdev(attr.st_rdev);
+          attributes.setStSize(attr.st_size);
+          attributes.setStAtime(attr.st_atime);
+          attributes.setStMtime(attr.st_mtime);
+          attributes.setStCtime(attr.st_ctime);
+          attributes.setStBlksize(attr.st_blksize);
+          attributes.setStBlocks(attr.st_blocks);
+        }
+        
+        std::string response_payload = send_message(mkdir_response, message, res, webSocket, Ops::Mknod);
 
         std::cout << "mknod_response sent correctly: " << response_payload << std::endl;
 
