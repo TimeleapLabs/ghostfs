@@ -891,12 +891,7 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
 
   ws->send((char)Ops::Write + payload);
 
-<<<<<<< HEAD
   std::cout << "hello_ll_write executed correctly: " << payload << std::endl;
-=======
-  std::cout << "hello_ll_write executed correctly: "
-            << "6" + payload << std::endl;
->>>>>>> 1c11a68fb6810817347b34dee39ff96eeada7b85
 }
 
 /**
