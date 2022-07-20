@@ -41,10 +41,9 @@
 #include <setattr.response.capnp.h>
 #include <setxattr.capnp.h>
 #include <setxattr.response.capnp.h>
-#include <write.capnp.h>
-#include <write.response.capnp.h>
 #include <sys/xattr.h>
 #include <write.capnp.h>
+#include <write.response.capnp.h>
 
 #include <filesystem>
 #include <iostream>
@@ -68,7 +67,7 @@ std::string gen_uuid() {
   return uuid.str();
 }
 
-std::string ROOT = "/Users/ncasati/.ghostfs/root";
+std::string ROOT = "/tmp/.ghostfs/root";
 
 struct dirbuf {
   char *p;
@@ -97,6 +96,17 @@ static int reply_buf_limited(fuse_req_t req, const char *buf, size_t bufsize, of
 std::map<std::string, request> requests;
 
 wsclient::WSClient *ws;
+
+uint64_t get_parent_ino(uint64_t ino, std::string path) {
+  if (ino == 1) {
+    return ino;
+  }
+
+  std::filesystem::path parent_path = std::filesystem::path(path).parent_path();
+  uint64_t parent_ino = path_to_ino[parent_path];
+
+  return parent_ino;
+}
 
 template <class T> void fillFileInfo(T *fuseFileInfo, struct fuse_file_info *fi) {
   if (!fi) return;
@@ -292,10 +302,6 @@ void process_readdir_response(std::string payload) {
     fuse_reply_err(request.req, ENOENT);
     return;
   }
-
-  // TODO: FIX ino
-  dirbuf_add(request.req, &b, ".", 1);
-  dirbuf_add(request.req, &b, "..", 1);
 
   for (ReaddirResponse::Entry::Reader entry : readdir_response.getEntries()) {
     dirbuf_add(request.req, &b, entry.getName().cStr(), entry.getIno());
@@ -833,7 +839,8 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
 
   ws->send("7" + payload);
 
-  std::cout << "hello_ll_write executed correctly: " << "6" + payload << std::endl;
+  std::cout << "hello_ll_write executed correctly: "
+            << "6" + payload << std::endl;
 }
 
 /**

@@ -24,7 +24,7 @@ namespace wsserver {
      */
     WSServer(int port);
 
-    void start();
+    void start(std::string root);
 
   private:
     void onMessage(std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket& webSocket,

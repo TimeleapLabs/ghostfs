@@ -35,7 +35,10 @@ using namespace wsserver;
 
 WSServer::WSServer(int _port) : port(std::move(_port)) {}
 
-void WSServer::start() {
+void WSServer::start(std::string root) {
+  if (root.length() > 0) {
+    ROOT = root;
+  }
   // Start the server on port
   ix::WebSocketServer server(port);
 
@@ -282,7 +285,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           return;
         }
 
-        uint64_t length = 0;
+        uint64_t length = 2;
 
         /**
          * TODO: Find a better way
@@ -294,7 +297,12 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         ::capnp::List<ReaddirResponse::Entry>::Builder entries
             = readdir_response.initEntries(length);
 
-        uint64_t index = 0;
+        entries[0].setName(".");
+        entries[0].setIno(ino);
+        entries[1].setName("..");
+        entries[1].setIno(get_parent_ino(ino, path));
+
+        uint64_t index = 2;
 
         for (const auto& entry : std::filesystem::directory_iterator(path)) {
           std::string file_path = entry.path();
