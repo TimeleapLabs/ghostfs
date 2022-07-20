@@ -47,3 +47,5 @@ void process_write_response(std::string payload);
 void process_setxattr_response(std::string payload);
 void process_create_response(std::string payload);
 void process_mknod_response(std::string payload);
+
+uint64_t get_parent_ino(uint64_t ino, std::string path);

@@ -10,12 +10,13 @@
 #include <unordered_map>
 
 auto main(int argc, char** argv) -> int {
-  cxxopts::Options options("MyProgram", "One line description of MyProgram");
+  cxxopts::Options options("GhostFS", "One Ghosty FS");
 
   // clang-format off
   options.add_options()
     ("h,help", "Show help")
     ("v,version", "Print the current version number")
+    ("r,root", "Root directory", cxxopts::value<std::string>())
     ("s,server", "Run in server mode")  // a bool parameter
     ("g,ghost", "Run in ghost mode")
     ("c,client", "Run in client mode");
@@ -45,7 +46,8 @@ auto main(int argc, char** argv) -> int {
 
   if (result["server"].as<bool>()) {
     wsserver::WSServer wss(3444);
-    wss.start();
+    std::string root = result["root"].as<std::string>();
+    wss.start(root);
 
     return 0;
   } else if (result["client"].as<bool>()) {
