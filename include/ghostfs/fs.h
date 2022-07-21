@@ -34,7 +34,9 @@ enum class Ops : char {
   Setxattr = 8,
   Create = 9,
   Mknod = 10,
-  Mkdir = 11
+  Mkdir = 11,
+  Unlink = 12,
+  Rmdir = 13,
 };
 
 // Responses
@@ -49,5 +51,7 @@ void process_setxattr_response(std::string payload);
 void process_create_response(std::string payload);
 void process_mknod_response(std::string payload);
 void process_mkdir_response(std::string payload);
+void process_unlink_response(std::string payload);
+void process_rmdir_response(std::string payload);
 
 uint64_t get_parent_ino(uint64_t ino, std::string path);

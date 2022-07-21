@@ -93,6 +93,14 @@ void WSClient::onMessage(const ix::WebSocketMessagePtr& msg) {
         process_mkdir_response(payload);
         break;
       }
+      case (char)Ops::Unlink: {
+        process_unlink_response(payload);
+        break;
+      }
+      case (char)Ops::Rmdir: {
+        process_rmdir_response(payload);
+        break;
+      }
       default:
         break;
     }

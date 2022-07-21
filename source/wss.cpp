@@ -25,10 +25,14 @@
 #include <read.response.capnp.h>
 #include <readdir.capnp.h>
 #include <readdir.response.capnp.h>
+#include <rmdir.capnp.h>
+#include <rmdir.response.capnp.h>
 #include <setattr.capnp.h>
 #include <setattr.response.capnp.h>
 #include <setxattr.capnp.h>
 #include <setxattr.response.capnp.h>
+#include <unlink.capnp.h>
+#include <unlink.response.capnp.h>
 #include <write.capnp.h>
 #include <write.response.capnp.h>
 
@@ -842,7 +846,85 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         
         std::string response_payload = send_message(mkdir_response, message, res, webSocket, Ops::Mknod);
 
-        std::cout << "mknod_response sent correctly: " << response_payload << std::endl;
+        std::cout << "mkdir_response sent correctly: " << response_payload << std::endl;
+
+        break;
+      }
+      case (char)Ops::Unlink: {
+        const kj::ArrayPtr<const capnp::word> view(
+            reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
+            reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
+
+        capnp::FlatArrayMessageReader data(view);
+        Unlink::Reader unlink = data.getRoot<Unlink>();
+
+        std::cout << "unlink: Received UUID: " << unlink.getUuid().cStr() << std::endl;
+
+        ::capnp::MallocMessageBuilder message;
+        UnlinkResponse::Builder unlink_response = message.initRoot<UnlinkResponse>();
+
+        unlink_response.setUuid(unlink.getUuid());
+
+        uint64_t parent = unlink.getParent();
+        std::string name = unlink.getName();
+
+        std::cout << "UNLINK name: " << name << std::endl;
+
+        std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
+        std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
+        std::filesystem::path file_path = parent_path / std::filesystem::path(name);
+
+        int res = ::unlink(file_path.c_str());
+
+        if (res == -1) {
+          std::string response_payload = send_message(unlink_response, message, res, webSocket, Ops::Unlink);
+
+          std::cout << "unlink_response sent error: " << response_payload << std::endl;
+          return;
+        }
+        
+        std::string response_payload = send_message(unlink_response, message, res, webSocket, Ops::Unlink);
+
+        std::cout << "unlink_response sent correctly: " << response_payload << std::endl;
+
+        break;
+      }
+      case (char)Ops::Rmdir: {
+        const kj::ArrayPtr<const capnp::word> view(
+            reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
+            reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
+
+        capnp::FlatArrayMessageReader data(view);
+        Rmdir::Reader rmdir = data.getRoot<Rmdir>();
+
+        std::cout << "rmdir: Received UUID: " << rmdir.getUuid().cStr() << std::endl;
+
+        ::capnp::MallocMessageBuilder message;
+        RmdirResponse::Builder rmdir_response = message.initRoot<RmdirResponse>();
+
+        rmdir_response.setUuid(rmdir.getUuid());
+
+        uint64_t parent = rmdir.getParent();
+        std::string name = rmdir.getName();
+
+        std::cout << "RMDIR name: " << name << std::endl;
+
+        std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
+        std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
+        std::filesystem::path file_path = parent_path / std::filesystem::path(name);
+
+        int res = ::rmdir(file_path.c_str());
+
+        if (res == -1) {
+          std::string response_payload = send_message(rmdir_response, message, res, webSocket, Ops::Rmdir);
+
+          std::cout << "rmdir_response sent error: " << response_payload << std::endl;
+          return;
+        }
+        
+        std::string response_payload = send_message(rmdir_response, message, res, webSocket, Ops::Rmdir);
+
+        std::cout << "rmdir_response sent correctly: " << response_payload << std::endl;
 
         break;
       }

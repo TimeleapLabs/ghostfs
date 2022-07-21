@@ -12,12 +12,12 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <fuse_lowlevel.h>
+#include <ghostfs/fs.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <uuid_v4.h>
-#include <ghostfs/fs.h>
 
 // CAPNPROTO
 
@@ -45,8 +45,12 @@
 #include <setxattr.capnp.h>
 #include <setxattr.response.capnp.h>
 #include <sys/xattr.h>
+#include <unlink.capnp.h>
+#include <unlink.response.capnp.h>
 #include <write.capnp.h>
 #include <write.response.capnp.h>
+#include <rmdir.capnp.h>
+#include <rmdir.response.capnp.h>
 
 #include <filesystem>
 #include <iostream>
@@ -656,6 +660,52 @@ void process_mkdir_response(std::string payload) {
   std::cout << "process_mkdir_response: fuse_reply_entry correctly executed" << std::endl;
 }
 
+void process_unlink_response(std::string payload) {
+  const kj::ArrayPtr<const capnp::word> view(
+      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
+      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
+
+  capnp::FlatArrayMessageReader data(view);
+  UnlinkResponse::Reader unlink_response = data.getRoot<UnlinkResponse>();
+
+  std::string uuid = unlink_response.getUuid();
+
+  std::cout << "process_unlink_response: Response UUID: " << uuid << std::endl;
+
+  request request = requests[uuid];
+
+  int res = unlink_response.getRes();
+
+  fuse_reply_err(request.req, res == -1 ? ENOENT : 0);
+
+  std::cout << "process_unlink_response: Request: " << request.req << std::endl;
+
+  std::cout << "process_unlink_response: executed" << std::endl;
+}
+
+void process_rmdir_response(std::string payload) {
+  const kj::ArrayPtr<const capnp::word> view(
+      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
+      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
+
+  capnp::FlatArrayMessageReader data(view);
+  RmdirResponse::Reader rmdir_response = data.getRoot<RmdirResponse>();
+
+  std::string uuid = rmdir_response.getUuid();
+
+  std::cout << "process_rmdir_response: Response UUID: " << uuid << std::endl;
+
+  request request = requests[uuid];
+
+  int res = rmdir_response.getRes();
+
+  fuse_reply_err(request.req, res == -1 ? ENOENT : 0);
+
+  std::cout << "process_rmdir_response: Request: " << request.req << std::endl;
+
+  std::cout << "process_rmdir_response: executed" << std::endl;
+}
+
 /**
  * @brief
  *
@@ -838,8 +888,7 @@ static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info 
 
   ws->send((char)Ops::Open + payload);
 
-  std::cout << "hello_ll_open executed correctly: "
-            << payload << std::endl;
+  std::cout << "hello_ll_open executed correctly: " << payload << std::endl;
 }
 
 /**
@@ -893,8 +942,7 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
 
   ws->send((char)Ops::Read + payload);
 
-  std::cout << "hello_ll_read executed correctly: "
-            << payload << std::endl;
+  std::cout << "hello_ll_read executed correctly: " << payload << std::endl;
 }
 
 /**
@@ -949,6 +997,56 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
   ws->send((char)Ops::Write + payload);
 
   std::cout << "hello_ll_write executed correctly: " << payload << std::endl;
+}
+
+static void hello_ll_unlink(fuse_req_t req, fuse_ino_t parent, const char *name) {
+  // printf("Called .unlink\n");
+
+  ::capnp::MallocMessageBuilder message;
+  Unlink::Builder unlink = message.initRoot<Unlink>();
+
+  unlink.setParent(parent);
+  unlink.setName(name);
+
+  std::string uuid = gen_uuid();
+  requests[uuid] = {.type = Ops::Unlink, .req = req};
+
+  unlink.setUuid(uuid);
+
+  std::cout << "hello_ll_unlink: Request UUID: " << uuid << std::endl;
+
+  const auto data = capnp::messageToFlatArray(message);
+  const auto bytes = data.asBytes();
+  std::string payload(bytes.begin(), bytes.end());
+
+  ws->send((char)Ops::Unlink + payload);
+
+  std::cout << "unlink executed correctly: " << payload << std::endl;
+}
+
+static void hello_ll_rmdir(fuse_req_t req, fuse_ino_t parent, const char *name) {
+  // printf("Called .rmdir\n");
+
+  ::capnp::MallocMessageBuilder message;
+  Rmdir::Builder rmdir = message.initRoot<Rmdir>();
+
+  rmdir.setParent(parent);
+  rmdir.setName(name);
+
+  std::string uuid = gen_uuid();
+  requests[uuid] = {.type = Ops::Rmdir, .req = req};
+
+  rmdir.setUuid(uuid);
+
+  std::cout << "hello_ll_rmdir: Request UUID: " << uuid << std::endl;
+
+  const auto data = capnp::messageToFlatArray(message);
+  const auto bytes = data.asBytes();
+  std::string payload(bytes.begin(), bytes.end());
+
+  ws->send((char)Ops::Rmdir + payload);
+
+  std::cout << "rmdir executed correctly: " << payload << std::endl;
 }
 
 /**
@@ -1039,8 +1137,7 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
 
   ws->send((char)Ops::Create + payload);
 
-  std::cout << "hello_ll_create executed correctly: "
-            << payload << std::endl;
+  std::cout << "hello_ll_create executed correctly: " << payload << std::endl;
 }
 
 /**
@@ -1213,6 +1310,8 @@ static struct fuse_lowlevel_ops hello_ll_oper = {
     .mkdir = hello_ll_mkdir,
     .setattr = hello_ll_setattr,
     .setxattr = hello_ll_setxattr,
+    .unlink = hello_ll_unlink,
+    .rmdir = hello_ll_rmdir,
 };
 // clang-format on
 
