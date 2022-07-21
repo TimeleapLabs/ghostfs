@@ -9,7 +9,6 @@
 #define FUSE_USE_VERSION 29
 
 #include <assert.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <fuse_lowlevel.h>
 #include <ghostfs/fs.h>
@@ -179,15 +178,15 @@ void process_lookup_response(std::string payload) {
 
   std::string uuid = lookup_response.getUuid();
 
-  std::cout << "process_lookup_response: Response UUID: " << uuid << std::endl;
+  // std::cout << "process_lookup_response: Response UUID: " << uuid << std::endl;
 
   request request = requests[uuid];
 
   int res = lookup_response.getRes();
 
   if (res == -1) {
-    std::cout << "LOOKUP::ENOENT" << std::endl;
-    fuse_reply_err(request.req, ENOENT);
+    // std::cout << "LOOKUP::ENOENT" << std::endl;
+    fuse_reply_err(request.req, lookup_response.getErrno());
     return;
   }
 
@@ -214,7 +213,7 @@ void process_lookup_response(std::string payload) {
   e.attr.st_blksize = attributes.getStBlksize();
   e.attr.st_blocks = attributes.getStBlocks();
 
-  std::cout << "process_lookup_response: Request: " << request.req << std::endl;
+  // std::cout << "process_lookup_response: Request: " << request.req << std::endl;
 
   fuse_reply_entry(request.req, &e);
 
@@ -235,14 +234,14 @@ void process_getattr_response(std::string payload) {
 
   std::string uuid = getattr_response.getUuid();
 
-  std::cout << "process_getattr_response: Response UUID: " << uuid << std::endl;
+  // std::cout << "process_getattr_response: Response UUID: " << uuid << std::endl;
 
   request request = requests[uuid];
 
   int res = getattr_response.getRes();
 
   if (res == -1) {
-    fuse_reply_err(request.req, ENOENT);
+    fuse_reply_err(request.req, getattr_response.getErrno());
     return;
   }
 
@@ -262,7 +261,7 @@ void process_getattr_response(std::string payload) {
   attr.st_blksize = attributes.getStBlksize();
   attr.st_blocks = attributes.getStBlocks();
 
-  std::cout << "process_getattr_response: Request: " << request.req << std::endl;
+  // std::cout << "process_getattr_response: Request: " << request.req << std::endl;
 
   fuse_reply_attr(request.req, &attr, 1.0);
 
@@ -293,7 +292,7 @@ void process_readdir_response(std::string payload) {
 
   std::string uuid = readdir_response.getUuid();
 
-  std::cout << "process_readdir_response: Response UUID: " << uuid << std::endl;
+  // std::cout << "process_readdir_response: Response UUID: " << uuid << std::endl;
 
   // TODO: FIX type name
   request request = requests[uuid];
@@ -329,7 +328,7 @@ void process_open_response(std::string payload) {
 
   std::string uuid = open_response.getUuid();
 
-  std::cout << "process_open_response: Response UUID: " << uuid << std::endl;
+  // std::cout << "process_open_response: Response UUID: " << uuid << std::endl;
 
   request request = requests[uuid];
 
@@ -356,7 +355,7 @@ void process_open_response(std::string payload) {
   //  fi.poll_events = fi_response.getPollEvents();
   // fi.writepage = fi_response.getWritepage();
 
-  std::cout << "process_getattr_response: Request: " << request.req << std::endl;
+  // std::cout << "process_getattr_response: Request: " << request.req << std::endl;
 
   fuse_reply_open(request.req, request.fi);
 
@@ -377,26 +376,23 @@ void process_read_response(std::string payload) {
 
   std::string uuid = read_response.getUuid();
 
-  std::cout << "process_read_response: Response UUID: " << uuid << std::endl;
+  // std::cout << "process_read_response: Response UUID: " << uuid << std::endl;
 
   request request = requests[uuid];
 
   int res = read_response.getRes();
 
   if (res == -1) {
-    std::cout << "READ::ENOENT" << std::endl;
-    fuse_reply_err(request.req, ENOENT);
+    // std::cout << "READ::ENOENT" << std::endl;
+    fuse_reply_err(request.req, read_response.getErrno());
     return;
   }
 
-  std::cout << "process_read_response: Request: " << request.req << std::endl;
+  // std::cout << "process_read_response: Request: " << request.req << std::endl;
 
   capnp::Data::Reader buf_reader = read_response.getBuf();
-  std::cout << "process_read_response: Request: 1" << std::endl;
   const auto bytes = buf_reader.asBytes();
-  std::cout << "process_read_response: Request: 2" << std::endl;
   std::string buf(bytes.begin(), bytes.end());
-  std::cout << "process_read_response: Request: 3 " << buf << std::endl;
 
   reply_buf_limited(request.req, buf.c_str(), request.size, request.off, request.size);
 
@@ -419,15 +415,15 @@ void process_setattr_response(std::string payload) {
 
   std::string uuid = setattr_response.getUuid();
 
-  std::cout << "process_setattr_response: Response UUID: " << uuid << std::endl;
+  // std::cout << "process_setattr_response: Response UUID: " << uuid << std::endl;
 
   request request = requests[uuid];
 
   int res = setattr_response.getRes();
 
   if (res == -1) {
-    std::cout << "SETATTR::ENOENT" << std::endl;
-    fuse_reply_err(request.req, ENOENT);
+    // std::cout << "SETATTR::ENOENT" << std::endl;
+    fuse_reply_err(request.req, setattr_response.getErrno());
     return;
   }
 
@@ -446,15 +442,15 @@ void process_write_response(std::string payload) {
 
   std::string uuid = write_response.getUuid();
 
-  std::cout << "process_write_response: Response UUID: " << uuid << std::endl;
+  // std::cout << "process_write_response: Response UUID: " << uuid << std::endl;
 
   request request = requests[uuid];
 
   int res = write_response.getRes();
 
   if (res == -1) {
-    std::cout << "WRITE::ENOENT" << std::endl;
-    fuse_reply_err(request.req, ENOENT);
+    // std::cout << "WRITE::ENOENT" << std::endl;
+    fuse_reply_err(request.req, write_response.getErrno());
     return;
   }
 
@@ -473,15 +469,15 @@ void process_setxattr_response(std::string payload) {
 
   std::string uuid = setxattr_response.getUuid();
 
-  std::cout << "process_setxattr_response: Response UUID: " << uuid << std::endl;
+  // std::cout << "process_setxattr_response: Response UUID: " << uuid << std::endl;
 
   request request = requests[uuid];
 
   int res = setxattr_response.getRes();
 
   if (res == -1) {
-    std::cout << "SETXATTR::ENOENT" << std::endl;
-    fuse_reply_err(request.req, ENOENT);
+    // std::cout << "SETXATTR::ENOENT" << std::endl;
+    fuse_reply_err(request.req, setxattr_response.getErrno());
     return;
   }
 
@@ -502,15 +498,15 @@ void process_create_response(std::string payload) {
 
   std::string uuid = create_response.getUuid();
 
-  std::cout << "process_create_response: Response UUID: " << uuid << std::endl;
+  // std::cout << "process_create_response: Response UUID: " << uuid << std::endl;
 
   request request = requests[uuid];
 
   int res = create_response.getRes();
 
   if (res == -1) {
-    std::cout << "CREATE::ENOENT" << std::endl;
-    fuse_reply_err(request.req, ENOENT);
+    // std::cout << "CREATE::ENOENT" << std::endl;
+    fuse_reply_err(request.req, create_response.getErrno());
     return;
   }
 
@@ -537,7 +533,7 @@ void process_create_response(std::string payload) {
   e.attr.st_blksize = attributes.getStBlksize();
   e.attr.st_blocks = attributes.getStBlocks();
 
-  std::cout << "process_create_response: Request: " << request.req << std::endl;
+  // std::cout << "process_create_response: Request: " << request.req << std::endl;
 
   CreateResponse::FuseFileInfo::Reader fi_response = create_response.getFi();
 
@@ -562,15 +558,15 @@ void process_mknod_response(std::string payload) {
 
   std::string uuid = mknod_response.getUuid();
 
-  std::cout << "process_mknod_response: Response UUID: " << uuid << std::endl;
+  // std::cout << "process_mknod_response: Response UUID: " << uuid << std::endl;
 
   request request = requests[uuid];
 
   int res = mknod_response.getRes();
 
   if (res == -1) {
-    std::cout << "MKNOD::ENOENT" << std::endl;
-    fuse_reply_err(request.req, ENOENT);
+    // std::cout << "MKNOD::ENOENT" << std::endl;
+    fuse_reply_err(request.req, mknod_response.getErrno());
     return;
   }
 
@@ -597,7 +593,7 @@ void process_mknod_response(std::string payload) {
   e.attr.st_blksize = attributes.getStBlksize();
   e.attr.st_blocks = attributes.getStBlocks();
 
-  std::cout << "process_mknod_response: Request: " << request.req << std::endl;
+  // std::cout << "process_mknod_response: Request: " << request.req << std::endl;
 
   fuse_reply_entry(request.req, &e);
 
@@ -618,15 +614,15 @@ void process_mkdir_response(std::string payload) {
 
   std::string uuid = mkdir_response.getUuid();
 
-  std::cout << "process_mkdir_response: Response UUID: " << uuid << std::endl;
+  // std::cout << "process_mkdir_response: Response UUID: " << uuid << std::endl;
 
   request request = requests[uuid];
 
   int res = mkdir_response.getRes();
 
   if (res == -1) {
-    std::cout << "MKDIR::ENOENT" << std::endl;
-    fuse_reply_err(request.req, ENOENT);
+    // std::cout << "MKDIR::ENOENT" << std::endl;
+    fuse_reply_err(request.req, mkdir_response.getErrno());
     return;
   }
 
@@ -653,7 +649,7 @@ void process_mkdir_response(std::string payload) {
   e.attr.st_blksize = attributes.getStBlksize();
   e.attr.st_blocks = attributes.getStBlocks();
 
-  std::cout << "process_mkdir_response: Request: " << request.req << std::endl;
+  // std::cout << "process_mkdir_response: Request: " << request.req << std::endl;
 
   fuse_reply_entry(request.req, &e);
 
@@ -670,15 +666,16 @@ void process_unlink_response(std::string payload) {
 
   std::string uuid = unlink_response.getUuid();
 
-  std::cout << "process_unlink_response: Response UUID: " << uuid << std::endl;
+  // std::cout << "process_unlink_response: Response UUID: " << uuid << std::endl;
 
   request request = requests[uuid];
 
   int res = unlink_response.getRes();
+  int err = unlink_response.getErrno();
 
-  fuse_reply_err(request.req, res == -1 ? ENOENT : 0);
+  fuse_reply_err(request.req, res == -1 ? err : 0);
 
-  std::cout << "process_unlink_response: Request: " << request.req << std::endl;
+  // std::cout << "process_unlink_response: Request: " << request.req << std::endl;
 
   std::cout << "process_unlink_response: executed" << std::endl;
 }
@@ -693,17 +690,18 @@ void process_rmdir_response(std::string payload) {
 
   std::string uuid = rmdir_response.getUuid();
 
-  std::cout << "process_rmdir_response: Response UUID: " << uuid << std::endl;
+  // std::cout << "process_rmdir_response: Response UUID: " << uuid << std::endl;
 
   request request = requests[uuid];
 
   int res = rmdir_response.getRes();
+  int err = rmdir_response.getErrno();
 
-  fuse_reply_err(request.req, res == -1 ? ENOENT : 0);
+  fuse_reply_err(request.req, res == -1 ? err : 0);
 
-  std::cout << "process_rmdir_response: Request: " << request.req << std::endl;
+  //std::cout << "process_rmdir_response: Request: " << request.req << std::endl;
 
-  std::cout << "process_rmdir_response: executed" << std::endl;
+  std::cout << "process_rmdir_response executed with result: " << res << std::endl;
 }
 
 /**
@@ -738,7 +736,7 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
   std::string uuid = gen_uuid();
   requests[uuid] = {.type = Ops::Getattr, .req = req};
 
-  std::cout << "hello_ll_getattr: Request UUID: " << uuid << std::endl;
+  // std::cout << "hello_ll_getattr: Request UUID: " << uuid << std::endl;
 
   getattr.setUuid(uuid);
 
@@ -767,14 +765,14 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
   lookup.setParent(parent);
   lookup.setName(name);
 
-  std::cout << "LOOKUP name: " << name << std::endl;
+  // std::cout << "LOOKUP name: " << name << std::endl;
 
   std::string uuid = gen_uuid();
   requests[uuid] = {.type = Ops::Lookup, .req = req};
 
   lookup.setUuid(uuid);
 
-  std::cout << "hello_ll_lookup: Request UUID: " << uuid << std::endl;
+  // std::cout << "hello_ll_lookup: Request UUID: " << uuid << std::endl;
 
   const auto data = capnp::messageToFlatArray(message);
   const auto bytes = data.asBytes();
@@ -833,7 +831,7 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
 
   readdir.setUuid(uuid);
 
-  std::cout << "hello_ll_readdir: Request UUID: " << uuid << std::endl;
+  // std::cout << "hello_ll_readdir: Request UUID: " << uuid << std::endl;
 
   const auto data = capnp::messageToFlatArray(message);
   const auto bytes = data.asBytes();
@@ -880,7 +878,7 @@ static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info 
 
   fillFileInfo(&fuseFileInfo, fi);
 
-  std::cout << "hello_ll_open: Request UUID: " << uuid << std::endl;
+  // std::cout << "hello_ll_open: Request UUID: " << uuid << std::endl;
 
   const auto data = capnp::messageToFlatArray(message);
   const auto bytes = data.asBytes();
@@ -934,7 +932,7 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
 
   read.setUuid(uuid);
 
-  std::cout << "hello_ll_read: Request UUID: " << uuid << std::endl;
+  // std::cout << "hello_ll_read: Request UUID: " << uuid << std::endl;
 
   const auto data = capnp::messageToFlatArray(message);
   const auto bytes = data.asBytes();
@@ -988,7 +986,7 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
 
   write.setUuid(uuid);
 
-  std::cout << "hello_ll_write: Request UUID: " << uuid << std::endl;
+  // std::cout << "hello_ll_write: Request UUID: " << uuid << std::endl;
 
   const auto data = capnp::messageToFlatArray(message);
   const auto bytes = data.asBytes();
@@ -1013,7 +1011,7 @@ static void hello_ll_unlink(fuse_req_t req, fuse_ino_t parent, const char *name)
 
   unlink.setUuid(uuid);
 
-  std::cout << "hello_ll_unlink: Request UUID: " << uuid << std::endl;
+  // std::cout << "hello_ll_unlink: Request UUID: " << uuid << std::endl;
 
   const auto data = capnp::messageToFlatArray(message);
   const auto bytes = data.asBytes();
@@ -1038,7 +1036,7 @@ static void hello_ll_rmdir(fuse_req_t req, fuse_ino_t parent, const char *name) 
 
   rmdir.setUuid(uuid);
 
-  std::cout << "hello_ll_rmdir: Request UUID: " << uuid << std::endl;
+  // std::cout << "hello_ll_rmdir: Request UUID: " << uuid << std::endl;
 
   const auto data = capnp::messageToFlatArray(message);
   const auto bytes = data.asBytes();
@@ -1075,7 +1073,7 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
 
   mknod.setUuid(uuid);
 
-  std::cout << "hello_ll_mknod: Request UUID: " << uuid << std::endl;
+  // std::cout << "hello_ll_mknod: Request UUID: " << uuid << std::endl;
 
   const auto data = capnp::messageToFlatArray(message);
   const auto bytes = data.asBytes();
@@ -1129,7 +1127,7 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
 
   create.setUuid(uuid);
 
-  std::cout << "hello_ll_create: Request UUID: " << uuid << std::endl;
+  // std::cout << "hello_ll_create: Request UUID: " << uuid << std::endl;
 
   const auto data = capnp::messageToFlatArray(message);
   const auto bytes = data.asBytes();
@@ -1163,7 +1161,7 @@ static void hello_ll_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, 
 
   mkdir.setUuid(uuid);
 
-  std::cout << "hello_ll_mkdir: Request UUID: " << uuid << std::endl;
+  // std::cout << "hello_ll_mkdir: Request UUID: " << uuid << std::endl;
 
   const auto data = capnp::messageToFlatArray(message);
   const auto bytes = data.asBytes();
@@ -1256,7 +1254,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
 
   setattr.setUuid(uuid);
 
-  std::cout << "hello_ll_setattr: Request UUID: " << uuid << std::endl;
+  // std::cout << "hello_ll_setattr: Request UUID: " << uuid << std::endl;
 
   const auto data = capnp::messageToFlatArray(message);
   const auto bytes = data.asBytes();
@@ -1286,7 +1284,7 @@ static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, 
 
   _setxattr.setUuid(uuid);
 
-  std::cout << "hello_ll_setxattr: Request UUID: " << uuid << std::endl;
+  // std::cout << "hello_ll_setxattr: Request UUID: " << uuid << std::endl;
 
   const auto data = capnp::messageToFlatArray(message);
   const auto bytes = data.asBytes();

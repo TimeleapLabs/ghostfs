@@ -3,8 +3,9 @@
 struct MkdirResponse {
   ino    @0 :UInt64;
   res    @1 :Int8;
-  attr   @2 :Attr;
-  uuid   @3 :Text;
+  errno  @2 :Int8;
+  attr   @3 :Attr;
+  uuid   @4 :Text;
 
   struct Attr {
     stDev     @0  :UInt16;

@@ -81,6 +81,8 @@ public:
 
   inline  ::int8_t getRes() const;
 
+  inline  ::int8_t getErrno() const;
+
 private:
   ::capnp::_::StructReader _reader;
   template <typename, ::capnp::Kind>
@@ -125,6 +127,9 @@ public:
 
   inline  ::int8_t getRes();
   inline void setRes( ::int8_t value);
+
+  inline  ::int8_t getErrno();
+  inline void setErrno( ::int8_t value);
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -376,6 +381,20 @@ inline  ::int8_t GetattrResponse::Builder::getRes() {
 inline void GetattrResponse::Builder::setRes( ::int8_t value) {
   _builder.setDataField< ::int8_t>(
       ::capnp::bounded<0>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int8_t GetattrResponse::Reader::getErrno() const {
+  return _reader.getDataField< ::int8_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+
+inline  ::int8_t GetattrResponse::Builder::getErrno() {
+  return _builder.getDataField< ::int8_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+inline void GetattrResponse::Builder::setErrno( ::int8_t value) {
+  _builder.setDataField< ::int8_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS, value);
 }
 
 inline  ::uint16_t GetattrResponse::Attr::Reader::getStDev() const {

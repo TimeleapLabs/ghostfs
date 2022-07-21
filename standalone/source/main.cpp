@@ -17,8 +17,8 @@ auto main(int argc, char** argv) -> int {
     ("h,help", "Show help")
     ("v,version", "Print the current version number")
     ("r,root", "Root directory", cxxopts::value<std::string>())
+    ("u,url", "Server connection URL", cxxopts::value<std::string>())
     ("s,server", "Run in server mode")  // a bool parameter
-    ("g,ghost", "Run in ghost mode")
     ("c,client", "Run in client mode");
 
   // options.add_options()
@@ -51,12 +51,8 @@ auto main(int argc, char** argv) -> int {
 
     return 0;
   } else if (result["client"].as<bool>()) {
-    wsclient::WSClient ws("http://localhost:3444");
-    ws.prompt();
-
-    return 0;
-  } else if (result["ghost"].as<bool>()) {
-    wsclient::WSClient ws("http://localhost:3444");
+    std::string url = result["url"].as<std::string>();
+    wsclient::WSClient ws(url);
     return start_fs(argc, argv, &ws);
 
     // ghostfs::GhostFS ghostfs();

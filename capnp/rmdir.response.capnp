@@ -2,6 +2,7 @@
 
 struct RmdirResponse {
   ino    @0 :UInt64;
-  res    @1 :Int8;
-  uuid   @2 :Text;
+  uuid   @1 :Text;
+  res    @2 :Int8;
+  errno  @3 :Int8;
 }

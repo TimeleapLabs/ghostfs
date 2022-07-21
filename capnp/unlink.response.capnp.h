@@ -58,10 +58,12 @@ public:
 
   inline  ::uint64_t getIno() const;
 
-  inline  ::int8_t getRes() const;
-
   inline bool hasUuid() const;
   inline  ::capnp::Text::Reader getUuid() const;
+
+  inline  ::int8_t getRes() const;
+
+  inline  ::int8_t getErrno() const;
 
 private:
   ::capnp::_::StructReader _reader;
@@ -94,15 +96,18 @@ public:
   inline  ::uint64_t getIno();
   inline void setIno( ::uint64_t value);
 
-  inline  ::int8_t getRes();
-  inline void setRes( ::int8_t value);
-
   inline bool hasUuid();
   inline  ::capnp::Text::Builder getUuid();
   inline void setUuid( ::capnp::Text::Reader value);
   inline  ::capnp::Text::Builder initUuid(unsigned int size);
   inline void adoptUuid(::capnp::Orphan< ::capnp::Text>&& value);
   inline ::capnp::Orphan< ::capnp::Text> disownUuid();
+
+  inline  ::int8_t getRes();
+  inline void setRes( ::int8_t value);
+
+  inline  ::int8_t getErrno();
+  inline void setErrno( ::int8_t value);
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -146,20 +151,6 @@ inline void UnlinkResponse::Builder::setIno( ::uint64_t value) {
       ::capnp::bounded<0>() * ::capnp::ELEMENTS, value);
 }
 
-inline  ::int8_t UnlinkResponse::Reader::getRes() const {
-  return _reader.getDataField< ::int8_t>(
-      ::capnp::bounded<8>() * ::capnp::ELEMENTS);
-}
-
-inline  ::int8_t UnlinkResponse::Builder::getRes() {
-  return _builder.getDataField< ::int8_t>(
-      ::capnp::bounded<8>() * ::capnp::ELEMENTS);
-}
-inline void UnlinkResponse::Builder::setRes( ::int8_t value) {
-  _builder.setDataField< ::int8_t>(
-      ::capnp::bounded<8>() * ::capnp::ELEMENTS, value);
-}
-
 inline bool UnlinkResponse::Reader::hasUuid() const {
   return !_reader.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
@@ -192,6 +183,34 @@ inline void UnlinkResponse::Builder::adoptUuid(
 inline ::capnp::Orphan< ::capnp::Text> UnlinkResponse::Builder::disownUuid() {
   return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+
+inline  ::int8_t UnlinkResponse::Reader::getRes() const {
+  return _reader.getDataField< ::int8_t>(
+      ::capnp::bounded<8>() * ::capnp::ELEMENTS);
+}
+
+inline  ::int8_t UnlinkResponse::Builder::getRes() {
+  return _builder.getDataField< ::int8_t>(
+      ::capnp::bounded<8>() * ::capnp::ELEMENTS);
+}
+inline void UnlinkResponse::Builder::setRes( ::int8_t value) {
+  _builder.setDataField< ::int8_t>(
+      ::capnp::bounded<8>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int8_t UnlinkResponse::Reader::getErrno() const {
+  return _reader.getDataField< ::int8_t>(
+      ::capnp::bounded<9>() * ::capnp::ELEMENTS);
+}
+
+inline  ::int8_t UnlinkResponse::Builder::getErrno() {
+  return _builder.getDataField< ::int8_t>(
+      ::capnp::bounded<9>() * ::capnp::ELEMENTS);
+}
+inline void UnlinkResponse::Builder::setErrno( ::int8_t value) {
+  _builder.setDataField< ::int8_t>(
+      ::capnp::bounded<9>() * ::capnp::ELEMENTS, value);
 }
 
 

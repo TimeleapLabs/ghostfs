@@ -63,6 +63,8 @@ public:
 
   inline  ::int8_t getRes() const;
 
+  inline  ::int8_t getErrno() const;
+
   inline  ::uint64_t getWritten() const;
 
 private:
@@ -105,6 +107,9 @@ public:
 
   inline  ::int8_t getRes();
   inline void setRes( ::int8_t value);
+
+  inline  ::int8_t getErrno();
+  inline void setErrno( ::int8_t value);
 
   inline  ::uint64_t getWritten();
   inline void setWritten( ::uint64_t value);
@@ -197,6 +202,20 @@ inline  ::int8_t WriteResponse::Builder::getRes() {
 inline void WriteResponse::Builder::setRes( ::int8_t value) {
   _builder.setDataField< ::int8_t>(
       ::capnp::bounded<8>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int8_t WriteResponse::Reader::getErrno() const {
+  return _reader.getDataField< ::int8_t>(
+      ::capnp::bounded<9>() * ::capnp::ELEMENTS);
+}
+
+inline  ::int8_t WriteResponse::Builder::getErrno() {
+  return _builder.getDataField< ::int8_t>(
+      ::capnp::bounded<9>() * ::capnp::ELEMENTS);
+}
+inline void WriteResponse::Builder::setErrno( ::int8_t value) {
+  _builder.setDataField< ::int8_t>(
+      ::capnp::bounded<9>() * ::capnp::ELEMENTS, value);
 }
 
 inline  ::uint64_t WriteResponse::Reader::getWritten() const {

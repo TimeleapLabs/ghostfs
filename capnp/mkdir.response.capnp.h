@@ -77,6 +77,8 @@ public:
 
   inline  ::int8_t getRes() const;
 
+  inline  ::int8_t getErrno() const;
+
   inline bool hasAttr() const;
   inline  ::MkdirResponse::Attr::Reader getAttr() const;
 
@@ -116,6 +118,9 @@ public:
 
   inline  ::int8_t getRes();
   inline void setRes( ::int8_t value);
+
+  inline  ::int8_t getErrno();
+  inline void setErrno( ::int8_t value);
 
   inline bool hasAttr();
   inline  ::MkdirResponse::Attr::Builder getAttr();
@@ -322,6 +327,20 @@ inline  ::int8_t MkdirResponse::Builder::getRes() {
 inline void MkdirResponse::Builder::setRes( ::int8_t value) {
   _builder.setDataField< ::int8_t>(
       ::capnp::bounded<8>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int8_t MkdirResponse::Reader::getErrno() const {
+  return _reader.getDataField< ::int8_t>(
+      ::capnp::bounded<9>() * ::capnp::ELEMENTS);
+}
+
+inline  ::int8_t MkdirResponse::Builder::getErrno() {
+  return _builder.getDataField< ::int8_t>(
+      ::capnp::bounded<9>() * ::capnp::ELEMENTS);
+}
+inline void MkdirResponse::Builder::setErrno( ::int8_t value) {
+  _builder.setDataField< ::int8_t>(
+      ::capnp::bounded<9>() * ::capnp::ELEMENTS, value);
 }
 
 inline bool MkdirResponse::Reader::hasAttr() const {

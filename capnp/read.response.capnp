@@ -5,4 +5,5 @@ struct ReadResponse {
   buf   @1 :Data;
   uuid  @2 :Text;
   res   @3 :Int8;
+  errno   @4 :Int8;
 }

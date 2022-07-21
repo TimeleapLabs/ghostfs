@@ -4,6 +4,7 @@ struct GetattrResponse {
   uuid    @0 :Text;
   attr    @1 :Attr;
   res     @2 :Int8;
+  errno     @3 :Int8;
 
   struct Attr {
     stDev     @0  :UInt16;
