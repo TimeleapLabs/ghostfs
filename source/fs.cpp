@@ -1296,20 +1296,20 @@ static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, 
 }
 
 // clang-format off
-static struct fuse_lowlevel_ops hello_ll_oper = {
+static const struct fuse_lowlevel_ops hello_ll_oper = {
     .lookup = hello_ll_lookup,
     .getattr = hello_ll_getattr,
-    .readdir = hello_ll_readdir,
+    .setattr = hello_ll_setattr,
+    .mknod = hello_ll_mknod,
+    .mkdir = hello_ll_mkdir,
+    .unlink = hello_ll_unlink,
+    .rmdir = hello_ll_rmdir,
     .open = hello_ll_open,
     .read = hello_ll_read,
     .write = hello_ll_write,
-    .mknod = hello_ll_mknod,
-    .create = hello_ll_create,
-    .mkdir = hello_ll_mkdir,
-    .setattr = hello_ll_setattr,
+    .readdir = hello_ll_readdir,
     .setxattr = hello_ll_setxattr,
-    .unlink = hello_ll_unlink,
-    .rmdir = hello_ll_rmdir,
+    .create = hello_ll_create,
 };
 // clang-format on
 
