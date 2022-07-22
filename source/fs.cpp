@@ -1310,7 +1310,9 @@ static const struct fuse_lowlevel_ops hello_ll_oper = {
     .read = hello_ll_read,
     .write = hello_ll_write,
     .readdir = hello_ll_readdir,
-    .setxattr = hello_ll_setxattr,
+    #ifdef __APPLE__
+      .setxattr = hello_ll_setxattr,
+    #endif
     .create = hello_ll_create,
 };
 // clang-format on
