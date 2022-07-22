@@ -313,10 +313,10 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         uint64_t length = 2;
 
-        /**
-         * TODO: Find a better way
-         */
-        for (const auto& entry : std::filesystem::directory_iterator(path)) {
+        std::filesystem::directory_iterator iter(
+            path, std::filesystem::directory_options::skip_permission_denied);
+
+        for (const auto& entry : iter) {
           length++;
         }
 
@@ -330,7 +330,11 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         uint64_t index = 2;
 
-        for (const auto& entry : std::filesystem::directory_iterator(path)) {
+        // TODO: Find out how we can reuse the iterator from previous step
+        iter = std::filesystem::directory_iterator(
+            path, std::filesystem::directory_options::skip_permission_denied);
+
+        for (const auto& entry : iter) {
           std::string file_path = entry.path();
           std::string file_name = std::filesystem::path(file_path).filename();
 
