@@ -77,7 +77,8 @@ void WSServer::start(std::string root) {
 }
 
 template <class T> std::string send_message(T& response, ::capnp::MallocMessageBuilder& message,
-                                            int res, int err, ix::WebSocket& webSocket, Ops opcode) {
+                                            int res, int err, ix::WebSocket& webSocket,
+                                            Ops opcode) {
   response.setRes(res);
   response.setErrno(err);
 
@@ -91,8 +92,7 @@ template <class T> std::string send_message(T& response, ::capnp::MallocMessageB
 }
 
 template <class T> std::string send_message(T& response, ::capnp::MallocMessageBuilder& message,
-                                            int res, ix::WebSocket& webSocket,
-                                            Ops opcode) {
+                                            int res, ix::WebSocket& webSocket, Ops opcode) {
   response.setRes(res);
 
   const auto response_data = capnp::messageToFlatArray(message);
@@ -484,7 +484,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         int res;
         int err;
-        
+
         std::string file_path = ino_to_path[ino];
 
         Setattr::Attr::Reader attr = setattr.getAttr();
@@ -601,9 +601,11 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         write_response.setUuid(write.getUuid());
 
         Write::FuseFileInfo::Reader fi = write.getFi();
+
         ::lseek(fi.getFh(), write.getOff(), SEEK_SET);
         size_t written = ::write(fi.getFh(), write.getBuf().cStr(), write.getSize());
-                int err = errno;
+        
+        int err = errno;
 
         write_response.setIno(write.getIno());
         write_response.setWritten(written);
