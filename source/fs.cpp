@@ -1266,6 +1266,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
             << payload << std::endl;
 }
 
+#ifdef __APPLE__
 static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, const char *value,
                               size_t size, int flags, uint32_t position) {
 
@@ -1294,6 +1295,7 @@ static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, 
 
   std::cout << "hello_ll_setxattr executed correctly: " << payload << std::endl;
 }
+#endif
 
 // clang-format off
 static const struct fuse_lowlevel_ops hello_ll_oper = {

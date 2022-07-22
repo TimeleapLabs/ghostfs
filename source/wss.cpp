@@ -617,6 +617,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         break;
       }
+      #ifdef __APPLE__
       case (char)Ops::Setxattr: {
         const kj::ArrayPtr<const capnp::word> view(
         reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
@@ -653,6 +654,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         break;
       }
+      #endif
       case (char)Ops::Create: {
         const kj::ArrayPtr<const capnp::word> view(
             reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
