@@ -150,6 +150,7 @@ int hello_stat(fuse_ino_t ino, struct stat *stbuf) {
     stbuf->st_ino = ino;
     stbuf->st_mode = S_IFDIR | 0777;
     stbuf->st_nlink = 2;
+    stbuf->st_blksize = 0;  // Use global I/O size on mount-point
     return 0;
   }
 
@@ -160,6 +161,7 @@ int hello_stat(fuse_ino_t ino, struct stat *stbuf) {
 
   stat(ino_to_path[ino].c_str(), stbuf);
   stbuf->st_ino = ino;
+  stbuf->st_blksize = 0;  // Use global I/O size on mount-point
 
   return 0;
 }
@@ -1234,7 +1236,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-// clang-format off
+  // clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
