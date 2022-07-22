@@ -16,6 +16,8 @@ auto main(int argc, char** argv) -> int {
   options.add_options()
     ("h,help", "Show help")
     ("v,version", "Print the current version number")
+    ("b,bind", "Bind IP address", cxxopts::value<std::string>()->default_value("0.0.0.0"))
+    ("p,port", "Server port", cxxopts::value<uint16_t>()->default_value("3444"))
     ("r,root", "Root directory", cxxopts::value<std::string>())
     ("u,url", "Server connection URL", cxxopts::value<std::string>())
     ("s,server", "Run in server mode")  // a bool parameter
@@ -45,8 +47,11 @@ auto main(int argc, char** argv) -> int {
   }
 
   if (result["server"].as<bool>()) {
-    wsserver::WSServer wss(3444);
     std::string root = result["root"].as<std::string>();
+    std::string bind = result["bind"].as<std::string>();
+    uint16_t port = result["port"].as<uint16_t>();
+
+    wsserver::WSServer wss(port, bind);
     wss.start(root);
 
     return 0;

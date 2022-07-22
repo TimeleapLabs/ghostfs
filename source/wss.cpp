@@ -6,7 +6,6 @@
 #include <ghostfs/wss.h>
 #include <sys/xattr.h>
 
-
 // Cap'n'Proto
 
 #include <capnp/message.h>
@@ -43,16 +42,16 @@
 
 using namespace wsserver;
 
-WSServer::WSServer(int _port) : port(std::move(_port)) {}
+WSServer::WSServer(int _port, std::string _host) : port(std::move(_port)), host(std::move(_host)) {}
 
 void WSServer::start(std::string root) {
   if (root.length() > 0) {
     ROOT = root;
   }
   // Start the server on port
-  ix::WebSocketServer server(port);
+  ix::WebSocketServer server(port, host);
 
-  std::cout << "Starting the server on port " << port << "..." << std::endl;
+  std::cout << "Starting the server on " << host << ":" << port << "..." << std::endl;
 
   // Setup a callback to be fired (in a background thread, watch out for race conditions !)
   // when a message or an event (open, close, error) is received

@@ -15,6 +15,7 @@ namespace wsserver {
    */
   class WSServer {
     int port;
+    std::string host;
     ix::WebSocketServer server;
 
   public:
@@ -22,7 +23,7 @@ namespace wsserver {
      * @brief Creates a new wsserver
      * @param url to connect to
      */
-    WSServer(int port);
+    WSServer(int port, std::string host);
 
     void start(std::string root);
 
