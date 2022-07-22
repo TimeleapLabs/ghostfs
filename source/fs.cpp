@@ -1266,6 +1266,8 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
             << payload << std::endl;
 }
 
+#ifdef HAVE_SETXATTR
+/* xattr operations are optional and can safely be left unimplemented */
 static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, const char *value,
                               size_t size, int flags, uint32_t position) {
 
@@ -1294,6 +1296,7 @@ static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, 
 
   std::cout << "hello_ll_setxattr executed correctly: " << payload << std::endl;
 }
+#endif /* HAVE_SETXATTR */
 
 // clang-format off
 static const struct fuse_lowlevel_ops hello_ll_oper = {
@@ -1308,7 +1311,9 @@ static const struct fuse_lowlevel_ops hello_ll_oper = {
     .read = hello_ll_read,
     .write = hello_ll_write,
     .readdir = hello_ll_readdir,
-    .setxattr = hello_ll_setxattr,
+    #ifdef HAVE_SETXATTR
+      .setxattr = hello_ll_setxattr,
+    #endif
     .create = hello_ll_create,
 };
 // clang-format on
