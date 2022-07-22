@@ -191,7 +191,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         std::string response_payload
             = send_message(getattr_response, message, res, err, webSocket, Ops::Getattr);
 
-        std::cout << "getattr_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "getattr_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -270,7 +270,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         std::string response_payload
             = send_message(lookup_response, message, res, err, webSocket, Ops::Lookup);
 
-        std::cout << "lookup_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "lookup_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -306,7 +306,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           std::string response_payload
               = send_message(readdir_response, message, -1, webSocket, Ops::Readdir);
 
-          std::cout << "readdir_response sent error: " << response_payload << std::endl;
+          // std::cout << "readdir_response sent error: " << response_payload << std::endl;
 
           return;
         }
@@ -357,7 +357,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         std::string response_payload
             = send_message(readdir_response, message, 0, webSocket, Ops::Readdir);
 
-        std::cout << "readdir_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "readdir_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -381,7 +381,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           std::string response_payload
               = send_message(open_response, message, -1, webSocket, Ops::Open);
 
-          std::cout << "readdir_response sent error: " << response_payload << std::endl;
+          // std::cout << "readdir_response sent error: " << response_payload << std::endl;
           return;
         }
 
@@ -409,7 +409,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         std::string response_payload
             = send_message(open_response, message, 0, webSocket, Ops::Open);
 
-        std::cout << "open_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "open_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -433,7 +433,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           std::string response_payload
               = send_message(read_response, message, -1, webSocket, Ops::Read);
 
-          std::cout << "read_response sent error: " << response_payload << std::endl;
+          // std::cout << "read_response sent error: " << response_payload << std::endl;
         }
 
         size_t size = read.getSize();
@@ -455,7 +455,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         std::string response_payload
             = send_message(read_response, message, 0, err, webSocket, Ops::Read);
 
-        std::cout << "read_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "read_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -481,7 +481,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           std::string response_payload
               = send_message(setattr_response, message, -1, webSocket, Ops::Setattr);
 
-          std::cout << "setattr_response sent error: " << response_payload << std::endl;
+          // std::cout << "setattr_response sent error: " << response_payload << std::endl;
 
           return;
         }
@@ -507,7 +507,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
             std::string response_payload
                 = send_message(setattr_response, message, res, err, webSocket, Ops::Setattr);
 
-            std::cout << "setattr_response sent error: " << response_payload << std::endl;
+            // std::cout << "setattr_response sent error: " << response_payload << std::endl;
 
             return;
           }
@@ -523,7 +523,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
             std::string response_payload
                 = send_message(setattr_response, message, res, err, webSocket, Ops::Setattr);
 
-            std::cout << "setattr_response sent error: " << response_payload << std::endl;
+            // std::cout << "setattr_response sent error: " << response_payload << std::endl;
             return;
           }
         }
@@ -535,7 +535,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
             std::string response_payload
                 = send_message(setattr_response, message, res, err, webSocket, Ops::Setattr);
 
-            std::cout << "setattr_response sent error: " << response_payload << std::endl;
+            // std::cout << "setattr_response sent error: " << response_payload << std::endl;
             return;
           }
         }
@@ -576,7 +576,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
             err = errno;
             std::string response_payload = send_message(setattr_response, message, res, err, webSocket, Ops::Setattr);
 
-            std::cout << "setattr_response sent error: " << response_payload << std::endl;
+            // std::cout << "setattr_response sent error: " << response_payload << std::endl;
             return;
           }
         }
@@ -585,7 +585,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         
         std::string response_payload = send_message(setattr_response, message, 0, webSocket, Ops::Setattr);
 
-        std::cout << "setattr_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "setattr_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -616,7 +616,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         std::string response_payload = send_message(write_response, message, 0, err, webSocket, Ops::Write);
 
-        std::cout << "write_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "write_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -645,7 +645,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
                   int err = errno;
             std::string response_payload = send_message(setxattr_response, message, res, err, webSocket, Ops::Setxattr);
 
-            std::cout << "setxattr_response sent error: " << response_payload << std::endl;
+            // std::cout << "setxattr_response sent error: " << response_payload << std::endl;
             return;
         }
 
@@ -653,7 +653,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         std::string response_payload = send_message(setxattr_response, message, res, webSocket, Ops::Setxattr);
 
-        std::cout << "setxattr_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "setxattr_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -686,7 +686,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
                   int err = errno;
             std::string response_payload = send_message(create_response, message, res, err, webSocket, Ops::Create);
 
-            std::cout << "create_response sent error: " << response_payload << std::endl;
+            // std::cout << "create_response sent error: " << response_payload << std::endl;
             return;
         } else {
           struct stat attr;
@@ -739,7 +739,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         
         std::string response_payload = send_message(create_response, message, res, webSocket, Ops::Create);
 
-        std::cout << "create_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "create_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -779,7 +779,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
           std::string response_payload = send_message(mknod_response, message, res, err, webSocket, Ops::Mknod);
 
-          std::cout << "mknod_response sent error: " << response_payload << std::endl;
+          // std::cout << "mknod_response sent error: " << response_payload << std::endl;
           return;
         } else {
           mknod_response.setIno(file_ino);
@@ -811,7 +811,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         
         std::string response_payload = send_message(mknod_response, message, res, webSocket, Ops::Mknod);
 
-        std::cout << "mknod_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "mknod_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -842,7 +842,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           int err = errno;
           std::string response_payload = send_message(mkdir_response, message, res, err, webSocket, Ops::Mkdir);
 
-          std::cout << "mkdir_response sent error: " << response_payload << std::endl;
+          // std::cout << "mkdir_response sent error: " << response_payload << std::endl;
           return;
         }
         else {
@@ -881,7 +881,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         
         std::string response_payload = send_message(mkdir_response, message, res, webSocket, Ops::Mknod);
 
-        std::cout << "mkdir_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "mkdir_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -911,7 +911,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         int err = errno;
         
         std::string response_payload = send_message(unlink_response, message, res, err, webSocket, Ops::Unlink);
-        std::cout << "unlink_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "unlink_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -933,19 +933,19 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         uint64_t parent = rmdir.getParent();
         std::string name = rmdir.getName();
 
-        std::cout << "RMDIR name: " << name << std::endl;
+        // std::cout << "RMDIR name: " << name << std::endl;
 
         std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
         std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
         std::filesystem::path file_path = parent_path / std::filesystem::path(name);
 
-        std::cout << "RMDIR file_path: " << file_path.c_str() << std::endl;
+        // std::cout << "RMDIR file_path: " << file_path.c_str() << std::endl;
 
         int res = ::rmdir(file_path.c_str());
         int err = errno;
         
         std::string response_payload = send_message(rmdir_response, message, res, errno, webSocket, Ops::Rmdir);
-        std::cout << "rmdir_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "rmdir_response sent correctly: " << response_payload << std::endl;
 
         break;
       }

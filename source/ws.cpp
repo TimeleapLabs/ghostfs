@@ -30,21 +30,21 @@ void WSClient::sendBinary(char* message) { webSocket.sendBinary(message); }
 
 void WSClient::prompt() {
   // Display a prompt
-  std::cout << "> " << std::flush;
+  // std::cout << "> " << std::flush;
 
   std::string text;
   // Read text from the console and send messages in text mode.
   // Exit with Ctrl-D on Unix or Ctrl-Z on Windows.
   while (std::getline(std::cin, text)) {
     webSocket.send(text);
-    std::cout << "> " << std::flush;
+    // std::cout << "> " << std::flush;
   }
 }
 
 void WSClient::onMessage(const ix::WebSocketMessagePtr& msg) {
   if (msg->type == ix::WebSocketMessageType::Message) {
-    std::cout << "received message: " << msg->str << std::endl;
-    std::cout << "> " << std::flush;
+    // std::cout << "received message: " << msg->str << std::endl;
+    // std::cout << "> " << std::flush;
     const char command = msg->str[0];
     std::string payload = msg->str.substr(1);
 
