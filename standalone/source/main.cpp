@@ -23,6 +23,7 @@ auto main(int argc, char** argv) -> int {
     ("p,port", "Server port", cxxopts::value<uint16_t>()->default_value("3444"))
     ("r,root", "Root directory", cxxopts::value<std::string>()->default_value(default_root))
     ("u,url", "Server connection URL", cxxopts::value<std::string>())
+    ("o,options", "Fuse mount options", cxxopts::value<std::string>()->default_value("big_writes"))
     ("s,server", "Run in server mode")  // a bool parameter
     ("c,client", "Run in client mode");
 

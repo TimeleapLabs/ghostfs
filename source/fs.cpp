@@ -39,6 +39,8 @@
 #include <read.response.capnp.h>
 #include <readdir.capnp.h>
 #include <readdir.response.capnp.h>
+#include <rmdir.capnp.h>
+#include <rmdir.response.capnp.h>
 #include <setattr.capnp.h>
 #include <setattr.response.capnp.h>
 #include <setxattr.capnp.h>
@@ -48,8 +50,6 @@
 #include <unlink.response.capnp.h>
 #include <write.capnp.h>
 #include <write.response.capnp.h>
-#include <rmdir.capnp.h>
-#include <rmdir.response.capnp.h>
 
 #include <filesystem>
 #include <iostream>
@@ -150,6 +150,7 @@ int hello_stat(fuse_ino_t ino, struct stat *stbuf) {
     stbuf->st_ino = ino;
     stbuf->st_mode = S_IFDIR | 0777;
     stbuf->st_nlink = 2;
+    stbuf->st_blksize = 131072;
     return 0;
   }
 
@@ -160,6 +161,7 @@ int hello_stat(fuse_ino_t ino, struct stat *stbuf) {
 
   stat(ino_to_path[ino].c_str(), stbuf);
   stbuf->st_ino = ino;
+  stbuf->st_blksize = 131072;
 
   return 0;
 }
@@ -699,7 +701,7 @@ void process_rmdir_response(std::string payload) {
 
   fuse_reply_err(request.req, res == -1 ? err : 0);
 
-  //std::cout << "process_rmdir_response: Request: " << request.req << std::endl;
+  // std::cout << "process_rmdir_response: Request: " << request.req << std::endl;
 
   // std::cout << "process_rmdir_response executed with result: " << res << std::endl;
 }
@@ -1234,7 +1236,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
