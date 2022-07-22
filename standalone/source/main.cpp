@@ -5,6 +5,7 @@
 #include <ghostfs/wss.h>
 
 #include <cxxopts.hpp>
+#include <filesystem>
 #include <iostream>
 #include <string>
 #include <unordered_map>
@@ -12,13 +13,15 @@
 auto main(int argc, char** argv) -> int {
   cxxopts::Options options("GhostFS", "One Ghosty FS");
 
+  std::string default_root = std::filesystem::path(getenv("HOME")) / ".ghostfs" / "root";
+
   // clang-format off
   options.add_options()
     ("h,help", "Show help")
     ("v,version", "Print the current version number")
     ("b,bind", "Bind IP address", cxxopts::value<std::string>()->default_value("0.0.0.0"))
     ("p,port", "Server port", cxxopts::value<uint16_t>()->default_value("3444"))
-    ("r,root", "Root directory", cxxopts::value<std::string>())
+    ("r,root", "Root directory", cxxopts::value<std::string>()->default_value(default_root))
     ("u,url", "Server connection URL", cxxopts::value<std::string>())
     ("s,server", "Run in server mode")  // a bool parameter
     ("c,client", "Run in client mode");
