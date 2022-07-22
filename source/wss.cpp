@@ -4,7 +4,9 @@
 #include <fuse_lowlevel.h>
 #include <ghostfs/fs.h>
 #include <ghostfs/wss.h>
-#include <sys/xattr.h>
+#ifdef HAVE_SETXATTR
+#  include <sys/xattr.h>
+#endif
 
 // Cap'n'Proto
 
@@ -616,6 +618,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         break;
       }
+      #ifdef HAVE_SETXATTR
       case (char)Ops::Setxattr: {
         const kj::ArrayPtr<const capnp::word> view(
         reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
@@ -652,6 +655,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         break;
       }
+      #endif
       case (char)Ops::Create: {
         const kj::ArrayPtr<const capnp::word> view(
             reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
