@@ -1316,8 +1316,18 @@ static const struct fuse_lowlevel_ops hello_ll_oper = {
 };
 // clang-format on
 
-int start_fs(int argc, char *argv[], wsclient::WSClient *wsc) {
+int start_fs(char *executable, char *argmnt, std::vector<std::string> options,
+             wsclient::WSClient *wsc) {
   ws = wsc;
+
+  int argc = options.size() * 2 + 2;
+  char *argv[32] = {executable, argmnt};
+
+  int i = 0;
+  for (std::string option : options) {
+    argv[2 + i++] = (char *)"-o";
+    argv[2 + i++] = (char *)option.c_str();
+  }
 
   struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
   struct fuse_chan *ch;

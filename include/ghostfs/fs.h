@@ -6,7 +6,8 @@
 
 #include <string>
 
-int start_fs(int argc, char* argv[], wsclient::WSClient* wsc);
+int start_fs(char* executable, char* mountpoint, std::vector<std::string> options,
+             wsclient::WSClient* wsc);
 std::string gen_uuid();
 void process_response(uint8_t msg);
 int hello_stat(fuse_ino_t ino, struct stat* stbuf);

@@ -23,7 +23,7 @@ auto main(int argc, char** argv) -> int {
     ("p,port", "Server port", cxxopts::value<uint16_t>()->default_value("3444"))
     ("r,root", "Root directory", cxxopts::value<std::string>()->default_value(default_root))
     ("u,url", "Server connection URL", cxxopts::value<std::string>())
-    ("o,options", "Fuse mount options", cxxopts::value<std::string>()->default_value("big_writes"))
+    ("o,options", "Fuse mount options", cxxopts::value<std::vector<std::string>>())
     ("s,server", "Run in server mode")  // a bool parameter
     ("c,client", "Run in client mode");
 
@@ -61,8 +61,9 @@ auto main(int argc, char** argv) -> int {
     return 0;
   } else if (result["client"].as<bool>()) {
     std::string url = result["url"].as<std::string>();
+    std::vector<std::string> options = result["options"].as<std::vector<std::string>>();
     wsclient::WSClient ws(url);
-    return start_fs(argc, argv, &ws);
+    return start_fs(argv[0], argv[1], options, &ws);
 
     // ghostfs::GhostFS ghostfs();
   }
