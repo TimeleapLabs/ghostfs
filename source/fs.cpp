@@ -1321,7 +1321,7 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options,
   ws = wsc;
 
   int argc = options.size() * 2 + 2;
-  char *argv[32] = {executable, argmnt};
+  char *argv[2048] = {executable, argmnt};
 
   int i = 0;
   for (std::string option : options) {
