@@ -44,8 +44,13 @@ using namespace wsserver;
 
 WSServer::WSServer(int _port, std::string _host) : port(std::move(_port)), host(std::move(_host)) {}
 
-void WSServer::start(std::string root) {
+int WSServer::start(std::string root) {
   if (root.length() > 0) {
+    if (!std::filesystem::is_directory(root)) {
+      std::cout << "ENOENT: Directory " << '"' << root << '"' << " does not exist.";
+      return 1;
+    };
+
     ROOT = root;
   }
   // Start the server on port
@@ -74,6 +79,8 @@ void WSServer::start(std::string root) {
 
   // Block until server.stop() is called.
   server.wait();
+
+  return 0;
 }
 
 template <class T> std::string send_message(T& response, ::capnp::MallocMessageBuilder& message,

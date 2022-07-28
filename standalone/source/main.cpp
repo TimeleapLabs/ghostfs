@@ -56,7 +56,7 @@ auto main(int argc, char** argv) -> int {
     uint16_t port = result["port"].as<uint16_t>();
 
     wsserver::WSServer wss(port, bind);
-    wss.start(root);
+    return wss.start(root);
 
     return 0;
   } else if (result["client"].as<bool>()) {
