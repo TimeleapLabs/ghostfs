@@ -10,12 +10,20 @@ on:
       - master
       - main
 
+env:
+  CPM_SOURCE_CACHE: ${{ github.workspace }}/cpm_modules
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v2
+
+      - uses: actions/cache@v2
+        with:
+          path: "**/cpm_modules"
+          key: ${{ github.workflow }}-cpm-modules-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
 
       - name: Set up GCC
         uses: egor-tensin/setup-gcc@v1
@@ -30,7 +38,7 @@ jobs:
         run: cmake -S standalone -B build/standalone
 
       - name: Build
-        run: cmake --build build -j4
+        run: cmake --build build/standalone -j4
 
       - name: Make Release Body
         run: echo Built from \#`git rev-parse --short HEAD` > release.md
