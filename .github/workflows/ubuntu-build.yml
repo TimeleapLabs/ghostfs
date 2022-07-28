@@ -38,11 +38,11 @@ jobs:
         run: cmake -S standalone -B build/standalone
 
       - name: Build
-        run: cmake --build build/standalone -j4
+        run: cmake --build build/standalone -j3
 
       - name: Make Release Body
         id: info
-        run:
+        run: |
           echo Built from \#`git rev-parse --short HEAD` > release.md
           echo ::set-output name=tag::linux-`git rev-parse --short HEAD`
 
