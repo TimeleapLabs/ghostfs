@@ -47,7 +47,7 @@ WSServer::WSServer(int _port, std::string _host) : port(std::move(_port)), host(
 int WSServer::start(std::string root) {
   if (root.length() > 0) {
     if (!std::filesystem::is_directory(root)) {
-      std::cout << "ENOENT: Directory " << '"' << root << '"' << " does not exist.";
+      std::cout << "ERROR: directory " << '"' << root << '"' << " does not exist." << std::endl;
       return 1;
     };
 
