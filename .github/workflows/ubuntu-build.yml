@@ -41,7 +41,9 @@ jobs:
         run: cmake --build build/standalone -j4
 
       - name: Make Release Body
-        run: echo Built from \#`git rev-parse --short HEAD` > release.md
+        run:
+          echo Built from \#`git rev-parse --short HEAD` > release.md
+          git tag linux-`git rev-parse --short HEAD`
 
       - name: Release
         uses: ncipollo/release-action@v1
