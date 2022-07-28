@@ -32,7 +32,7 @@ jobs:
           platform: x64
 
       - name: Install Dependencies
-        run: apt-get install -y libfuse-dev zlib1g-dev
+        run: sudo apt-get install -y libfuse-dev zlib1g-dev
 
       - name: Configure
         run: cmake -S standalone -B build/standalone
