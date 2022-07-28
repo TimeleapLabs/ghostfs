@@ -25,19 +25,26 @@ jobs:
           path: "**/cpm_modules"
           key: ${{ github.workflow }}-cpm-modules-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
 
-      - name: dependencies
+      - name: Set up GCC
+        uses: egor-tensin/setup-gcc@v1
+        with:
+          version: latest
+          platform: x64
+
+      - name: Install Dependencies
         run: apt-get install -y libfuse-dev zlib1g-dev
 
-      - name: configure
+      - name: Configure
         run: cmake -S standalone -B build/standalone
 
-      - name: build
+      - name: Build
         run: cmake --build build -j4
 
-      - name: body
+      - name: Make Release Body
         run: echo Built from \#`git rev-parse --short HEAD` > release.md
 
-      - uses: ncipollo/release-action@v1
+      - name: Release
+        uses: ncipollo/release-action@v1
         with:
           artifacts: "build/standalone/GhostFS"
           bodyFile: "release.md"
