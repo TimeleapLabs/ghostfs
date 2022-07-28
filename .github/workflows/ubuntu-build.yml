@@ -41,9 +41,10 @@ jobs:
         run: cmake --build build/standalone -j4
 
       - name: Make Release Body
+        id: info
         run:
           echo Built from \#`git rev-parse --short HEAD` > release.md
-          git tag linux-`git rev-parse --short HEAD`
+          echo ::set-output name=tag::linux-`git rev-parse --short HEAD`
 
       - name: Release
         uses: ncipollo/release-action@v1
@@ -51,3 +52,4 @@ jobs:
           artifacts: "build/standalone/GhostFS"
           bodyFile: "release.md"
           prerelease: true
+          tag: ${{ steps.info.outputs.tag }}
