@@ -54,4 +54,4 @@ jobs:
           prerelease: true
           tag: ${{ steps.info.outputs.tag }}
           token: ${{ secrets.PERSONAL_TOKEN }}
-          repo: https://github.com/pouya-eghbali/ghostfs-builds
+          repo: pouya-eghbali/ghostfs-builds
