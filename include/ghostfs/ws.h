@@ -32,6 +32,8 @@ namespace wsclient {
 
     void prompt();
 
+    bool ready;
+
   private:
     void onMessage(const ix::WebSocketMessagePtr& msg);
   };

@@ -10,6 +10,9 @@ WSClient::WSClient(std::string _url) : url(std::move(_url)) {
   // Connect to a server with encryption
   // See https://machinezone.github.io/IXWebSocket/usage/#tls-support-and-configuration
   // std::string url("ws://localhost:3444");
+
+  ready = false;
+
   webSocket.setUrl(url);
 
   std::cout << "Connecting to " << url << "..." << std::endl;
@@ -106,9 +109,11 @@ void WSClient::onMessage(const ix::WebSocketMessagePtr& msg) {
     }
 
   } else if (msg->type == ix::WebSocketMessageType::Close) {
-    std::cout << "Connection closed with error code " << msg->closeInfo.code << ": " <<msg->closeInfo.reason << std::endl;
+    std::cout << "Connection closed with error code " << msg->closeInfo.code << ": "
+              << msg->closeInfo.reason << std::endl;
   } else if (msg->type == ix::WebSocketMessageType::Open) {
     std::cout << "Connection established" << std::endl;
+    ready = true;
     // std::cout << "> " << std::flush;
   } else if (msg->type == ix::WebSocketMessageType::Error) {
     // Maybe SSL is not configured properly

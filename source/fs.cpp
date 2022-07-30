@@ -1320,6 +1320,9 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options,
              wsclient::WSClient *wsc) {
   ws = wsc;
 
+  while (!ws->ready)
+    ;
+
   int argc = options.size() * 2 + 2;
   char *argv[2048] = {executable, argmnt};
 
