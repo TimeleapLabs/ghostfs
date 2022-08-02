@@ -12,14 +12,15 @@
 #include <fcntl.h>
 #include <fuse_lowlevel.h>
 #include <ghostfs/fs.h>
+#include <ghostfs/uuid.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <uuid_v4.h>
 
 // CAPNPROTO
 
+#include <auth.response.capnp.h>
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
 #include <create.capnp.h>
@@ -61,17 +62,10 @@ static const char *hello_name = "hello";
 char user_file_str[40];
 char user_file_name[1024];
 
-UUIDv4::UUIDGenerator<std::mt19937_64> uuidGenerator;
-
 std::map<uint64_t, std::string> ino_to_path;
 std::map<std::string, uint64_t> path_to_ino;
 
 uint64_t current_ino = 1;
-
-std::string gen_uuid() {
-  UUIDv4::UUID uuid = uuidGenerator.getUUID();
-  return uuid.str();
-}
 
 std::string ROOT = "/tmp/.ghostfs/root";
 
@@ -162,6 +156,20 @@ int hello_stat(fuse_ino_t ino, struct stat *stbuf) {
   stbuf->st_ino = ino;
 
   return 0;
+}
+
+void process_auth_response(std::string payload, wsclient::WSClient *wsc) {
+  const kj::ArrayPtr<const capnp::word> view(
+      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
+      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
+
+  capnp::FlatArrayMessageReader data(view);
+  AuthResponse::Reader auth_response = data.getRoot<AuthResponse>();
+
+  bool success = auth_response.getSuccess();
+
+  wsc->auth_failed = not success;
+  wsc->ready = success;
 }
 
 void process_lookup_response(std::string payload) {
@@ -1320,8 +1328,13 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options,
              wsclient::WSClient *wsc) {
   ws = wsc;
 
-  while (!ws->ready)
+  while (!ws->ready && !ws->auth_failed)
     ;
+
+  if (ws->auth_failed) {
+    std::cout << "Fail to authenticate!" << std::endl;
+    return 1;
+  }
 
   int argc = options.size() * 2 + 2;
   char *argv[2048] = {executable, argmnt};

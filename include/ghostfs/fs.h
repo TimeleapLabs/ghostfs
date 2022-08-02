@@ -8,7 +8,7 @@
 
 int start_fs(char* executable, char* mountpoint, std::vector<std::string> options,
              wsclient::WSClient* wsc);
-std::string gen_uuid();
+
 void process_response(uint8_t msg);
 int hello_stat(fuse_ino_t ino, struct stat* stbuf);
 
@@ -25,22 +25,24 @@ struct dirbuf {
 void dirbuf_add(fuse_req_t req, struct dirbuf* b, const char* name, fuse_ino_t ino);
 
 enum class Ops : char {
-  Getattr = 1,
-  Lookup = 2,
-  Readdir = 3,
-  Open = 4,
-  Read = 5,
-  Setattr = 6,
-  Write = 7,
-  Setxattr = 8,
-  Create = 9,
-  Mknod = 10,
-  Mkdir = 11,
-  Unlink = 12,
-  Rmdir = 13,
+  Auth = 1,
+  Getattr = 2,
+  Lookup = 3,
+  Readdir = 4,
+  Open = 5,
+  Read = 6,
+  Setattr = 7,
+  Write = 8,
+  Setxattr = 9,
+  Create = 10,
+  Mknod = 11,
+  Mkdir = 12,
+  Unlink = 13,
+  Rmdir = 14,
 };
 
 // Responses
+void process_auth_response(std::string payload, wsclient::WSClient* wsc);
 void process_getattr_response(std::string payload);
 void process_lookup_response(std::string payload);
 void process_readdir_response(std::string payload);

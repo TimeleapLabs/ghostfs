@@ -14,6 +14,8 @@ namespace wsclient {
    */
   class WSClient {
     std::string url;
+    std::string user;
+    std::string token;
     ix::WebSocket webSocket;
 
   public:
@@ -21,7 +23,7 @@ namespace wsclient {
      * @brief Creates a new wsclient
      * @param url to connect to
      */
-    WSClient(std::string url);
+    WSClient(std::string url, std::string user, std::string token);
 
     /**
      * @brief Sends a message to the connected to ghostfs server
@@ -33,6 +35,7 @@ namespace wsclient {
     void prompt();
 
     bool ready;
+    bool auth_failed;
 
   private:
     void onMessage(const ix::WebSocketMessagePtr& msg);

@@ -1,3 +1,6 @@
+#include <auth.capnp.h>
+#include <capnp/message.h>
+#include <capnp/serialize-packed.h>
 #include <fmt/format.h>
 #include <ghostfs/fs.h>
 #include <ghostfs/ws.h>
@@ -6,12 +9,14 @@
 
 using namespace wsclient;
 
-WSClient::WSClient(std::string _url) : url(std::move(_url)) {
+WSClient::WSClient(std::string _url, std::string _user, std::string _token)
+    : url(std::move(_url)), user(std::move(_user)), token(std::move(_token)) {
   // Connect to a server with encryption
   // See https://machinezone.github.io/IXWebSocket/usage/#tls-support-and-configuration
   // std::string url("ws://localhost:3444");
 
   ready = false;
+  auth_failed = false;
 
   webSocket.setUrl(url);
 
@@ -52,6 +57,10 @@ void WSClient::onMessage(const ix::WebSocketMessagePtr& msg) {
     std::string payload = msg->str.substr(1);
 
     switch (command) {
+      case (char)Ops::Auth: {
+        process_auth_response(payload, this);
+        break;
+      }
       case (char)Ops::Getattr: {
         process_getattr_response(payload);
         break;
@@ -113,7 +122,19 @@ void WSClient::onMessage(const ix::WebSocketMessagePtr& msg) {
               << msg->closeInfo.reason << std::endl;
   } else if (msg->type == ix::WebSocketMessageType::Open) {
     std::cout << "Connection established" << std::endl;
-    ready = true;
+
+    ::capnp::MallocMessageBuilder message;
+    Auth::Builder auth = message.initRoot<Auth>();
+
+    auth.setUser(user);
+    auth.setToken(token);
+
+    const auto data = capnp::messageToFlatArray(message);
+    const auto bytes = data.asBytes();
+
+    std::string payload(bytes.begin(), bytes.end());
+    send((char)Ops::Auth + payload);
+
     // std::cout << "> " << std::flush;
   } else if (msg->type == ix::WebSocketMessageType::Error) {
     // Maybe SSL is not configured properly

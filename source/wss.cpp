@@ -2,12 +2,15 @@
 #include <errno.h>
 #include <fmt/format.h>
 #include <fuse_lowlevel.h>
+#include <ghostfs/auth.h>
 #include <ghostfs/fs.h>
 #include <ghostfs/wss.h>
 #include <sys/xattr.h>
 
 // Cap'n'Proto
 
+#include <auth.capnp.h>
+#include <auth.response.capnp.h>
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
 #include <create.capnp.h>
@@ -144,6 +147,32 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
     std::string payload = msg->str.substr(1);
 
     switch (command) {
+      case (char)Ops::Auth: {
+        const kj::ArrayPtr<const capnp::word> view(
+            reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
+            reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
+
+        capnp::FlatArrayMessageReader data(view);
+        Auth::Reader auth = data.getRoot<Auth>();
+
+        std::string user = auth.getUser();
+        std::string token = auth.getToken();
+
+        bool is_valid = authenticate(token, user, connectionState->getId());
+
+        ::capnp::MallocMessageBuilder message;
+        AuthResponse::Builder auth_response = message.initRoot<AuthResponse>();
+
+        auth_response.setSuccess(is_valid);
+
+        const auto response_data = capnp::messageToFlatArray(message);
+        const auto bytes = response_data.asBytes();
+        std::string response_payload(bytes.begin(), bytes.end());
+
+        webSocket.send((char)Ops::Auth + response_payload, true);
+        break;
+      }
+
       case (char)Ops::Getattr: {
         const kj::ArrayPtr<const capnp::word> view(
             reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
@@ -283,6 +312,14 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
       }
 
       case (char)Ops::Readdir: {
+        /**
+         * Check if authenticated (example).
+         * On fail we need to return a fuse error.
+         */
+
+        bool auth = is_authenticated(connectionState->getId());
+        std::cout << "Readdir is authenticated? " << (auth ? "Yes" : "No") << std::endl;
+
         const kj::ArrayPtr<const capnp::word> view(
             reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
             reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
