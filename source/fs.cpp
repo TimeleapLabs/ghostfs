@@ -1332,7 +1332,7 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options,
     ;
 
   if (ws->auth_failed) {
-    std::cout << "Fail to authenticate!" << std::endl;
+    std::cout << "Authentication failed!" << std::endl;
     return 1;
   }
 

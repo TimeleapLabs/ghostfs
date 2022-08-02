@@ -253,7 +253,8 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         uint64_t parent = lookup.getParent();
         std::string name = lookup.getName();
 
-        std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
+        std::string user_root = normalize_path(ROOT, connectionState->getId());
+        std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
         std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
         std::filesystem::path file_path = parent_path / std::filesystem::path(name);
 
@@ -312,14 +313,6 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
       }
 
       case (char)Ops::Readdir: {
-        /**
-         * Check if authenticated (example).
-         * On fail we need to return a fuse error.
-         */
-
-        bool auth = is_authenticated(connectionState->getId());
-        std::cout << "Readdir is authenticated? " << (auth ? "Yes" : "No") << std::endl;
-
         const kj::ArrayPtr<const capnp::word> view(
             reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
             reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
@@ -330,20 +323,32 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         // std::cout << "readdir: Received UUID: " << readdir.getUuid().cStr() << std::endl;
 
-        struct stat stbuf;
-
         // char msg[] = {3, ino};
         // ws->sendBinary(msg);
-
-        std::string path;
 
         ::capnp::MallocMessageBuilder message;
         ReaddirResponse::Builder readdir_response = message.initRoot<ReaddirResponse>();
         readdir_response.setUuid(readdir.getUuid());
 
+        /**
+         * Check if authenticated (example).
+         * On fail we need to return a fuse error.
+         * EACCESS for access denied.
+         */
+
+        bool auth = is_authenticated(connectionState->getId());
+
+        if (!auth) {
+          send_message(readdir_response, message, EACCES, webSocket, Ops::Readdir);
+          return;
+        }  // END EXAMPLE
+
+        struct stat stbuf;
+        std::string path;
+
         // Root
         if (ino == 1) {
-          path = ROOT;
+          path = normalize_path(ROOT, connectionState->getId());
         } else if (ino_to_path.find(ino) != ino_to_path.end()) {
           path = ino_to_path[ino];
         } else {
@@ -354,6 +359,16 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
           return;
         }
+
+        /**
+         * example check access
+         */
+        bool access_ok = check_access(ROOT, connectionState->getId(), path);
+
+        if (!access_ok) {
+          send_message(readdir_response, message, EACCES, webSocket, Ops::Readdir);
+          return;
+        }  // END EXAMPLE
 
         uint64_t length = 2;
 
@@ -720,9 +735,10 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         uint64_t parent = create.getParent();
 
-        std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
+        std::string user_root = normalize_path(ROOT, connectionState->getId());
+        std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
         std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
-        std::filesystem::path file_path = parent_path / std::filesystem::path(create.getName());
+        std::filesystem::path file_path = parent_path / create.getName();
 
         int res = ::open(file_path.c_str(), (fi.getFlags() | O_CREAT) & ~O_NOFOLLOW, create.getMode());
 
@@ -804,9 +820,10 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         uint64_t parent = mknod.getParent();
 
-        std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
+        std::string user_root = normalize_path(ROOT, connectionState->getId());
+        std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
         std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
-        std::filesystem::path file_path = parent_path / std::filesystem::path(mknod.getName());
+        std::filesystem::path file_path = parent_path / mknod.getName();
 
         uint64_t file_ino;
 
@@ -876,9 +893,10 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         uint64_t parent = mkdir.getParent();
 
-        std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
+        std::string user_root = normalize_path(ROOT, connectionState->getId());
+        std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
         std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
-        std::filesystem::path file_path = parent_path / std::filesystem::path(mkdir.getName());
+        std::filesystem::path file_path = parent_path / mkdir.getName();
 
         int res = ::mkdir(file_path.c_str(), mkdir.getMode());
 
@@ -947,7 +965,8 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         uint64_t parent = unlink.getParent();
         std::string name = unlink.getName();
 
-        std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
+        std::string user_root = normalize_path(ROOT, connectionState->getId());
+        std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
         std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
         std::filesystem::path file_path = parent_path / std::filesystem::path(name);
 
@@ -979,7 +998,8 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         // std::cout << "RMDIR name: " << name << std::endl;
 
-        std::string parent_path_name = parent == 1 ? ROOT : ino_to_path[parent];
+        std::string user_root = normalize_path(ROOT, connectionState->getId());
+        std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
         std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
         std::filesystem::path file_path = parent_path / std::filesystem::path(name);
 

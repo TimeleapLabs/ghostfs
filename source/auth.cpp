@@ -71,3 +71,7 @@ bool check_access(std::string root, std::string user_id, std::string path) {
 std::filesystem::path normalize_path(std::string root, std::string user_id, std::string path) {
   return std::filesystem::path(root) / users[user_id].sub_directory / path;
 }
+
+std::filesystem::path normalize_path(std::string root, std::string user_id) {
+  return std::filesystem::path(root) / users[user_id].sub_directory;
+}
