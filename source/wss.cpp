@@ -109,7 +109,7 @@ template <class T> std::string send_message(T& response, ::capnp::MallocMessageB
   const auto bytes = response_data.asBytes();
   std::string response_payload(bytes.begin(), bytes.end());
 
-  webSocket.send((char)opcode + response_payload, true);
+  webSocket.sendBinary((char)opcode + response_payload);
 
   return response_payload;
 }
@@ -504,9 +504,10 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         ::lseek(fi.getFh(), off, SEEK_SET);
         ::read(fi.getFh(), &buf, size);
+
         int err = errno;
 
-        kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((unsigned char*)buf, size);
+        kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte*)buf, size);
         capnp::Data::Reader buf_reader(buf_ptr);
 
         read_response.setBuf(buf_reader);

@@ -82,10 +82,11 @@ struct request {
 
 static int reply_buf_limited(fuse_req_t req, const char *buf, size_t bufsize, off_t off,
                              size_t maxsize) {
-  if (off < bufsize)
+  if (off < bufsize) {
     return fuse_reply_buf(req, buf + off, min(bufsize - off, maxsize));
-  else
+  } else {
     return fuse_reply_buf(req, NULL, 0);
+  }
 }
 
 std::map<std::string, request> requests;
@@ -399,10 +400,12 @@ void process_read_response(std::string payload) {
   // std::cout << "process_read_response: Request: " << request.req << std::endl;
 
   capnp::Data::Reader buf_reader = read_response.getBuf();
-  const auto bytes = buf_reader.asBytes();
-  std::string buf(bytes.begin(), bytes.end());
+  const auto chars = buf_reader.asChars();
+  const char *buf = chars.begin();
 
-  reply_buf_limited(request.req, buf.c_str(), request.size, request.off, request.size);
+  // reply_buf_limited(request.req, buf, chars.size(), request.off, request.size);
+
+  fuse_reply_buf(request.req, buf, chars.size());
 
   // std::cout << "process_read_response: reply_buf_limited correctly executed" << std::endl;
 }
@@ -1242,7 +1245,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-// clang-format off
+  // clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
