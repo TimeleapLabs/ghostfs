@@ -6,8 +6,6 @@ import { TokenResponse } from "./token.response.capnp.js";
 
 const { user, retries = "1" } = minimist(process.argv);
 
-console.log({ user, retries });
-
 const ws = new WebSocket("ws://localhost:3445", {
   perMessageDeflate: false,
 });

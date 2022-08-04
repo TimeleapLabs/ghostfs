@@ -210,8 +210,8 @@ void process_lookup_response(std::string payload) {
   e.attr.st_ino = attributes.getStIno();
   e.attr.st_mode = attributes.getStMode();
   e.attr.st_nlink = attributes.getStNlink();
-  e.attr.st_uid = attributes.getStUid();
-  e.attr.st_gid = attributes.getStGid();
+  e.attr.st_uid = geteuid();  // attributes.getStUid();
+  e.attr.st_gid = getegid();  // attributes.getStGid();
   e.attr.st_rdev = attributes.getStRdev();
   e.attr.st_size = attributes.getStSize();
   e.attr.st_atime = attributes.getStAtime();
@@ -258,8 +258,8 @@ void process_getattr_response(std::string payload) {
   attr.st_ino = attributes.getStIno();
   attr.st_mode = attributes.getStMode();
   attr.st_nlink = attributes.getStNlink();
-  attr.st_uid = attributes.getStUid();
-  attr.st_gid = attributes.getStGid();
+  e.attr.st_uid = geteuid();  // attributes.getStUid();
+  e.attr.st_gid = getegid();  // attributes.getStGid();
   attr.st_rdev = attributes.getStRdev();
   attr.st_size = attributes.getStSize();
   attr.st_atime = attributes.getStAtime();
@@ -532,8 +532,8 @@ void process_create_response(std::string payload) {
   e.attr.st_ino = attributes.getStIno();
   e.attr.st_mode = attributes.getStMode();
   e.attr.st_nlink = attributes.getStNlink();
-  e.attr.st_uid = attributes.getStUid();
-  e.attr.st_gid = attributes.getStGid();
+  e.attr.st_uid = geteuid();  // attributes.getStUid();
+  e.attr.st_gid = getegid();  // attributes.getStGid();
   e.attr.st_rdev = attributes.getStRdev();
   e.attr.st_size = attributes.getStSize();
   e.attr.st_atime = attributes.getStAtime();
@@ -592,8 +592,8 @@ void process_mknod_response(std::string payload) {
   e.attr.st_ino = attributes.getStIno();
   e.attr.st_mode = attributes.getStMode();
   e.attr.st_nlink = attributes.getStNlink();
-  e.attr.st_uid = attributes.getStUid();
-  e.attr.st_gid = attributes.getStGid();
+  e.attr.st_uid = geteuid();  // attributes.getStUid();
+  e.attr.st_gid = getegid();  // attributes.getStGid();
   e.attr.st_rdev = attributes.getStRdev();
   e.attr.st_size = attributes.getStSize();
   e.attr.st_atime = attributes.getStAtime();
@@ -648,8 +648,8 @@ void process_mkdir_response(std::string payload) {
   e.attr.st_ino = attributes.getStIno();
   e.attr.st_mode = attributes.getStMode();
   e.attr.st_nlink = attributes.getStNlink();
-  e.attr.st_uid = attributes.getStUid();
-  e.attr.st_gid = attributes.getStGid();
+  e.attr.st_uid = geteuid();  // attributes.getStUid();
+  e.attr.st_gid = getegid();  // attributes.getStGid();
   e.attr.st_rdev = attributes.getStRdev();
   e.attr.st_size = attributes.getStSize();
   e.attr.st_atime = attributes.getStAtime();
@@ -1243,7 +1243,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-// clang-format off
+  // clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
