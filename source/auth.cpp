@@ -33,8 +33,8 @@ bool authenticate(std::string token, std::string sub_directory, std::string user
    * Add a dummy token
    */
 
-  if (tokens.find("test") == tokens.end()) {
-    tokens["test"] = {.token = "dummy", .usable = 1};
+  if (tokens.find("hipuser") == tokens.end()) {
+    tokens["hipuser"] = {.token = "dummy", .usable = 1};
   }
 
   if (tokens.find(sub_directory) == tokens.end()) {
