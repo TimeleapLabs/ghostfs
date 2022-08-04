@@ -258,8 +258,8 @@ void process_getattr_response(std::string payload) {
   attr.st_ino = attributes.getStIno();
   attr.st_mode = attributes.getStMode();
   attr.st_nlink = attributes.getStNlink();
-  e.attr.st_uid = geteuid();  // attributes.getStUid();
-  e.attr.st_gid = getegid();  // attributes.getStGid();
+  attr.st_uid = geteuid();  // attributes.getStUid();
+  attr.st_gid = getegid();  // attributes.getStGid();
   attr.st_rdev = attributes.getStRdev();
   attr.st_size = attributes.getStSize();
   attr.st_atime = attributes.getStAtime();
