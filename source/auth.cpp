@@ -34,13 +34,20 @@ std::string random_token() {
   return uuid;
 }
 
+std::string add_token(std::string user, std::string token, int64_t retries) {
+  std::string token_to_add = token.length() ? token : random_token();
+  tokens[user] = {.token = token_to_add, .usable = retries};
+  return token_to_add;
+}
+
 bool authenticate(std::string token, std::string sub_directory, std::string user_id) {
   /**
    * Add a dummy token
+   * TODO: remove this
    */
-
   if (tokens.find("hipuser") == tokens.end()) {
-    tokens["hipuser"] = {.token = "dummy", .usable = 1};
+    // -1 for unlimited retries, for test purposes
+    add_token("hipuser", "dummy", -1);
   }
 
   if (tokens.find(sub_directory) == tokens.end()) {
@@ -75,10 +82,13 @@ bool check_access(std::string root, std::string user_id, std::string path) {
   return itr == path_can.begin();
 }
 
-std::filesystem::path normalize_path(std::string root, std::string user_id, std::string path) {
-  return std::filesystem::path(root) / users[user_id].sub_directory / path;
-}
-
 std::filesystem::path normalize_path(std::string root, std::string user_id) {
   return std::filesystem::path(root) / users[user_id].sub_directory;
+}
+
+std::filesystem::path normalize_path(std::string root, std::string user_id, std::string path) {
+  if (!path.length()) {
+    return normalize_path(root, user_id);
+  }
+  return std::filesystem::path(root) / users[user_id].sub_directory / path;
 }

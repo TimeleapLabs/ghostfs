@@ -35,6 +35,8 @@
 #include <setattr.response.capnp.h>
 #include <setxattr.capnp.h>
 #include <setxattr.response.capnp.h>
+#include <token.capnp.h>
+#include <token.response.capnp.h>
 #include <unlink.capnp.h>
 #include <unlink.response.capnp.h>
 #include <write.capnp.h>
@@ -45,8 +47,10 @@
 
 using namespace wsserver;
 
-WSServer::WSServer(int _port, std::string _host, std::string _root, std::string _suffix)
+WSServer::WSServer(int _port, int _auth_port, std::string _host, std::string _root,
+                   std::string _suffix)
     : port(std::move(_port)),
+      auth_port(std::move(_auth_port)),
       host(std::move(_host)),
       root(std::move(_root)),
       suffix(std::move(_suffix)) {}
@@ -60,30 +64,44 @@ int WSServer::start() {
   }
   // Start the server on port
   ix::WebSocketServer server(port, host);
+  ix::WebSocketServer auth_server(auth_port);
 
   std::cout << "Starting the server on " << host << ":" << port << "..." << std::endl;
+  std::cout << "Starting the auth server on port " << auth_port << "..." << std::endl;
 
   // Setup a callback to be fired (in a background thread, watch out for race conditions !)
   // when a message or an event (open, close, error) is received
   server.setOnClientMessageCallback(
       [this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket& webSocket,
              const ix::WebSocketMessagePtr& msg) { onMessage(connectionState, webSocket, msg); });
+  auth_server.setOnClientMessageCallback(
+      [this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket& webSocket,
+             const ix::WebSocketMessagePtr& msg) {
+        onAuthMessage(connectionState, webSocket, msg);
+      });
 
-  auto res = server.listen(); /*
+  // auto res = server.listen();
+  /*
    if (!res.first) {
      // Error handling
      return 1;
    } */
 
+  server.listen();
+  auth_server.listen();
+
   // Per message deflate connection is enabled by default. It can be disabled
   // which might be helpful when running on low power devices such as a Rasbery Pi
   server.disablePerMessageDeflate();
+  auth_server.disablePerMessageDeflate();
 
   // Run the server in the background. Server can be stoped by calling server.stop()
   server.start();
+  auth_server.start();
 
   // Block until server.stop() is called.
   server.wait();
+  auth_server.stop();
 
   return 0;
 }
@@ -116,6 +134,34 @@ template <class T> std::string send_message(T& response, ::capnp::MallocMessageB
   return response_payload;
 }
 
+void WSServer::onAuthMessage(std::shared_ptr<ix::ConnectionState> connectionState,
+                             ix::WebSocket& webSocket, const ix::WebSocketMessagePtr& msg) {
+  if (msg->type == ix::WebSocketMessageType::Message) {
+    const kj::ArrayPtr<const capnp::word> view(
+        reinterpret_cast<const capnp::word*>(&(*std::begin(msg->str))),
+        reinterpret_cast<const capnp::word*>(&(*std::end(msg->str))));
+
+    capnp::FlatArrayMessageReader data(view);
+    TokenRequest::Reader token_request = data.getRoot<TokenRequest>();
+
+    std::string user = token_request.getUser();
+    std::string token = token_request.getToken();
+    int64_t retries = token_request.getRetries();
+
+    std::string added_token = add_token(user, token, retries);
+
+    ::capnp::MallocMessageBuilder message;
+    TokenResponse::Builder token_response = message.initRoot<TokenResponse>();
+
+    token_response.setToken(added_token);
+
+    const auto response_data = capnp::messageToFlatArray(message);
+    const auto bytes = response_data.asBytes();
+    std::string response_payload(bytes.begin(), bytes.end());
+
+    webSocket.sendBinary(response_payload);
+  }
+}
 void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
                          ix::WebSocket& webSocket, const ix::WebSocketMessagePtr& msg) {
   // std::cout << "Remote ip: " << connectionState->getRemoteIp() << std::endl;
@@ -171,7 +217,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         const auto bytes = response_data.asBytes();
         std::string response_payload(bytes.begin(), bytes.end());
 
-        webSocket.send((char)Ops::Auth + response_payload, true);
+        webSocket.sendBinary((char)Ops::Auth + response_payload);
         break;
       }
 
@@ -255,10 +301,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         uint64_t parent = lookup.getParent();
         std::string name = lookup.getName();
 
-        std::string user_root = suffix.length()
-                                    ? normalize_path(root, connectionState->getId(), suffix)
-                                    : normalize_path(root, connectionState->getId());
-
+        std::string user_root = normalize_path(root, connectionState->getId(), suffix);
         std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
         std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
         std::filesystem::path file_path = parent_path / std::filesystem::path(name);
@@ -353,8 +396,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         // Root
         if (ino == 1) {
-          path = suffix.length() ? normalize_path(root, connectionState->getId(), suffix)
-                                 : normalize_path(root, connectionState->getId());
+          path = normalize_path(root, connectionState->getId(), suffix);
         } else if (ino_to_path.find(ino) != ino_to_path.end()) {
           path = ino_to_path[ino];
         } else {
@@ -743,10 +785,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         uint64_t parent = create.getParent();
 
-        std::string user_root = suffix.length()
-                                    ? normalize_path(root, connectionState->getId(), suffix)
-                                    : normalize_path(root, connectionState->getId());
-
+        std::string user_root = normalize_path(root, connectionState->getId(), suffix);
         std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
         std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
         std::filesystem::path file_path = parent_path / create.getName();
@@ -831,10 +870,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         uint64_t parent = mknod.getParent();
 
-        std::string user_root = suffix.length()
-                                    ? normalize_path(root, connectionState->getId(), suffix)
-                                    : normalize_path(root, connectionState->getId());
-
+        std::string user_root = normalize_path(root, connectionState->getId(), suffix);
         std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
         std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
         std::filesystem::path file_path = parent_path / mknod.getName();
@@ -907,10 +943,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         uint64_t parent = mkdir.getParent();
 
-        std::string user_root = suffix.length()
-                                    ? normalize_path(root, connectionState->getId(), suffix)
-                                    : normalize_path(root, connectionState->getId());
-
+        std::string user_root = normalize_path(root, connectionState->getId(), suffix);
         std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
         std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
         std::filesystem::path file_path = parent_path / mkdir.getName();
@@ -982,10 +1015,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         uint64_t parent = unlink.getParent();
         std::string name = unlink.getName();
 
-        std::string user_root = suffix.length()
-                                    ? normalize_path(root, connectionState->getId(), suffix)
-                                    : normalize_path(root, connectionState->getId());
-                                    
+        std::string user_root = normalize_path(root, connectionState->getId(), suffix);
         std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
         std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
         std::filesystem::path file_path = parent_path / std::filesystem::path(name);
@@ -1018,10 +1048,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         // std::cout << "RMDIR name: " << name << std::endl;
 
-        std::string user_root = suffix.length()
-                                    ? normalize_path(root, connectionState->getId(), suffix)
-                                    : normalize_path(root, connectionState->getId());
-                                    
+        std::string user_root = normalize_path(root, connectionState->getId(), suffix);
         std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
         std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
         std::filesystem::path file_path = parent_path / std::filesystem::path(name);

@@ -21,6 +21,7 @@ auto main(int argc, char** argv) -> int {
     ("v,version", "Print the current version number")
     ("b,bind", "Bind IP address", cxxopts::value<std::string>()->default_value("127.0.0.1"))
     ("p,port", "Server port", cxxopts::value<uint16_t>()->default_value("3444"))
+    ("P,auth-port", "Server auth port", cxxopts::value<uint16_t>()->default_value("3445"))
     ("r,root", "Root directory", cxxopts::value<std::string>()->default_value(default_root))
     ("S,suffix", "User data subdirectory suffix", cxxopts::value<std::string>()->default_value(""))
     ("u,url", "Server connection URL", cxxopts::value<std::string>())
@@ -59,8 +60,9 @@ auto main(int argc, char** argv) -> int {
     std::string suffix = result["suffix"].as<std::string>();
 
     uint16_t port = result["port"].as<uint16_t>();
+    uint16_t auth_port = result["auth-port"].as<uint16_t>();
 
-    wsserver::WSServer wss(port, bind, root, suffix);
+    wsserver::WSServer wss(port, auth_port, bind, root, suffix);
     return wss.start();
 
     return 0;
