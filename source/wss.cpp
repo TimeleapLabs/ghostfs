@@ -45,16 +45,18 @@
 
 using namespace wsserver;
 
-WSServer::WSServer(int _port, std::string _host) : port(std::move(_port)), host(std::move(_host)) {}
+WSServer::WSServer(int _port, std::string _host, std::string _root, std::string _suffix)
+    : port(std::move(_port)),
+      host(std::move(_host)),
+      root(std::move(_root)),
+      suffix(std::move(_suffix)) {}
 
-int WSServer::start(std::string root) {
+int WSServer::start() {
   if (root.length() > 0) {
     if (!std::filesystem::is_directory(root)) {
       std::cout << "ERROR: directory " << '"' << root << '"' << " does not exist." << std::endl;
       return 1;
     };
-
-    ROOT = root;
   }
   // Start the server on port
   ix::WebSocketServer server(port, host);
@@ -253,7 +255,10 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         uint64_t parent = lookup.getParent();
         std::string name = lookup.getName();
 
-        std::string user_root = normalize_path(ROOT, connectionState->getId());
+        std::string user_root = suffix.length()
+                                    ? normalize_path(root, connectionState->getId(), suffix)
+                                    : normalize_path(root, connectionState->getId());
+
         std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
         std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
         std::filesystem::path file_path = parent_path / std::filesystem::path(name);
@@ -348,7 +353,8 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         // Root
         if (ino == 1) {
-          path = normalize_path(ROOT, connectionState->getId());
+          path = suffix.length() ? normalize_path(root, connectionState->getId(), suffix)
+                                 : normalize_path(root, connectionState->getId());
         } else if (ino_to_path.find(ino) != ino_to_path.end()) {
           path = ino_to_path[ino];
         } else {
@@ -362,8 +368,9 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         /**
          * example check access
+         * TODO: Add suffix here
          */
-        bool access_ok = check_access(ROOT, connectionState->getId(), path);
+        bool access_ok = check_access(root, connectionState->getId(), path);
 
         if (!access_ok) {
           send_message(readdir_response, message, EACCES, webSocket, Ops::Readdir);
@@ -736,7 +743,10 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         uint64_t parent = create.getParent();
 
-        std::string user_root = normalize_path(ROOT, connectionState->getId());
+        std::string user_root = suffix.length()
+                                    ? normalize_path(root, connectionState->getId(), suffix)
+                                    : normalize_path(root, connectionState->getId());
+
         std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
         std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
         std::filesystem::path file_path = parent_path / create.getName();
@@ -821,7 +831,10 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         uint64_t parent = mknod.getParent();
 
-        std::string user_root = normalize_path(ROOT, connectionState->getId());
+        std::string user_root = suffix.length()
+                                    ? normalize_path(root, connectionState->getId(), suffix)
+                                    : normalize_path(root, connectionState->getId());
+
         std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
         std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
         std::filesystem::path file_path = parent_path / mknod.getName();
@@ -894,7 +907,10 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         uint64_t parent = mkdir.getParent();
 
-        std::string user_root = normalize_path(ROOT, connectionState->getId());
+        std::string user_root = suffix.length()
+                                    ? normalize_path(root, connectionState->getId(), suffix)
+                                    : normalize_path(root, connectionState->getId());
+
         std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
         std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
         std::filesystem::path file_path = parent_path / mkdir.getName();
@@ -966,7 +982,10 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         uint64_t parent = unlink.getParent();
         std::string name = unlink.getName();
 
-        std::string user_root = normalize_path(ROOT, connectionState->getId());
+        std::string user_root = suffix.length()
+                                    ? normalize_path(root, connectionState->getId(), suffix)
+                                    : normalize_path(root, connectionState->getId());
+                                    
         std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
         std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
         std::filesystem::path file_path = parent_path / std::filesystem::path(name);
@@ -999,7 +1018,10 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         // std::cout << "RMDIR name: " << name << std::endl;
 
-        std::string user_root = normalize_path(ROOT, connectionState->getId());
+        std::string user_root = suffix.length()
+                                    ? normalize_path(root, connectionState->getId(), suffix)
+                                    : normalize_path(root, connectionState->getId());
+                                    
         std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
         std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
         std::filesystem::path file_path = parent_path / std::filesystem::path(name);

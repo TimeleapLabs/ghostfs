@@ -67,8 +67,6 @@ std::map<std::string, uint64_t> path_to_ino;
 
 uint64_t current_ino = 1;
 
-std::string ROOT = "/tmp/.ghostfs/root";
-
 struct request {
   char *name;
   Ops type;
@@ -1245,7 +1243,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);

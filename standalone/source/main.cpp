@@ -22,6 +22,7 @@ auto main(int argc, char** argv) -> int {
     ("b,bind", "Bind IP address", cxxopts::value<std::string>()->default_value("127.0.0.1"))
     ("p,port", "Server port", cxxopts::value<uint16_t>()->default_value("3444"))
     ("r,root", "Root directory", cxxopts::value<std::string>()->default_value(default_root))
+    ("S,suffix", "User data subdirectory suffix", cxxopts::value<std::string>()->default_value(""))
     ("u,url", "Server connection URL", cxxopts::value<std::string>())
     ("o,options", "Fuse mount options", cxxopts::value<std::vector<std::string>>())
     ("U,user", "Username (GhostFS subdirectory)", cxxopts::value<std::string>())
@@ -55,10 +56,12 @@ auto main(int argc, char** argv) -> int {
   if (result["server"].as<bool>()) {
     std::string root = result["root"].as<std::string>();
     std::string bind = result["bind"].as<std::string>();
+    std::string suffix = result["suffix"].as<std::string>();
+
     uint16_t port = result["port"].as<uint16_t>();
 
-    wsserver::WSServer wss(port, bind);
-    return wss.start(root);
+    wsserver::WSServer wss(port, bind, root, suffix);
+    return wss.start();
 
     return 0;
   } else if (result["client"].as<bool>()) {

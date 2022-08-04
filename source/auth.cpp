@@ -28,6 +28,12 @@ bool is_authenticated(std::string user_id) {
   return users[user_id].authenticated;
 }
 
+std::string random_token() {
+  std::string uuid = gen_uuid();
+  std::replace(uuid.begin(), uuid.end(), '-', uuid[3]);
+  return uuid;
+}
+
 bool authenticate(std::string token, std::string sub_directory, std::string user_id) {
   /**
    * Add a dummy token

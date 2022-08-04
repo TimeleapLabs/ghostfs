@@ -14,7 +14,6 @@ int hello_stat(fuse_ino_t ino, struct stat* stbuf);
 
 extern std::map<uint64_t, std::string> ino_to_path;
 extern std::map<std::string, uint64_t> path_to_ino;
-extern std::string ROOT;
 extern uint64_t current_ino;
 
 struct dirbuf {
