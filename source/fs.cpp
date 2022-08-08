@@ -1282,11 +1282,15 @@ static void hello_ll_release(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
 
   release.setUuid(uuid);
 
+  std::cout << "hello_ll_release: Request UUID: " << uuid << std::endl;
+
   const auto data = capnp::messageToFlatArray(message);
   const auto bytes = data.asBytes();
   std::string payload(bytes.begin(), bytes.end());
 
   ws->send((char)Ops::Release + payload);
+
+  std::cout << "hello_ll_release executed correctly: " << payload << std::endl;
 }
 
 /**
