@@ -798,6 +798,9 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         if (res == -1) {
             int err = errno;
+
+            std::cout << "create: open errno: " << err << std::endl;
+
             std::string response_payload = send_message(create_response, message, res, err, webSocket, Ops::Create);
 
             std::cout << "create_response sent error: " << response_payload << std::endl;
