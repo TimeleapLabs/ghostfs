@@ -829,7 +829,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         fi_response.setPollEvents(fi.getPollEvents());
         fi_response.setWritepage(fi.getWritepage());
 
-        hello_stat(file_ino, &attr);
+        res = hello_stat(file_ino, &attr);
         int err = errno;
 
         create_response.setIno(file_ino);
