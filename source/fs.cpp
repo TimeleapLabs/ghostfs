@@ -1233,8 +1233,13 @@ static void hello_ll_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, 
   // std::cout << "hello_ll_mkdir executed correctly: " << payload << std::endl;
 }
 
-static void lo_rename(fuse_req_t req, fuse_ino_t parent, const char *name, fuse_ino_t newparent,
-                      const char *newname, unsigned int flags) {
+#ifdef __APPLE__
+static void hello_ll_rename(fuse_req_t req, fuse_ino_t parent, const char *name,
+                            fuse_ino_t newparent, const char *newname) {
+#else
+static void hello_ll_rename(fuse_req_t req, fuse_ino_t parent, const char *name,
+                            fuse_ino_t newparent, const char *newname, unsigned int flags) {
+#endif
   // printf("Called .rename\n");
 
   ::capnp::MallocMessageBuilder message;
@@ -1244,8 +1249,10 @@ static void lo_rename(fuse_req_t req, fuse_ino_t parent, const char *name, fuse_
   rename.setName(name);
   rename.setNewparent(newparent);
   rename.setNewname(newname);
-  rename.setFlags(flags);
 
+#ifndef __APPLE__
+  rename.setFlags(flags);
+#endif
   std::string uuid = gen_uuid();
   requests[uuid] = {.type = Ops::Rename, .req = req};
 
@@ -1423,15 +1430,16 @@ static const struct fuse_lowlevel_ops hello_ll_oper = {
     .mkdir = hello_ll_mkdir,
     .unlink = hello_ll_unlink,
     .rmdir = hello_ll_rmdir,
+    .rename = hello_ll_rename,
     .open = hello_ll_open,
     .read = hello_ll_read,
     .write = hello_ll_write,
+    .release = hello_ll_release,
     .readdir = hello_ll_readdir,
     #ifdef __APPLE__
       .setxattr = hello_ll_setxattr,
     #endif
     .create = hello_ll_create,
-    .release = hello_ll_release
 };
 // clang-format on
 
