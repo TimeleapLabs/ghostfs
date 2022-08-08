@@ -113,6 +113,10 @@ void WSClient::onMessage(const ix::WebSocketMessagePtr& msg) {
         process_rmdir_response(payload);
         break;
       }
+      case (char)Ops::Rename: {
+        process_rename_response(payload);
+        break;
+      }
       default:
         break;
     }

@@ -29,6 +29,8 @@
 #include <read.response.capnp.h>
 #include <readdir.capnp.h>
 #include <readdir.response.capnp.h>
+#include <rename.capnp.h>
+#include <rename.response.capnp.h>
 #include <rmdir.capnp.h>
 #include <rmdir.response.capnp.h>
 #include <setattr.capnp.h>
@@ -793,7 +795,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         int res = ::open(file_path.c_str(), (fi.getFlags() | O_CREAT) & ~O_NOFOLLOW, create.getMode());
 
         if (res == -1) {
-                  int err = errno;
+            int err = errno;
             std::string response_payload = send_message(create_response, message, res, err, webSocket, Ops::Create);
 
             // std::cout << "create_response sent error: " << response_payload << std::endl;
@@ -886,7 +888,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         if (res == -1) {
           ino_to_path.erase(file_ino);
           path_to_ino.erase(file_path);
-                  int err = errno;
+          int err = errno;
 
           std::string response_payload = send_message(mknod_response, message, res, err, webSocket, Ops::Mknod);
 
@@ -1060,6 +1062,52 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         
         std::string response_payload = send_message(rmdir_response, message, res, errno, webSocket, Ops::Rmdir);
         // std::cout << "rmdir_response sent correctly: " << response_payload << std::endl;
+
+        break;
+      }
+      case (char)Ops::Rename: {
+        const kj::ArrayPtr<const capnp::word> view(
+            reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
+            reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
+
+        capnp::FlatArrayMessageReader data(view);
+        Rename::Reader rename = data.getRoot<Rename>();
+
+        // std::cout << "rename: Received UUID: " << rename.getUuid().cStr() << std::endl;
+
+        ::capnp::MallocMessageBuilder message;
+        RenameResponse::Builder rename_response = message.initRoot<RenameResponse>();
+
+        rename_response.setUuid(rename.getUuid());
+
+        unsigned int flags = rename.getFlags();
+
+        if (flags) {
+          std::string response_payload = send_message(rename_response, message, -1, EINVAL, webSocket, Ops::Rename);
+          return;
+        }
+
+        uint64_t parent = rename.getParent();
+        std::string name = rename.getName();
+        uint64_t newparent = rename.getNewparent();
+        std::string newname = rename.getNewname();
+
+        std::string user_root = normalize_path(root, connectionState->getId(), suffix);
+
+        std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
+        std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
+        std::filesystem::path file_path = parent_path / std::filesystem::path(name);
+
+        std::string newparent_path_name = newparent == 1 ? user_root : ino_to_path[newparent];
+        std::filesystem::path newparent_path = std::filesystem::path(newparent_path_name);
+        std::filesystem::path newfile_path = newparent_path / std::filesystem::path(newname);
+
+        // use rename
+        int res = ::rename(file_path.c_str(), newfile_path.c_str());
+        int err = errno;
+
+        std::string response_payload = send_message(rename_response, message, res, errno, webSocket, Ops::Rmdir);
+        // std::cout << "rename_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
