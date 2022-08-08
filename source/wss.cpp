@@ -800,56 +800,57 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
             std::cout << "create_response sent error: " << response_payload << std::endl;
             return;
-        } else {
-          struct stat attr;
-          memset(&attr, 0, sizeof(attr));
-
-          uint64_t file_ino;
-
-          file_ino = ++current_ino;
-          ino_to_path[file_ino] = file_path;
-          path_to_ino[file_path] = file_ino;
-
-          // e.attr_timeout = 1.0;
-          // e.entry_timeout = 1.0;
-
-          CreateResponse::FuseFileInfo::Builder fi_response = create_response.initFi();
-
-          fi_response.setCacheReaddir(fi.getCacheReaddir());
-          fi_response.setDirectIo(fi.getDirectIo());
-          fi_response.setFh(res);
-          fi_response.setFlags(fi.getFlags());
-          fi_response.setFlush(fi.getFlush());
-          fi_response.setKeepCache(fi.getKeepCache());
-          fi_response.setLockOwner(fi.getLockOwner());
-          fi_response.setNoflush(fi.getNoflush());
-          fi_response.setNonseekable(fi.getNonseekable());
-          fi_response.setPadding(fi.getPadding());
-          fi_response.setPollEvents(fi.getPollEvents());
-          fi_response.setWritepage(fi.getWritepage());
-
-          hello_stat(file_ino, &attr);
-
-          create_response.setIno(file_ino);
-
-          CreateResponse::Attr::Builder attributes = create_response.initAttr();
-
-          attributes.setStDev(attr.st_dev);
-          attributes.setStIno(attr.st_ino);
-          attributes.setStMode(attr.st_mode);
-          attributes.setStNlink(attr.st_nlink);
-          attributes.setStUid(attr.st_uid);
-          attributes.setStGid(attr.st_gid);
-          attributes.setStRdev(attr.st_rdev);
-          attributes.setStSize(attr.st_size);
-          attributes.setStAtime(attr.st_atime);
-          attributes.setStMtime(attr.st_mtime);
-          attributes.setStCtime(attr.st_ctime);
-          attributes.setStBlksize(attr.st_blksize);
-          attributes.setStBlocks(attr.st_blocks);
         }
+
+        struct stat attr;
+        memset(&attr, 0, sizeof(attr));
+
+        uint64_t file_ino;
+
+        file_ino = ++current_ino;
+        ino_to_path[file_ino] = file_path;
+        path_to_ino[file_path] = file_ino;
+
+        // e.attr_timeout = 1.0;
+        // e.entry_timeout = 1.0;
+
+        CreateResponse::FuseFileInfo::Builder fi_response = create_response.initFi();
+
+        fi_response.setCacheReaddir(fi.getCacheReaddir());
+        fi_response.setDirectIo(fi.getDirectIo());
+        fi_response.setFh(res);
+        fi_response.setFlags(fi.getFlags());
+        fi_response.setFlush(fi.getFlush());
+        fi_response.setKeepCache(fi.getKeepCache());
+        fi_response.setLockOwner(fi.getLockOwner());
+        fi_response.setNoflush(fi.getNoflush());
+        fi_response.setNonseekable(fi.getNonseekable());
+        fi_response.setPadding(fi.getPadding());
+        fi_response.setPollEvents(fi.getPollEvents());
+        fi_response.setWritepage(fi.getWritepage());
+
+        hello_stat(file_ino, &attr);
+        int err = errno;
+
+        create_response.setIno(file_ino);
+
+        CreateResponse::Attr::Builder attributes = create_response.initAttr();
+
+        attributes.setStDev(attr.st_dev);
+        attributes.setStIno(attr.st_ino);
+        attributes.setStMode(attr.st_mode);
+        attributes.setStNlink(attr.st_nlink);
+        attributes.setStUid(attr.st_uid);
+        attributes.setStGid(attr.st_gid);
+        attributes.setStRdev(attr.st_rdev);
+        attributes.setStSize(attr.st_size);
+        attributes.setStAtime(attr.st_atime);
+        attributes.setStMtime(attr.st_mtime);
+        attributes.setStCtime(attr.st_ctime);
+        attributes.setStBlksize(attr.st_blksize);
+        attributes.setStBlocks(attr.st_blocks);
         
-        std::string response_payload = send_message(create_response, message, res, webSocket, Ops::Create);
+        std::string response_payload = send_message(create_response, message, res, err, webSocket, Ops::Create);
 
         std::cout << "create_response sent correctly: " << response_payload << std::endl;
 
