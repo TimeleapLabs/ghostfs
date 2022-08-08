@@ -30,7 +30,7 @@ struct Rename {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(8169ed6dea562276, 3, 3)
+    CAPNP_DECLARE_STRUCT_HEADER(8169ed6dea562276, 2, 3)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -65,8 +65,6 @@ public:
 
   inline bool hasNewname() const;
   inline  ::capnp::Text::Reader getNewname() const;
-
-  inline  ::uint64_t getFlags() const;
 
   inline bool hasUuid() const;
   inline  ::capnp::Text::Reader getUuid() const;
@@ -118,9 +116,6 @@ public:
   inline  ::capnp::Text::Builder initNewname(unsigned int size);
   inline void adoptNewname(::capnp::Orphan< ::capnp::Text>&& value);
   inline ::capnp::Orphan< ::capnp::Text> disownNewname();
-
-  inline  ::uint64_t getFlags();
-  inline void setFlags( ::uint64_t value);
 
   inline bool hasUuid();
   inline  ::capnp::Text::Builder getUuid();
@@ -251,20 +246,6 @@ inline void Rename::Builder::adoptNewname(
 inline ::capnp::Orphan< ::capnp::Text> Rename::Builder::disownNewname() {
   return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(_builder.getPointerField(
       ::capnp::bounded<1>() * ::capnp::POINTERS));
-}
-
-inline  ::uint64_t Rename::Reader::getFlags() const {
-  return _reader.getDataField< ::uint64_t>(
-      ::capnp::bounded<2>() * ::capnp::ELEMENTS);
-}
-
-inline  ::uint64_t Rename::Builder::getFlags() {
-  return _builder.getDataField< ::uint64_t>(
-      ::capnp::bounded<2>() * ::capnp::ELEMENTS);
-}
-inline void Rename::Builder::setFlags( ::uint64_t value) {
-  _builder.setDataField< ::uint64_t>(
-      ::capnp::bounded<2>() * ::capnp::ELEMENTS, value);
 }
 
 inline bool Rename::Reader::hasUuid() const {

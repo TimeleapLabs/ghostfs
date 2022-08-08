@@ -1233,13 +1233,8 @@ static void hello_ll_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, 
   // std::cout << "hello_ll_mkdir executed correctly: " << payload << std::endl;
 }
 
-#ifdef __APPLE__
 static void hello_ll_rename(fuse_req_t req, fuse_ino_t parent, const char *name,
                             fuse_ino_t newparent, const char *newname) {
-#else
-static void hello_ll_rename(fuse_req_t req, fuse_ino_t parent, const char *name,
-                            fuse_ino_t newparent, const char *newname, unsigned int flags) {
-#endif
   // printf("Called .rename\n");
 
   ::capnp::MallocMessageBuilder message;
@@ -1250,9 +1245,6 @@ static void hello_ll_rename(fuse_req_t req, fuse_ino_t parent, const char *name,
   rename.setNewparent(newparent);
   rename.setNewname(newname);
 
-#ifndef __APPLE__
-  rename.setFlags(flags);
-#endif
   std::string uuid = gen_uuid();
   requests[uuid] = {.type = Ops::Rename, .req = req};
 
@@ -1359,7 +1351,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-// clang-format off
+  // clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);

@@ -1082,13 +1082,6 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         rename_response.setUuid(rename.getUuid());
 
-        unsigned int flags = rename.getFlags();
-
-        if (flags) {
-          std::string response_payload = send_message(rename_response, message, -1, EINVAL, webSocket, Ops::Rename);
-          return;
-        }
-
         uint64_t parent = rename.getParent();
         std::string name = rename.getName();
         uint64_t newparent = rename.getNewparent();

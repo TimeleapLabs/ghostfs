@@ -5,6 +5,5 @@ struct Rename {
     name      @1 :Text;
     newparent @2 :UInt64;
     newname   @3 :Text;
-    flags     @4 :UInt64;
-    uuid      @5 :Text;
+    uuid      @4 :Text;
 }
