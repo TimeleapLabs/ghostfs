@@ -751,7 +751,7 @@ void process_release_response(std::string payload) {
 
   std::string uuid = release_response.getUuid();
 
-  std::cout << "process_rmdir_response: Response UUID: " << uuid << std::endl;
+  std::cout << "process_release_response: Response UUID: " << uuid << std::endl;
 
   request request = requests[uuid];
 
@@ -760,9 +760,9 @@ void process_release_response(std::string payload) {
 
   fuse_reply_err(request.req, res == -1 ? err : 0);
 
-  std::cout << "process_rmdir_response: Request: " << request.req << std::endl;
+  std::cout << "process_release_response: Request: " << request.req << std::endl;
 
-  std::cout << "process_rmdir_response executed with result: " << res << std::endl;
+  std::cout << "process_release_response executed with result: " << res << std::endl;
 }
 
 /**
