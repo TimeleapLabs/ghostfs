@@ -793,6 +793,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         std::filesystem::path file_path = parent_path / create.getName();
 
         std::cout << "create: open file path: " << file_path.c_str() << std::endl;
+        std::cout << "create: flags: " << fi.getFlags() << std::endl;
 
         int res = ::open(file_path.c_str(), (fi.getFlags() | O_CREAT) & ~O_NOFOLLOW, create.getMode());
 
