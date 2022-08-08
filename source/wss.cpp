@@ -29,6 +29,8 @@
 #include <read.response.capnp.h>
 #include <readdir.capnp.h>
 #include <readdir.response.capnp.h>
+#include <release.capnp.h>
+#include <release.response.capnp.h>
 #include <rename.capnp.h>
 #include <rename.response.capnp.h>
 #include <rmdir.capnp.h>
@@ -1108,6 +1110,28 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         std::string response_payload = send_message(rename_response, message, res, errno, webSocket, Ops::Rmdir);
         // std::cout << "rename_response sent correctly: " << response_payload << std::endl;
+
+        break;
+      }
+      case (char)Ops::Release: {
+        const kj::ArrayPtr<const capnp::word> view(
+            reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
+            reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
+
+        capnp::FlatArrayMessageReader data(view);
+        Release::Reader release = data.getRoot<Release>();
+        Release::FuseFileInfo::Reader fi = release.getFi();
+
+        int res = ::close(fi.getFh());
+        int err = errno;
+
+        // std::cout << "rmdir: Received UUID: " << rmdir.getUuid().cStr() << std::endl;
+
+        ::capnp::MallocMessageBuilder message;
+        ReleaseResponse::Builder release_response = message.initRoot<ReleaseResponse>();
+
+        release_response.setUuid(release.getUuid());
+        std::string response_payload = send_message(release_response, message, res, err, webSocket, Ops::Release);
 
         break;
       }

@@ -40,6 +40,8 @@
 #include <read.response.capnp.h>
 #include <readdir.capnp.h>
 #include <readdir.response.capnp.h>
+#include <release.capnp.h>
+#include <release.response.capnp.h>
 #include <rename.capnp.h>
 #include <rename.response.capnp.h>
 #include <rmdir.capnp.h>
@@ -739,6 +741,30 @@ void process_rename_response(std::string payload) {
   // std::cout << "rename_rmdir_response executed with result: " << res << std::endl;
 }
 
+void process_release_response(std::string payload) {
+  const kj::ArrayPtr<const capnp::word> view(
+      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
+      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
+
+  capnp::FlatArrayMessageReader data(view);
+  ReleaseResponse::Reader release_response = data.getRoot<ReleaseResponse>();
+
+  std::string uuid = release_response.getUuid();
+
+  // std::cout << "process_rmdir_response: Response UUID: " << uuid << std::endl;
+
+  request request = requests[uuid];
+
+  int res = release_response.getRes();
+  int err = release_response.getErrno();
+
+  fuse_reply_err(request.req, res == -1 ? err : 0);
+
+  // std::cout << "process_rmdir_response: Request: " << request.req << std::endl;
+
+  // std::cout << "process_rmdir_response executed with result: " << res << std::endl;
+}
+
 /**
  * @brief
  *
@@ -1240,6 +1266,34 @@ static void lo_rename(fuse_req_t req, fuse_ino_t parent, const char *name, fuse_
  * @brief
  *
  * @param req
+ * @param parent -> uint64_t
+ * @param name -> *char
+ * @param mode -> uint64_t
+ */
+static void hello_ll_release(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
+  ::capnp::MallocMessageBuilder message;
+  Release::Builder release = message.initRoot<Release>();
+  Release::FuseFileInfo::Builder fuseFileInfo = release.initFi();
+
+  release.setIno(ino);
+  fillFileInfo(&fuseFileInfo, fi);
+
+  std::string uuid = gen_uuid();
+  requests[uuid] = {.type = Ops::Mkdir, .req = req};
+
+  release.setUuid(uuid);
+
+  const auto data = capnp::messageToFlatArray(message);
+  const auto bytes = data.asBytes();
+  std::string payload(bytes.begin(), bytes.end());
+
+  ws->send((char)Ops::Release + payload);
+}
+
+/**
+ * @brief
+ *
+ * @param req
  * @param ino -> uint64_t
  * @param attr -> {
  *    uint16_t      st_dev
@@ -1298,7 +1352,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
@@ -1377,6 +1431,7 @@ static const struct fuse_lowlevel_ops hello_ll_oper = {
       .setxattr = hello_ll_setxattr,
     #endif
     .create = hello_ll_create,
+    .release = hello_ll_release
 };
 // clang-format on
 

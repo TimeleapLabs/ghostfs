@@ -39,6 +39,7 @@ enum class Ops : char {
   Unlink = 13,
   Rmdir = 14,
   Rename = 15,
+  Release = 16
 };
 
 // Responses
@@ -57,5 +58,6 @@ void process_mkdir_response(std::string payload);
 void process_unlink_response(std::string payload);
 void process_rmdir_response(std::string payload);
 void process_rename_response(std::string payload);
+void process_release_response(std::string payload);
 
 uint64_t get_parent_ino(uint64_t ino, std::string path);
