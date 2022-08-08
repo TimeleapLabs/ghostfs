@@ -272,10 +272,12 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         std::cout << "st_atime " << attr.st_atime << " " << attributes.getStAtime() << std::endl;
         std::cout << "st_mtime " << attr.st_mtime << " " << attributes.getStMtime() << std::endl;
         std::cout << "st_ctime " << attr.st_ctime << " " << attributes.getStCtime() << std::endl;
-        std::cout << "st_blksize " << attr.st_blksize << " " << attributes.getStBlksize() << std::endl;
+        std::cout << "st_blksize " << attr.st_blksize << " " << attributes.getStBlksize()
+                  << std::endl;
         std::cout << "st_blocks " << attr.st_blocks << " " << attributes.getStBlocks() << std::endl;
 
-        std::string response_payload = send_message(getattr_response, message, res, err, webSocket, Ops::Getattr);
+        std::string response_payload
+            = send_message(getattr_response, message, res, err, webSocket, Ops::Getattr);
 
         std::cout << "getattr_response sent correctly: " << response_payload << std::endl;
 
@@ -500,6 +502,15 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         Open::FuseFileInfo::Reader fi = open.getFi();
 
         uint64_t fh = ::open(ino_to_path[open.getIno()].c_str(), fi.getFlags());
+
+        if (fh == -1) {
+          int err = errno;
+
+          std::string response_payload
+              = send_message(open_response, message, fh, err, webSocket, Ops::Open);
+
+          return;
+        }
 
         OpenResponse::FuseFileInfo::Builder fi_response = open_response.initFi();
 
@@ -795,7 +806,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         std::cout << "create: open file path: " << file_path.c_str() << std::endl;
         std::cout << "create: flags: " << fi.getFlags() << std::endl;
 
-        int res = ::open(file_path.c_str(), (fi.getFlags() | O_CREAT) & ~O_NOFOLLOW, create.getMode());
+        int res = ::creat(file_path.c_str(), create.getMode());
 
         if (res == -1) {
             int err = errno;

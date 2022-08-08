@@ -32,7 +32,7 @@ struct OpenResponse {
   struct FuseFileInfo;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(ad0459ef1f13b266, 2, 2)
+    CAPNP_DECLARE_STRUCT_HEADER(ad0459ef1f13b266, 3, 2)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -83,6 +83,8 @@ public:
 
   inline  ::int8_t getRes() const;
 
+  inline  ::uint64_t getErrno() const;
+
 private:
   ::capnp::_::StructReader _reader;
   template <typename, ::capnp::Kind>
@@ -130,6 +132,9 @@ public:
 
   inline  ::int8_t getRes();
   inline void setRes( ::int8_t value);
+
+  inline  ::uint64_t getErrno();
+  inline void setErrno( ::uint64_t value);
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -390,6 +395,20 @@ inline  ::int8_t OpenResponse::Builder::getRes() {
 inline void OpenResponse::Builder::setRes( ::int8_t value) {
   _builder.setDataField< ::int8_t>(
       ::capnp::bounded<8>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint64_t OpenResponse::Reader::getErrno() const {
+  return _reader.getDataField< ::uint64_t>(
+      ::capnp::bounded<2>() * ::capnp::ELEMENTS);
+}
+
+inline  ::uint64_t OpenResponse::Builder::getErrno() {
+  return _builder.getDataField< ::uint64_t>(
+      ::capnp::bounded<2>() * ::capnp::ELEMENTS);
+}
+inline void OpenResponse::Builder::setErrno( ::uint64_t value) {
+  _builder.setDataField< ::uint64_t>(
+      ::capnp::bounded<2>() * ::capnp::ELEMENTS, value);
 }
 
 inline  ::int8_t OpenResponse::FuseFileInfo::Reader::getFlags() const {
