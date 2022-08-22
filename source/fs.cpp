@@ -1035,8 +1035,11 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
   Write::Builder write = message.initRoot<Write>();
   Write::FuseFileInfo::Builder fuseFileInfo = write.initFi();
 
+  kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte *)buf, size);
+  capnp::Data::Reader buf_reader(buf_ptr);
+
   write.setIno(ino);
-  write.setBuf(buf);
+  write.setBuf(buf_reader);
   write.setSize(size);
   write.setOff(off);
 

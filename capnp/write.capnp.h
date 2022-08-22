@@ -76,7 +76,7 @@ public:
   inline  ::uint64_t getIno() const;
 
   inline bool hasBuf() const;
-  inline  ::capnp::Text::Reader getBuf() const;
+  inline  ::capnp::Data::Reader getBuf() const;
 
   inline  ::uint64_t getSize() const;
 
@@ -120,11 +120,11 @@ public:
   inline void setIno( ::uint64_t value);
 
   inline bool hasBuf();
-  inline  ::capnp::Text::Builder getBuf();
-  inline void setBuf( ::capnp::Text::Reader value);
-  inline  ::capnp::Text::Builder initBuf(unsigned int size);
-  inline void adoptBuf(::capnp::Orphan< ::capnp::Text>&& value);
-  inline ::capnp::Orphan< ::capnp::Text> disownBuf();
+  inline  ::capnp::Data::Builder getBuf();
+  inline void setBuf( ::capnp::Data::Reader value);
+  inline  ::capnp::Data::Builder initBuf(unsigned int size);
+  inline void adoptBuf(::capnp::Orphan< ::capnp::Data>&& value);
+  inline ::capnp::Orphan< ::capnp::Data> disownBuf();
 
   inline  ::uint64_t getSize();
   inline void setSize( ::uint64_t value);
@@ -328,29 +328,29 @@ inline bool Write::Builder::hasBuf() {
   return !_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
 }
-inline  ::capnp::Text::Reader Write::Reader::getBuf() const {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_reader.getPointerField(
+inline  ::capnp::Data::Reader Write::Reader::getBuf() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Data>::get(_reader.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
-inline  ::capnp::Text::Builder Write::Builder::getBuf() {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_builder.getPointerField(
+inline  ::capnp::Data::Builder Write::Builder::getBuf() {
+  return ::capnp::_::PointerHelpers< ::capnp::Data>::get(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
-inline void Write::Builder::setBuf( ::capnp::Text::Reader value) {
-  ::capnp::_::PointerHelpers< ::capnp::Text>::set(_builder.getPointerField(
+inline void Write::Builder::setBuf( ::capnp::Data::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Data>::set(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS), value);
 }
-inline  ::capnp::Text::Builder Write::Builder::initBuf(unsigned int size) {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(_builder.getPointerField(
+inline  ::capnp::Data::Builder Write::Builder::initBuf(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Data>::init(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS), size);
 }
 inline void Write::Builder::adoptBuf(
-    ::capnp::Orphan< ::capnp::Text>&& value) {
-  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(_builder.getPointerField(
+    ::capnp::Orphan< ::capnp::Data>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Data>::adopt(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
 }
-inline ::capnp::Orphan< ::capnp::Text> Write::Builder::disownBuf() {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(_builder.getPointerField(
+inline ::capnp::Orphan< ::capnp::Data> Write::Builder::disownBuf() {
+  return ::capnp::_::PointerHelpers< ::capnp::Data>::disown(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 

@@ -2,7 +2,7 @@
 
 struct Write {
   ino   @0 :UInt64;
-  buf   @1 :Text;
+  buf   @1 :Data;
   size  @2 :UInt64;
   off   @3 :Int64;
   fi    @4 :FuseFileInfo;

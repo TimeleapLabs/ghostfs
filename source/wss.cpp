@@ -728,8 +728,12 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         Write::FuseFileInfo::Reader fi = write.getFi();
 
+        capnp::Data::Reader buf_reader = write.getBuf();
+        const auto chars = buf_reader.asChars();
+        const char *buf = chars.begin();
+
         ::lseek(fi.getFh(), write.getOff(), SEEK_SET);
-        size_t written = ::write(fi.getFh(), write.getBuf().cStr(), write.getSize());
+        size_t written = ::write(fi.getFh(), buf, write.getSize());
         
         int err = errno;
 
