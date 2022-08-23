@@ -1054,10 +1054,11 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
   // std::cout << "hello_ll_write: Request UUID: " << uuid << std::endl;
 
   const auto data = capnp::messageToFlatArray(message);
-  const auto bytes = data.asBytes();
-  std::string payload(bytes.begin(), bytes.end());
+  const auto chars = data.asChars();
+  const char *charArray = chars.begin();
+  // std::string payload(bytes.begin(), bytes.end());
 
-  ws->send((char)Ops::Write + payload);
+  ws->send((char)Ops::Write + charArray);
 
   // std::cout << "hello_ll_write executed correctly: " << payload << std::endl;
 }
