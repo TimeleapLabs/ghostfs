@@ -60,8 +60,8 @@
 #include <iostream>
 #include <map>
 
-//static const char *hello_str = "Hello World!\n";
-//static const char *hello_name = "hello";
+// static const char *hello_str = "Hello World!\n";
+// static const char *hello_name = "hello";
 
 char user_file_str[40];
 char user_file_name[1024];
@@ -1036,8 +1036,8 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
   Write::Builder write = message.initRoot<Write>();
   Write::FuseFileInfo::Builder fuseFileInfo = write.initFi();
 
-  kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte *)buf, size);
-  capnp::Data::Reader buf_reader(buf_ptr);
+  // kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte *)buf, size);
+  capnp::Data::Reader buf_reader((kj::byte *)buf, size);
 
   write.setIno(ino);
   write.setBuf(buf_reader);
@@ -1173,7 +1173,6 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
  */
 static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode,
                             struct fuse_file_info *fi) {
-
   // printf("Called .create\n");
 
   ::capnp::MallocMessageBuilder message;
