@@ -70,8 +70,8 @@ int WSServer::start() {
   ix::WebSocketServer server(port, host);
   ix::WebSocketServer auth_server(auth_port);
 
-  // std::cout << "Starting the server on " << host << ":" << port << "..." << std::endl;
-  // std::cout << "Starting the auth server on port " << auth_port << "..." << std::endl;
+  std::cout << "Starting the server on " << host << ":" << port << "..." << std::endl;
+  std::cout << "Starting the auth server on port " << auth_port << "..." << std::endl;
 
   // Setup a callback to be fired (in a background thread, watch out for race conditions !)
   // when a message or an event (open, close, error) is received

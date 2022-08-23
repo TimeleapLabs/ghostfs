@@ -45,12 +45,12 @@ auto main(int argc, char** argv) -> int {
   // std::cout << "UUID: " << gen_uuid() << std::endl;
 
   if (result["help"].as<bool>()) {
-    // std::cout << options.help() << std::endl;
+    std::cout << options.help() << std::endl;
     return 0;
   }
 
   if (result["version"].as<bool>()) {
-    // std::cout << "GhostFS, version " << GHOSTFS_VERSION << std::endl;
+    std::cout << "GhostFS, version " << GHOSTFS_VERSION << std::endl;
     return 0;
   }
 
