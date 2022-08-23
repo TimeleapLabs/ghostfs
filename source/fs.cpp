@@ -148,7 +148,6 @@ int hello_stat(fuse_ino_t ino, struct stat *stbuf) {
     stbuf->st_ino = ino;
     stbuf->st_mode = S_IFDIR | 0777;
     stbuf->st_nlink = 2;
-    stbuf->st_blksize = 16384;
     return 0;
   }
 
@@ -159,7 +158,6 @@ int hello_stat(fuse_ino_t ino, struct stat *stbuf) {
 
   stat(ino_to_path[ino].c_str(), stbuf);
   stbuf->st_ino = ino;
-  stbuf->st_blksize = 16384;
 
   return 0;
 }
@@ -1038,8 +1036,8 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
   Write::Builder write = message.initRoot<Write>();
   Write::FuseFileInfo::Builder fuseFileInfo = write.initFi();
 
-  // kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte *)buf, size);
-  capnp::Data::Reader buf_reader(reinterpret_cast<const kj::byte *>(buf), size);
+  kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte *)buf, size);
+  capnp::Data::Reader buf_reader(buf_ptr);
 
   write.setIno(ino);
   write.setBuf(buf_reader);
@@ -1056,8 +1054,8 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
   // std::cout << "hello_ll_write: Request UUID: " << uuid << std::endl;
 
   const auto data = capnp::messageToFlatArray(message);
-  const auto chars = data.asChars();
-  std::string payload(chars.begin(), chars.end());
+  const auto bytes = data.asBytes();
+  std::string payload(bytes.begin(), bytes.end());
 
   ws->send((char)Ops::Write + payload);
 
@@ -1359,7 +1357,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
@@ -1455,7 +1453,7 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options,
     return 1;
   }
 
-  int argc = options.size() * 2 + 2;
+  int argc = options.size() * 2 + 4;
   char *argv[2048] = {executable, argmnt};
 
   int i = 0;
@@ -1463,6 +1461,9 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options,
     argv[2 + i++] = (char *)"-o";
     argv[2 + i++] = (char *)option.c_str();
   }
+
+  argv[2 + i++] = (char *)"-o";
+  argv[2 + i++] = (char *)"max_write=67108864";
 
   struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
   struct fuse_chan *ch;
