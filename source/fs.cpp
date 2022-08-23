@@ -60,8 +60,8 @@
 #include <iostream>
 #include <map>
 
-static const char *hello_str = "Hello World!\n";
-static const char *hello_name = "hello";
+//static const char *hello_str = "Hello World!\n";
+//static const char *hello_name = "hello";
 
 char user_file_str[40];
 char user_file_name[1024];
@@ -84,7 +84,7 @@ struct request {
 
 static int reply_buf_limited(fuse_req_t req, const char *buf, size_t bufsize, off_t off,
                              size_t maxsize) {
-  if (off < bufsize) {
+  if (off < (int64_t)bufsize) {
     return fuse_reply_buf(req, buf + off, min(bufsize - off, maxsize));
   } else {
     return fuse_reply_buf(req, NULL, 0);
@@ -123,7 +123,8 @@ template <class T> void fillFileInfo(T *fuseFileInfo, struct fuse_file_info *fi)
   /* fuseFileInfo->setNoflush(fi->noflush); */
 }
 
-void process_response(uint8_t msg) {}
+// TODO
+// void process_response(uint8_t msg) {}
 /**
  * Notes: fuse_ino_t is uint64_t
  *        off_t is apparently long int
@@ -1172,7 +1173,6 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
  */
 static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode,
                             struct fuse_file_info *fi) {
-  struct fuse_entry_param e;
 
   // printf("Called .create\n");
 

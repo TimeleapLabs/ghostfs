@@ -140,6 +140,7 @@ template <class T> std::string send_message(T& response, ::capnp::MallocMessageB
 
 void WSServer::onAuthMessage(std::shared_ptr<ix::ConnectionState> connectionState,
                              ix::WebSocket& webSocket, const ix::WebSocketMessagePtr& msg) {
+  (void)connectionState;
   if (msg->type == ix::WebSocketMessageType::Message) {
     const kj::ArrayPtr<const capnp::word> view(
         reinterpret_cast<const capnp::word*>(&(*std::begin(msg->str))),
@@ -387,7 +388,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
          * On fail we need to return a fuse error.
          * EACCESS for access denied.
          */
-
+        // TODO
         bool auth = is_authenticated(connectionState->getId());
 
         if (!auth) {
@@ -395,7 +396,6 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           return;
         }  // END EXAMPLE
 
-        struct stat stbuf;
         std::string path;
 
         // Root
@@ -429,6 +429,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
             path, std::filesystem::directory_options::skip_permission_denied);
 
         for (const auto& entry : iter) {
+          (void)entry;
           length++;
         }
 
@@ -501,7 +502,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         Open::FuseFileInfo::Reader fi = open.getFi();
 
-        uint64_t fh = ::open(ino_to_path[open.getIno()].c_str(), fi.getFlags());
+        int64_t fh = ::open(ino_to_path[open.getIno()].c_str(), fi.getFlags());
 
         if (fh == -1) {
           int err = errno;
@@ -1082,7 +1083,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         int res = ::rmdir(file_path.c_str());
         int err = errno;
         
-        std::string response_payload = send_message(rmdir_response, message, res, errno, webSocket, Ops::Rmdir);
+        std::string response_payload = send_message(rmdir_response, message, res, err, webSocket, Ops::Rmdir);
         std::cout << "rmdir_response sent correctly: " << response_payload << std::endl;
 
         break;
@@ -1121,7 +1122,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         int res = ::rename(file_path.c_str(), newfile_path.c_str());
         int err = errno;
 
-        std::string response_payload = send_message(rename_response, message, res, errno, webSocket, Ops::Rmdir);
+        std::string response_payload = send_message(rename_response, message, res, err, webSocket, Ops::Rmdir);
         std::cout << "rename_response sent correctly: " << response_payload << std::endl;
 
         break;
