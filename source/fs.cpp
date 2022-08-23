@@ -1037,7 +1037,7 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
   Write::FuseFileInfo::Builder fuseFileInfo = write.initFi();
 
   // kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte *)buf, size);
-  capnp::Data::Reader buf_reader((kj::byte *)buf, size);
+  capnp::Data::Reader buf_reader(reinterpret_cast<const kj::byte *>(buf), size);
 
   write.setIno(ino);
   write.setBuf(buf_reader);
@@ -1055,10 +1055,9 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
 
   const auto data = capnp::messageToFlatArray(message);
   const auto chars = data.asChars();
-  const char *charArray = chars.begin();
-  // std::string payload(bytes.begin(), bytes.end());
+  std::string payload(chars.begin(), chars.end());
 
-  ws->send((char)Ops::Write + charArray);
+  ws->send((char)Ops::Write + payload);
 
   // std::cout << "hello_ll_write executed correctly: " << payload << std::endl;
 }
@@ -1358,7 +1357,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
