@@ -62,7 +62,7 @@ WSServer::WSServer(int _port, int _auth_port, std::string _host, std::string _ro
 int WSServer::start() {
   if (root.length() > 0) {
     if (!std::filesystem::is_directory(root)) {
-      std::cout << "ERROR: directory " << '"' << root << '"' << " does not exist." << std::endl;
+      // std::cout << "ERROR: directory " << '"' << root << '"' << " does not exist." << std::endl;
       return 1;
     };
   }
@@ -70,8 +70,8 @@ int WSServer::start() {
   ix::WebSocketServer server(port, host);
   ix::WebSocketServer auth_server(auth_port);
 
-  std::cout << "Starting the server on " << host << ":" << port << "..." << std::endl;
-  std::cout << "Starting the auth server on port " << auth_port << "..." << std::endl;
+  // std::cout << "Starting the server on " << host << ":" << port << "..." << std::endl;
+  // std::cout << "Starting the auth server on port " << auth_port << "..." << std::endl;
 
   // Setup a callback to be fired (in a background thread, watch out for race conditions !)
   // when a message or an event (open, close, error) is received
@@ -169,30 +169,30 @@ void WSServer::onAuthMessage(std::shared_ptr<ix::ConnectionState> connectionStat
 }
 void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
                          ix::WebSocket& webSocket, const ix::WebSocketMessagePtr& msg) {
-  std::cout << "Remote ip: " << connectionState->getRemoteIp() << std::endl;
+  // std::cout << "Remote ip: " << connectionState->getRemoteIp() << std::endl;
 
   if (msg->type == ix::WebSocketMessageType::Open) {
-    std::cout << "New connection" << std::endl;
+    // std::cout << "New connection" << std::endl;
 
     // // A connection state object is available, and has a default id
     // // You can subclass ConnectionState and pass an alternate factory
     // // to override it. It is useful if you want to store custom
     // // attributes per connection (authenticated bool flag, attributes, etc...)
-    std::cout << "id: " << connectionState->getId() << std::endl;
+    // std::cout << "id: " << connectionState->getId() << std::endl;
 
     // // The uri the client did connect to.
-    std::cout << "Uri: " << msg->openInfo.uri << std::endl;
+    // std::cout << "Uri: " << msg->openInfo.uri << std::endl;
 
-    std::cout << "Headers:" << std::endl;
+    // std::cout << "Headers:" << std::endl;
     // for (auto it : msg->openInfo.headers) {
-    //   std::cout << "\t" << it.first << ": " << it.second << std::endl;
+       // std::cout << "\t" << it.first << ": " << it.second << std::endl;
     // }
   } else if (msg->type == ix::WebSocketMessageType::Message) {
     // For an echo server, we just send back to the client whatever was received by the server
     // All connected clients are available in an std::set. See the broadcast cpp example.
     // Second parameter tells whether we are sending the message in binary or text mode.
     // Here we send it in the same mode as it was received.
-    std::cout << "Received: " << msg->str << std::endl;
+    // std::cout << "Received: " << msg->str << std::endl;
 
     // webSocket.send(msg->str, msg->binary);
 
@@ -234,7 +234,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         capnp::FlatArrayMessageReader data(view);
         Getattr::Reader getattr = data.getRoot<Getattr>();
 
-        std::cout << "getattr: Received UUID: " << getattr.getUuid().cStr() << std::endl;
+        // std::cout << "getattr: Received UUID: " << getattr.getUuid().cStr() << std::endl;
 
         struct stat attr;
 
@@ -262,25 +262,24 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         attributes.setStBlksize(attr.st_blksize);
         attributes.setStBlocks(attr.st_blocks);
 
-        std::cout << "st_dev " << attr.st_dev << " " << attributes.getStDev() << std::endl;
-        std::cout << "st_ino " << attr.st_ino << " " << attributes.getStIno() << std::endl;
-        std::cout << "st_mode " << attr.st_mode << " " << attributes.getStMode() << std::endl;
-        std::cout << "st_nlink " << attr.st_nlink << " " << attributes.getStNlink() << std::endl;
-        std::cout << "st_uid " << attr.st_uid << " " << attributes.getStUid() << std::endl;
-        std::cout << "st_gid " << attr.st_gid << " " << attributes.getStGid() << std::endl;
-        std::cout << "st_rdev " << attr.st_rdev << " " << attributes.getStRdev() << std::endl;
-        std::cout << "st_size " << attr.st_size << " " << attributes.getStSize() << std::endl;
-        std::cout << "st_atime " << attr.st_atime << " " << attributes.getStAtime() << std::endl;
-        std::cout << "st_mtime " << attr.st_mtime << " " << attributes.getStMtime() << std::endl;
-        std::cout << "st_ctime " << attr.st_ctime << " " << attributes.getStCtime() << std::endl;
-        std::cout << "st_blksize " << attr.st_blksize << " " << attributes.getStBlksize()
-                  << std::endl;
-        std::cout << "st_blocks " << attr.st_blocks << " " << attributes.getStBlocks() << std::endl;
+        // std::cout << "st_dev " << attr.st_dev << " " << attributes.getStDev() << std::endl;
+        // std::cout << "st_ino " << attr.st_ino << " " << attributes.getStIno() << std::endl;
+        // std::cout << "st_mode " << attr.st_mode << " " << attributes.getStMode() << std::endl;
+        // std::cout << "st_nlink " << attr.st_nlink << " " << attributes.getStNlink() << std::endl;
+        // std::cout << "st_uid " << attr.st_uid << " " << attributes.getStUid() << std::endl;
+        // std::cout << "st_gid " << attr.st_gid << " " << attributes.getStGid() << std::endl;
+        // std::cout << "st_rdev " << attr.st_rdev << " " << attributes.getStRdev() << std::endl;
+        // std::cout << "st_size " << attr.st_size << " " << attributes.getStSize() << std::endl;
+        // std::cout << "st_atime " << attr.st_atime << " " << attributes.getStAtime() << std::endl;
+        // std::cout << "st_mtime " << attr.st_mtime << " " << attributes.getStMtime() << std::endl;
+        // std::cout << "st_ctime " << attr.st_ctime << " " << attributes.getStCtime() << std::endl;
+        // std::cout << "st_blksize " << attr.st_blksize << " " << attributes.getStBlksize() << std::endl;
+        // std::cout << "st_blocks " << attr.st_blocks << " " << attributes.getStBlocks() << std::endl;
 
         std::string response_payload
             = send_message(getattr_response, message, res, err, webSocket, Ops::Getattr);
 
-        std::cout << "getattr_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "getattr_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -293,7 +292,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         capnp::FlatArrayMessageReader data(view);
         Lookup::Reader lookup = data.getRoot<Lookup>();
 
-        std::cout << "lookup: Received UUID: " << lookup.getUuid().cStr() << std::endl;
+        // std::cout << "lookup: Received UUID: " << lookup.getUuid().cStr() << std::endl;
 
         // char msg[] = {2, parent, *name};
         // ws->sendBinary(msg);
@@ -315,7 +314,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           int err = errno;
           std::string response_payload
               = send_message(lookup_response, message, -1, err, webSocket, Ops::Lookup);
-          std::cout << "lookup_response sent error: " << response_payload << std::endl;
+          // std::cout << "lookup_response sent error: " << response_payload << std::endl;
           return;
         }
 
@@ -360,7 +359,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         std::string response_payload
             = send_message(lookup_response, message, res, err, webSocket, Ops::Lookup);
 
-        std::cout << "lookup_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "lookup_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -374,7 +373,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         Readdir::Reader readdir = data.getRoot<Readdir>();
         uint64_t ino = readdir.getIno();
 
-        std::cout << "readdir: Received UUID: " << readdir.getUuid().cStr() << std::endl;
+        // std::cout << "readdir: Received UUID: " << readdir.getUuid().cStr() << std::endl;
 
         // char msg[] = {3, ino};
         // ws->sendBinary(msg);
@@ -407,7 +406,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           std::string response_payload
               = send_message(readdir_response, message, -1, webSocket, Ops::Readdir);
 
-          std::cout << "readdir_response sent error: " << response_payload << std::endl;
+          // std::cout << "readdir_response sent error: " << response_payload << std::endl;
 
           return;
         }
@@ -470,7 +469,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         std::string response_payload
             = send_message(readdir_response, message, 0, webSocket, Ops::Readdir);
 
-        std::cout << "readdir_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "readdir_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -482,7 +481,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         capnp::FlatArrayMessageReader data(view);
         Open::Reader open = data.getRoot<Open>();
 
-        std::cout << "open: Received UUID: " << open.getUuid().cStr() << std::endl;
+        // std::cout << "open: Received UUID: " << open.getUuid().cStr() << std::endl;
 
         ::capnp::MallocMessageBuilder message;
         OpenResponse::Builder open_response = message.initRoot<OpenResponse>();
@@ -494,7 +493,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           std::string response_payload
               = send_message(open_response, message, -1, webSocket, Ops::Open);
 
-          std::cout << "readdir_response sent error: " << response_payload << std::endl;
+          // std::cout << "readdir_response sent error: " << response_payload << std::endl;
           return;
         }
 
@@ -531,7 +530,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         std::string response_payload
             = send_message(open_response, message, 0, webSocket, Ops::Open);
 
-        std::cout << "open_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "open_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -543,7 +542,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         capnp::FlatArrayMessageReader data(view);
         Read::Reader read = data.getRoot<Read>();
 
-        std::cout << "read: Received UUID: " << read.getUuid().cStr() << std::endl;
+        // std::cout << "read: Received UUID: " << read.getUuid().cStr() << std::endl;
 
         ::capnp::MallocMessageBuilder message;
         ReadResponse::Builder read_response = message.initRoot<ReadResponse>();
@@ -555,7 +554,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           std::string response_payload
               = send_message(read_response, message, -1, webSocket, Ops::Read);
 
-          std::cout << "read_response sent error: " << response_payload << std::endl;
+          // std::cout << "read_response sent error: " << response_payload << std::endl;
         }
 
         size_t size = read.getSize();
@@ -578,7 +577,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         std::string response_payload
             = send_message(read_response, message, 0, err, webSocket, Ops::Read);
 
-        std::cout << "read_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "read_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -590,7 +589,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         capnp::FlatArrayMessageReader data(view);
         Setattr::Reader setattr = data.getRoot<Setattr>();
 
-        std::cout << "setattr: Received UUID: " << setattr.getUuid().cStr() << std::endl;
+        // std::cout << "setattr: Received UUID: " << setattr.getUuid().cStr() << std::endl;
 
         ::capnp::MallocMessageBuilder message;
         SetattrResponse::Builder setattr_response = message.initRoot<SetattrResponse>();
@@ -604,7 +603,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           std::string response_payload
               = send_message(setattr_response, message, -1, webSocket, Ops::Setattr);
 
-          std::cout << "setattr_response sent error: " << response_payload << std::endl;
+          // std::cout << "setattr_response sent error: " << response_payload << std::endl;
 
           return;
         }
@@ -630,7 +629,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
             std::string response_payload
                 = send_message(setattr_response, message, res, err, webSocket, Ops::Setattr);
 
-            std::cout << "setattr_response sent error: " << response_payload << std::endl;
+            // std::cout << "setattr_response sent error: " << response_payload << std::endl;
 
             return;
           }
@@ -646,7 +645,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
             std::string response_payload
                 = send_message(setattr_response, message, res, err, webSocket, Ops::Setattr);
 
-            std::cout << "setattr_response sent error: " << response_payload << std::endl;
+            // std::cout << "setattr_response sent error: " << response_payload << std::endl;
             return;
           }
         }
@@ -658,7 +657,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
             std::string response_payload
                 = send_message(setattr_response, message, res, err, webSocket, Ops::Setattr);
 
-            std::cout << "setattr_response sent error: " << response_payload << std::endl;
+            // std::cout << "setattr_response sent error: " << response_payload << std::endl;
             return;
           }
         }
@@ -699,7 +698,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
             err = errno;
             std::string response_payload = send_message(setattr_response, message, res, err, webSocket, Ops::Setattr);
 
-            std::cout << "setattr_response sent error: " << response_payload << std::endl;
+            // std::cout << "setattr_response sent error: " << response_payload << std::endl;
             return;
           }
         }
@@ -708,7 +707,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         
         std::string response_payload = send_message(setattr_response, message, 0, webSocket, Ops::Setattr);
 
-        std::cout << "setattr_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "setattr_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -720,7 +719,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         capnp::FlatArrayMessageReader data(view);
         Write::Reader write = data.getRoot<Write>();
 
-        std::cout << "write: Received UUID: " << write.getUuid().cStr() << std::endl;
+        // std::cout << "write: Received UUID: " << write.getUuid().cStr() << std::endl;
 
         ::capnp::MallocMessageBuilder message;
         WriteResponse::Builder write_response = message.initRoot<WriteResponse>();
@@ -743,7 +742,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         std::string response_payload = send_message(write_response, message, 0, err, webSocket, Ops::Write);
 
-        std::cout << "write_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "write_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -756,7 +755,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         capnp::FlatArrayMessageReader data(view);
         Setxattr::Reader _setxattr = data.getRoot<Setxattr>();
 
-        std::cout << "setxattr: Received UUID: " << _setxattr.getUuid().cStr() << std::endl;
+        // std::cout << "setxattr: Received UUID: " << _setxattr.getUuid().cStr() << std::endl;
 
         ::capnp::MallocMessageBuilder message;
         SetxattrResponse::Builder setxattr_response = message.initRoot<SetxattrResponse>();
@@ -772,7 +771,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
             int err = errno;
             std::string response_payload = send_message(setxattr_response, message, res, err, webSocket, Ops::Setxattr);
 
-            std::cout << "setxattr_response sent error: " << response_payload << std::endl;
+            // std::cout << "setxattr_response sent error: " << response_payload << std::endl;
             return;
         }
 
@@ -780,7 +779,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         std::string response_payload = send_message(setxattr_response, message, res, webSocket, Ops::Setxattr);
 
-        std::cout << "setxattr_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "setxattr_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -794,7 +793,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         Create::Reader create = data.getRoot<Create>();
         Create::FuseFileInfo::Reader fi = create.getFi();
 
-        std::cout << "create: Received UUID: " << create.getUuid().cStr() << std::endl;
+        // std::cout << "create: Received UUID: " << create.getUuid().cStr() << std::endl;
 
         ::capnp::MallocMessageBuilder message;
         CreateResponse::Builder create_response = message.initRoot<CreateResponse>();
@@ -808,19 +807,19 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
         std::filesystem::path file_path = parent_path / create.getName();
 
-        std::cout << "create: open file path: " << file_path.c_str() << std::endl;
-        std::cout << "create: flags: " << fi.getFlags() << std::endl;
+        // std::cout << "create: open file path: " << file_path.c_str() << std::endl;
+        // std::cout << "create: flags: " << fi.getFlags() << std::endl;
 
         int res = ::creat(file_path.c_str(), create.getMode());
 
         if (res == -1) {
             int err = errno;
 
-            std::cout << "create: open errno: " << err << std::endl;
+            // std::cout << "create: open errno: " << err << std::endl;
 
             std::string response_payload = send_message(create_response, message, res, err, webSocket, Ops::Create);
 
-            std::cout << "create_response sent error: " << response_payload << std::endl;
+            // std::cout << "create_response sent error: " << response_payload << std::endl;
             return;
         }
 
@@ -874,7 +873,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         
         std::string response_payload = send_message(create_response, message, res, err, webSocket, Ops::Create);
 
-        std::cout << "create_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "create_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -886,7 +885,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         capnp::FlatArrayMessageReader data(view);
         Mknod::Reader mknod = data.getRoot<Mknod>();
 
-        std::cout << "mknod: Received UUID: " << mknod.getUuid().cStr() << std::endl;
+        // std::cout << "mknod: Received UUID: " << mknod.getUuid().cStr() << std::endl;
 
         ::capnp::MallocMessageBuilder message;
         MknodResponse::Builder mknod_response = message.initRoot<MknodResponse>();
@@ -915,7 +914,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
           std::string response_payload = send_message(mknod_response, message, res, err, webSocket, Ops::Mknod);
 
-          std::cout << "mknod_response sent error: " << response_payload << std::endl;
+          // std::cout << "mknod_response sent error: " << response_payload << std::endl;
           return;
         } else {
           mknod_response.setIno(file_ino);
@@ -947,7 +946,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         
         std::string response_payload = send_message(mknod_response, message, res, webSocket, Ops::Mknod);
 
-        std::cout << "mknod_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "mknod_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -959,7 +958,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         capnp::FlatArrayMessageReader data(view);
         Mkdir::Reader mkdir = data.getRoot<Mkdir>();
 
-        std::cout << "mkdir: Received UUID: " << mkdir.getUuid().cStr() << std::endl;
+        // std::cout << "mkdir: Received UUID: " << mkdir.getUuid().cStr() << std::endl;
 
         ::capnp::MallocMessageBuilder message;
         MkdirResponse::Builder mkdir_response = message.initRoot<MkdirResponse>();
@@ -979,7 +978,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           int err = errno;
           std::string response_payload = send_message(mkdir_response, message, res, err, webSocket, Ops::Mkdir);
 
-          std::cout << "mkdir_response sent error: " << response_payload << std::endl;
+          // std::cout << "mkdir_response sent error: " << response_payload << std::endl;
           return;
         }
         else {
@@ -1018,7 +1017,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         
         std::string response_payload = send_message(mkdir_response, message, res, webSocket, Ops::Mknod);
 
-        std::cout << "mkdir_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "mkdir_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -1030,7 +1029,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         capnp::FlatArrayMessageReader data(view);
         Unlink::Reader unlink = data.getRoot<Unlink>();
 
-        std::cout << "unlink: Received UUID: " << unlink.getUuid().cStr() << std::endl;
+        // std::cout << "unlink: Received UUID: " << unlink.getUuid().cStr() << std::endl;
 
         ::capnp::MallocMessageBuilder message;
         UnlinkResponse::Builder unlink_response = message.initRoot<UnlinkResponse>();
@@ -1049,7 +1048,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         int err = errno;
         
         std::string response_payload = send_message(unlink_response, message, res, err, webSocket, Ops::Unlink);
-        std::cout << "unlink_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "unlink_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -1061,7 +1060,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         capnp::FlatArrayMessageReader data(view);
         Rmdir::Reader rmdir = data.getRoot<Rmdir>();
 
-        std::cout << "rmdir: Received UUID: " << rmdir.getUuid().cStr() << std::endl;
+        // std::cout << "rmdir: Received UUID: " << rmdir.getUuid().cStr() << std::endl;
 
         ::capnp::MallocMessageBuilder message;
         RmdirResponse::Builder rmdir_response = message.initRoot<RmdirResponse>();
@@ -1071,20 +1070,20 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         uint64_t parent = rmdir.getParent();
         std::string name = rmdir.getName();
 
-        std::cout << "RMDIR name: " << name << std::endl;
+        // std::cout << "RMDIR name: " << name << std::endl;
 
         std::string user_root = normalize_path(root, connectionState->getId(), suffix);
         std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
         std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
         std::filesystem::path file_path = parent_path / std::filesystem::path(name);
 
-        std::cout << "RMDIR file_path: " << file_path.c_str() << std::endl;
+        // std::cout << "RMDIR file_path: " << file_path.c_str() << std::endl;
 
         int res = ::rmdir(file_path.c_str());
         int err = errno;
         
         std::string response_payload = send_message(rmdir_response, message, res, err, webSocket, Ops::Rmdir);
-        std::cout << "rmdir_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "rmdir_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -1096,7 +1095,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         capnp::FlatArrayMessageReader data(view);
         Rename::Reader rename = data.getRoot<Rename>();
 
-        std::cout << "rename: Received UUID: " << rename.getUuid().cStr() << std::endl;
+        // std::cout << "rename: Received UUID: " << rename.getUuid().cStr() << std::endl;
 
         ::capnp::MallocMessageBuilder message;
         RenameResponse::Builder rename_response = message.initRoot<RenameResponse>();
@@ -1123,7 +1122,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         int err = errno;
 
         std::string response_payload = send_message(rename_response, message, res, err, webSocket, Ops::Rmdir);
-        std::cout << "rename_response sent correctly: " << response_payload << std::endl;
+        // std::cout << "rename_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -1139,7 +1138,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         int res = ::close(fi.getFh());
         int err = errno;
 
-        std::cout << "release: Received UUID: " << release.getUuid().cStr() << std::endl;
+        // std::cout << "release: Received UUID: " << release.getUuid().cStr() << std::endl;
 
         ::capnp::MallocMessageBuilder message;
         ReleaseResponse::Builder release_response = message.initRoot<ReleaseResponse>();
