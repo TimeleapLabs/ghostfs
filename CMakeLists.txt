@@ -67,7 +67,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 find_package(FUSE REQUIRED)
-add_definitions(-D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=29)
+add_definitions(-D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=39)
 include_directories(${FUSE_INCLUDE_DIR})
 
 # ---- Add source files ----

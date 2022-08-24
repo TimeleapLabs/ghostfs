@@ -6,7 +6,7 @@
   gcc -Wall hello_ll.c `pkg-config fuse --cflags --libs` -o hello_ll
 */
 
-#define FUSE_USE_VERSION 29
+#define FUSE_USE_VERSION 39
 
 #include <assert.h>
 #include <fcntl.h>
