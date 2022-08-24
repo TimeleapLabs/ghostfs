@@ -60,8 +60,8 @@
 #include <iostream>
 #include <map>
 
-//static const char *hello_str = "Hello World!\n";
-//static const char *hello_name = "hello";
+// static const char *hello_str = "Hello World!\n";
+// static const char *hello_name = "hello";
 
 char user_file_str[40];
 char user_file_name[1024];
@@ -1173,7 +1173,6 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
  */
 static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode,
                             struct fuse_file_info *fi) {
-
   // printf("Called .create\n");
 
   ::capnp::MallocMessageBuilder message;
@@ -1358,7 +1357,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
@@ -1454,7 +1453,7 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options,
     return 1;
   }
 
-  int argc = options.size() * 2 + 2;
+  int argc = options.size() * 2 + 4;
   char *argv[2048] = {executable, argmnt};
 
   int i = 0;
@@ -1462,6 +1461,9 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options,
     argv[2 + i++] = (char *)"-o";
     argv[2 + i++] = (char *)option.c_str();
   }
+
+  argv[2 + i++] = (char *)"-o";
+  argv[2 + i++] = (char *)"max_write=67108864";
 
   struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
   struct fuse_chan *ch;
