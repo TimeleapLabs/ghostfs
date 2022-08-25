@@ -18,6 +18,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <future>
+
 // CAPNPROTO
 
 #include <auth.response.capnp.h>
@@ -1028,8 +1030,8 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
  *    unsigned int 	noflush
  * }
  */
-static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size_t size, off_t off,
-                           struct fuse_file_info *fi) {
+static void hello_ll_write_async(fuse_req_t req, fuse_ino_t ino, const char *buf, size_t size,
+                                 off_t off, struct fuse_file_info *fi) {
   // printf("Called .write\n");
 
   ::capnp::MallocMessageBuilder message;
@@ -1060,6 +1062,11 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
   ws->send((char)Ops::Write + payload);
 
   // std::cout << "hello_ll_write executed correctly: " << payload << std::endl;
+}
+
+static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size_t size, off_t off,
+                           struct fuse_file_info *fi) {
+  std::async(std::launch::async, hello_ll_write_async, req, ino, buf, size, off, fi);
 }
 
 static void hello_ll_unlink(fuse_req_t req, fuse_ino_t parent, const char *name) {
