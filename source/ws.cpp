@@ -143,6 +143,8 @@ void WSClient::onMessage(const ix::WebSocketMessagePtr& msg) {
     std::string payload(bytes.begin(), bytes.end());
     send((char)Ops::Auth + payload);
 
+    std::cout << "Sent Auth" << std::endl;
+
     // std::cout << "> " << std::flush;
   } else if (msg->type == ix::WebSocketMessageType::Error) {
     // Maybe SSL is not configured properly

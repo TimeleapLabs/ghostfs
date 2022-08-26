@@ -185,7 +185,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
     // std::cout << "Headers:" << std::endl;
     // for (auto it : msg->openInfo.headers) {
-       // std::cout << "\t" << it.first << ": " << it.second << std::endl;
+    // std::cout << "\t" << it.first << ": " << it.second << std::endl;
     // }
   } else if (msg->type == ix::WebSocketMessageType::Message) {
     // For an echo server, we just send back to the client whatever was received by the server
@@ -273,8 +273,9 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         // std::cout << "st_atime " << attr.st_atime << " " << attributes.getStAtime() << std::endl;
         // std::cout << "st_mtime " << attr.st_mtime << " " << attributes.getStMtime() << std::endl;
         // std::cout << "st_ctime " << attr.st_ctime << " " << attributes.getStCtime() << std::endl;
-        // std::cout << "st_blksize " << attr.st_blksize << " " << attributes.getStBlksize() << std::endl;
-        // std::cout << "st_blocks " << attr.st_blocks << " " << attributes.getStBlocks() << std::endl;
+        // std::cout << "st_blksize " << attr.st_blksize << " " << attributes.getStBlksize() <<
+        // std::endl; std::cout << "st_blocks " << attr.st_blocks << " " << attributes.getStBlocks()
+        // << std::endl;
 
         std::string response_payload
             = send_message(getattr_response, message, res, err, webSocket, Ops::Getattr);

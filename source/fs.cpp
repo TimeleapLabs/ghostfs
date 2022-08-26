@@ -163,6 +163,8 @@ int hello_stat(fuse_ino_t ino, struct stat *stbuf) {
 }
 
 void process_auth_response(std::string payload, wsclient::WSClient *wsc) {
+  std::cout << "Received Auth" << std::endl;
+
   const kj::ArrayPtr<const capnp::word> view(
       reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
       reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
