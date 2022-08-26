@@ -1450,12 +1450,14 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options,
   ws = wsc;
   std::cout << "Waiting for auth!" << std::endl;
 
-  while (!ws->ready || !ws->auth_failed)
-    ;
-
-  if (ws->auth_failed) {
-    std::cout << "Authentication failed!" << std::endl;
-    return 1;
+  while (true) {
+    if (ws->auth_failed) {
+      std::cout << "Authentication failed!" << std::endl;
+      return 1;
+    }
+    if (ws->ready) {
+      break;
+    }
   }
 
   std::cout << "Authentication success!" << std::endl;
