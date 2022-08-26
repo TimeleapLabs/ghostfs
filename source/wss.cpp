@@ -211,6 +211,8 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         std::string user = auth.getUser();
         std::string token = auth.getToken();
 
+        std::cout << "New connection: " << user << std::endl;
+
         bool is_valid = authenticate(token, user, connectionState->getId());
 
         ::capnp::MallocMessageBuilder message;
