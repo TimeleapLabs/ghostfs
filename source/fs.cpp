@@ -1446,14 +1446,17 @@ static const struct fuse_lowlevel_ops hello_ll_oper = {
 int start_fs(char *executable, char *argmnt, std::vector<std::string> options,
              wsclient::WSClient *wsc) {
   ws = wsc;
+  std::cout << "Waiting for auth!" << std::endl;
 
   while (!ws->ready && !ws->auth_failed)
     ;
 
   if (ws->auth_failed) {
-    // std::cout << "Authentication failed!" << std::endl;
+    std::cout << "Authentication failed!" << std::endl;
     return 1;
   }
+
+  std::cout << "Authentication success!" << std::endl;
 
   int argc = options.size() * 2 + 2;
   char *argv[2048] = {executable, argmnt};
