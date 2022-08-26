@@ -174,6 +174,8 @@ void process_auth_response(std::string payload, wsclient::WSClient *wsc) {
 
   bool success = auth_response.getSuccess();
 
+  std::cout << "SUCCESS? " << success << std::endl;
+
   wsc->auth_failed = not success;
   wsc->ready = success;
 }
@@ -1359,7 +1361,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-// clang-format off
+  // clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
@@ -1448,7 +1450,7 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options,
   ws = wsc;
   std::cout << "Waiting for auth!" << std::endl;
 
-  while (!ws->ready && !ws->auth_failed)
+  while (!ws->ready || !ws->auth_failed)
     ;
 
   if (ws->auth_failed) {
