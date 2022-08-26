@@ -1453,7 +1453,7 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options,
     return 1;
   }
 
-  int argc = options.size() * 2 + 4;
+  int argc = options.size() * 2 + 2;
   char *argv[2048] = {executable, argmnt};
 
   int i = 0;
@@ -1461,9 +1461,6 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options,
     argv[2 + i++] = (char *)"-o";
     argv[2 + i++] = (char *)option.c_str();
   }
-
-  argv[2 + i++] = (char *)"-o";
-  argv[2 + i++] = (char *)"max_write=67108864";
 
   struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
   struct fuse_chan *ch;
