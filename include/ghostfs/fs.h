@@ -1,4 +1,4 @@
-#define FUSE_USE_VERSION 39
+#define FUSE_USE_VERSION 29
 #define _FILE_OFFSET_BITS 64
 
 #include <fuse_lowlevel.h>

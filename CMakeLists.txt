@@ -50,15 +50,15 @@ CPMAddPackage(
 )
 
 # ---- Build type ----
-#set(CMAKE_BUILD_TYPE Debug)
-#set(CMAKE_BUILD_TYPE RelWithDebInfo)
-
+# set(CMAKE_BUILD_TYPE Debug)
+# set(CMAKE_BUILD_TYPE RelWithDebInfo)
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra")
+
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -ggdb")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
 
@@ -67,7 +67,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 find_package(FUSE REQUIRED)
-add_definitions(-D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=39)
+add_definitions(-D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=29)
 include_directories(${FUSE_INCLUDE_DIR})
 
 # ---- Add source files ----
