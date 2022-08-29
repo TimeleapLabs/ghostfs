@@ -1056,7 +1056,7 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
 
   // ws->send((char)Ops::Write + payload);
 
-  // auto &waitScope = rpc->getWaitScope();
+  auto &waitScope = rpc->getWaitScope();
   GhostFS::Client client = rpc->getMain<GhostFS>();
 
   auto request = client.writeRequest();
@@ -1071,7 +1071,7 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
 
   // This is the async way:
   [[maybe_unused]] auto promise
-      = request.send().then([req](capnp::Response<GhostFS::WriteResults> &&response) {
+      = request.send().then([&req](capnp::Response<GhostFS::WriteResults> &&response) {
           process_write_response(req, response);
         });
 
@@ -1373,7 +1373,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-// clang-format off
+  // clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
