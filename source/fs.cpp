@@ -101,6 +101,8 @@ std::map<std::string, request> requests;
 wsclient::WSClient *ws;
 capnp::EzRpcClient *rpc;
 
+kj::TaskSet tasks;
+
 uint64_t get_parent_ino(uint64_t ino, std::string path) {
   if (ino == 1) {
     return ino;
@@ -456,12 +458,7 @@ void process_setattr_response(std::string payload) {
 void process_write_response(fuse_req_t req, capnp::Response<GhostFS::WriteResults> &response) {
   WriteResponse::Reader write_response = response.getRes();
 
-  std::cout << "WRITE_RESPONSE" << std::endl;
-  std::cout << "REQ: " << req << std::endl;
-
   int res = write_response.getRes();
-
-  std::cout << "RES: " << res << std::endl;
 
   if (res == -1) {
     // std::cout << "WRITE::ENOENT" << std::endl;
@@ -1074,14 +1071,12 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
 
   // fuse_reply_write(req, res.getWritten());
 
-  std::cout << "WRITE_REQUEST" << std::endl;
-  std::cout << "REQ: " << req << std::endl;
-
   // This is the async way:
-  [[maybe_unused]] auto promise
-      = request.send().then([req](capnp::Response<GhostFS::WriteResults> &&response) {
-          process_write_response(req, response);
-        });
+  auto promise = request.send().then([req](capnp::Response<GhostFS::WriteResults> &&response) {
+    process_write_response(req, response);
+  });
+
+  tasks.add(kj::mv(promise));
 
   // std::cout << "hello_ll_write executed correctly: " << payload << std::endl;
 }
@@ -1381,7 +1376,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-// clang-format off
+  // clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
