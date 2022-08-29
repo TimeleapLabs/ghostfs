@@ -11,12 +11,14 @@
 
 #include <auth.capnp.h>
 #include <auth.response.capnp.h>
+#include <capnp/ez-rpc.h>
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
 #include <create.capnp.h>
 #include <create.response.capnp.h>
 #include <getattr.capnp.h>
 #include <getattr.response.capnp.h>
+#include <ghostfs.capnp.h>
 #include <lookup.capnp.h>
 #include <lookup.response.capnp.h>
 #include <mkdir.capnp.h>
@@ -49,6 +51,37 @@
 #include <filesystem>
 #include <iostream>
 
+class GhostFSImpl final : public GhostFS::Server {
+public:
+  kj::Promise<void> write(WriteContext context) override {
+    auto params = context.getParams();
+    auto req = params.getReq();
+
+    Write::FuseFileInfo::Reader fi = req.getFi();
+    capnp::Data::Reader buf_reader = req.getBuf();
+
+    const auto chars = buf_reader.asChars();
+    const char* buf = chars.begin();
+
+    ::lseek(fi.getFh(), req.getOff(), SEEK_SET);
+    size_t written = ::write(fi.getFh(), buf, req.getSize());
+
+    int err = errno;
+
+    auto results = context.getResults();
+    auto response = results.getRes();
+
+    response.setErrno(err);
+    response.setIno(req.getIno());
+    response.setWritten(written);
+
+    return kj::READY_NOW;
+  }
+
+  // Any method which we don't implement will simply throw
+  // an exception by default.
+};
+
 using namespace wsserver;
 
 WSServer::WSServer(int _port, int _auth_port, std::string _host, std::string _root,
@@ -70,7 +103,10 @@ int WSServer::start() {
   ix::WebSocketServer server(port, host);
   ix::WebSocketServer auth_server(auth_port);
 
-  std::cout << "Starting the server on " << host << ":" << port << "..." << std::endl;
+  std::cout << "Starting ws server on " << host << ":" << port << "..." << std::endl;
+  std::cout << "Starting capnp server on "
+            << "0.0.0.0"
+            << ":" << 5923 << "..." << std::endl;
   std::cout << "Starting the auth server on port " << auth_port << "..." << std::endl;
 
   // Setup a callback to be fired (in a background thread, watch out for race conditions !)
@@ -102,6 +138,12 @@ int WSServer::start() {
   // Run the server in the background. Server can be stoped by calling server.stop()
   server.start();
   auth_server.start();
+
+  capnp::EzRpcServer rpc_server(kj::heap<GhostFSImpl>(), "0.0.0.0", 5923);
+  auto& waitScope = rpc_server.getWaitScope();
+
+  // Run forever, accepting connections and handling requests.
+  kj::NEVER_DONE.wait(waitScope);
 
   // Block until server.stop() is called.
   server.wait();

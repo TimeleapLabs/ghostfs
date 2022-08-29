@@ -20,6 +20,7 @@ auto main(int argc, char** argv) -> int {
     ("h,help", "Show help")
     ("v,version", "Print the current version number")
     ("b,bind", "Bind IP address", cxxopts::value<std::string>()->default_value("127.0.0.1"))
+    ("H,host", "Capnp host address", cxxopts::value<std::string>()->default_value("127.0.0.1"))
     ("p,port", "Server port", cxxopts::value<uint16_t>()->default_value("3444"))
     ("P,auth-port", "Server auth port", cxxopts::value<uint16_t>()->default_value("3445"))
     ("r,root", "Root directory", cxxopts::value<std::string>()->default_value(default_root))
@@ -68,13 +69,14 @@ auto main(int argc, char** argv) -> int {
     return 0;
   } else if (result["client"].as<bool>()) {
     std::string url = result["url"].as<std::string>();
+    std::string host = result["host"].as<std::string>();
     std::string user = result["user"].as<std::string>();
     std::string token = result["token"].as<std::string>();
     std::vector<std::string> options = result["options"].as<std::vector<std::string>>();
 
     wsclient::WSClient ws(url, user, token);
 
-    return start_fs(argv[0], argv[1], options, &ws);
+    return start_fs(argv[0], argv[1], options, &ws, host);
 
     // ghostfs::GhostFS ghostfs();
   }

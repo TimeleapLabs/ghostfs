@@ -7,7 +7,7 @@
 #include <string>
 
 int start_fs(char* executable, char* mountpoint, std::vector<std::string> options,
-             wsclient::WSClient* wsc);
+             wsclient::WSClient* wsc, std::string host);
 
 void process_response(uint8_t msg);
 int hello_stat(fuse_ino_t ino, struct stat* stbuf);

@@ -60,6 +60,11 @@
 #include <iostream>
 #include <map>
 
+// RPC
+
+#include <capnp/ez-rpc.h>
+#include <ghostfs.capnp.h>
+
 // static const char *hello_str = "Hello World!\n";
 // static const char *hello_name = "hello";
 
@@ -94,6 +99,7 @@ static int reply_buf_limited(fuse_req_t req, const char *buf, size_t bufsize, of
 std::map<std::string, request> requests;
 
 wsclient::WSClient *ws;
+capnp::EzRpcClient *rpc;
 
 uint64_t get_parent_ino(uint64_t ino, std::string path) {
   if (ino == 1) {
@@ -1051,13 +1057,24 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
 
   write.setUuid(uuid);
 
-  // std::cout << "hello_ll_write: Request UUID: " << uuid << std::endl;
+  // // std::cout << "hello_ll_write: Request UUID: " << uuid << std::endl;
 
-  const auto data = capnp::messageToFlatArray(message);
-  const auto bytes = data.asBytes();
-  std::string payload(bytes.begin(), bytes.end());
+  // const auto data = capnp::messageToFlatArray(message);
+  // const auto bytes = data.asBytes();
+  // std::string payload(bytes.begin(), bytes.end());
 
-  ws->send((char)Ops::Write + payload);
+  // ws->send((char)Ops::Write + payload);
+
+  auto &waitScope = rpc->getWaitScope();
+  GhostFS::Client client = rpc->getMain<GhostFS>();
+
+  auto request = client.writeRequest();
+  request.setReq(write.asReader());
+  auto promise = request.send();
+
+  auto response = promise.wait(waitScope);
+
+  fuse_reply_write(req, size);
 
   // std::cout << "hello_ll_write executed correctly: " << payload << std::endl;
 }
@@ -1357,7 +1374,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-// clang-format off
+  // clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
@@ -1442,7 +1459,7 @@ static const struct fuse_lowlevel_ops hello_ll_oper = {
 // clang-format on
 
 int start_fs(char *executable, char *argmnt, std::vector<std::string> options,
-             wsclient::WSClient *wsc) {
+             wsclient::WSClient *wsc, std::string host) {
   ws = wsc;
 
   while (true) {
@@ -1454,6 +1471,9 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options,
       break;
     }
   }
+
+  capnp::EzRpcClient rpc_client(host, 5923);
+  rpc = &rpc_client;
 
   int argc = options.size() * 2 + 2;
   char *argv[2048] = {executable, argmnt};

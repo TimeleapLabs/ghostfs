@@ -98,6 +98,7 @@ target_compile_options(${PROJECT_NAME} PUBLIC "-mavx2")
 target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt)
 target_link_libraries(${PROJECT_NAME} PUBLIC ixwebsocket)
 target_link_libraries(${PROJECT_NAME} PRIVATE CapnProto::capnp)
+target_link_libraries(${PROJECT_NAME} PRIVATE CapnProto::capnp-rpc)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${FUSE_LIBRARIES})
 
 target_include_directories(
