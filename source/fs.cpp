@@ -456,7 +456,12 @@ void process_setattr_response(std::string payload) {
 void process_write_response(fuse_req_t req, capnp::Response<GhostFS::WriteResults> &response) {
   WriteResponse::Reader write_response = response.getRes();
 
+  std::cout << "WRITE_RESPONSE" << std::endl;
+  std::cout << "REQ: " << req << std::endl;
+
   int res = write_response.getRes();
+
+  std::cout << "RES: " << res << std::endl;
 
   if (res == -1) {
     // std::cout << "WRITE::ENOENT" << std::endl;
@@ -1069,9 +1074,12 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
 
   // fuse_reply_write(req, res.getWritten());
 
+  std::cout << "WRITE_REQUEST" << std::endl;
+  std::cout << "REQ: " << req << std::endl;
+
   // This is the async way:
   [[maybe_unused]] auto promise
-      = request.send().then([&req](capnp::Response<GhostFS::WriteResults> &&response) {
+      = request.send().then([req](capnp::Response<GhostFS::WriteResults> &&response) {
           process_write_response(req, response);
         });
 
