@@ -452,29 +452,19 @@ void process_setattr_response(std::string payload) {
   // std::cout << "process_setattr_response: hello_ll_getattr correctly executed" << std::endl;
 }
 
-void process_write_response(std::string payload) {
-  const kj::ArrayPtr<const capnp::word> view(
-      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
-      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
-
-  capnp::FlatArrayMessageReader data(view);
-  WriteResponse::Reader write_response = data.getRoot<WriteResponse>();
-
-  std::string uuid = write_response.getUuid();
-
-  // std::cout << "process_write_response: Response UUID: " << uuid << std::endl;
-
-  request request = requests[uuid];
+// void process_write_response(std::string payload) {
+void process_write_response(fuse_req_t req, capnp::Response<GhostFS::WriteResults> *response) {
+  WriteResponse::Reader write_response = response->getRes();
 
   int res = write_response.getRes();
 
   if (res == -1) {
     // std::cout << "WRITE::ENOENT" << std::endl;
-    fuse_reply_err(request.req, write_response.getErrno());
+    fuse_reply_err(req, write_response.getErrno());
     return;
   }
 
-  fuse_reply_write(request.req, write_response.getWritten());
+  fuse_reply_write(req, write_response.getWritten());
 
   // std::cout << "process_setattr_response: fuse_reply_write correctly executed" << std::endl;
 }
@@ -1052,10 +1042,11 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
 
   fillFileInfo(&fuseFileInfo, fi);
 
-  std::string uuid = gen_uuid();
-  requests[uuid] = {.type = Ops::Write, .req = req};
+  // These aren't needed anymore
+  // std::string uuid = gen_uuid();
+  // requests[uuid] = {.type = Ops::Write, .req = req};
 
-  write.setUuid(uuid);
+  // write.setUuid(uuid);
 
   // // std::cout << "hello_ll_write: Request UUID: " << uuid << std::endl;
 
@@ -1065,17 +1056,23 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
 
   // ws->send((char)Ops::Write + payload);
 
-  auto &waitScope = rpc->getWaitScope();
+  // auto &waitScope = rpc->getWaitScope();
   GhostFS::Client client = rpc->getMain<GhostFS>();
 
   auto request = client.writeRequest();
   request.setReq(write.asReader());
-  auto promise = request.send();
 
-  auto response = promise.wait(waitScope);
-  auto res = response.getRes();
+  // This is the sync way:
+  // auto promise = request.send();
+  // auto response = promise.wait(waitScope);
+  // auto res = response.getRes();
 
-  fuse_reply_write(req, res.getWritten());
+  // fuse_reply_write(req, res.getWritten());
+
+  // This is the async way:
+  (void)request.send().then([req](capnp::Response<GhostFS::WriteResults> response) {
+    process_write_response(req, &response);
+  });
 
   // std::cout << "hello_ll_write executed correctly: " << payload << std::endl;
 }
