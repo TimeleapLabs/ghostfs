@@ -101,17 +101,6 @@ std::map<std::string, request> requests;
 wsclient::WSClient *ws;
 capnp::EzRpcClient *rpc;
 
-class Tasker final : public kj::TaskSet::ErrorHandler {
-public:
-  void taskFailed(kj::Exception &&exception) override { KJ_LOG(ERROR, "Task failed", exception); }
-  template <class T> void add(kj::Promise<T> promise) { tasks->add(kj::mv(promise)); }
-
-private:
-  kj::Own<kj::TaskSet> tasks = kj::heap<kj::TaskSet>(*this);
-};
-
-Tasker tasker;
-
 uint64_t get_parent_ino(uint64_t ino, std::string path) {
   if (ino == 1) {
     return ino;
@@ -1079,12 +1068,12 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
   // fuse_reply_write(req, res.getWritten());
 
   // This is the async way:
-  auto promise = request.send().then([req](capnp::Response<GhostFS::WriteResults> &&response) {
-    process_write_response(req, response);
-  });
-
-  tasker.add(kj::mv(promise));
-
+  [[maybe_unused]] auto promise
+      = request.send()
+            .then([req](capnp::Response<GhostFS::WriteResults> &&response) {
+              process_write_response(req, response);
+            })
+            .eagerlyEvaluate([]([[maybe_unused]] kj::Exception &&e) mutable {});
   // std::cout << "hello_ll_write executed correctly: " << payload << std::endl;
 }
 
