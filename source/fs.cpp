@@ -101,7 +101,16 @@ std::map<std::string, request> requests;
 wsclient::WSClient *ws;
 capnp::EzRpcClient *rpc;
 
-kj::TaskSet tasks;
+class Tasker final : public kj::TaskSet::ErrorHandler {
+public:
+  void taskFailed(kj::Exception &&exception) override { KJ_LOG(ERROR, "Task failed", exception); }
+  template <class T> void add(kj::Promise<T> promise) { tasks->add(kj::mv(promise)); }
+
+private:
+  kj::Own<kj::TaskSet> tasks = kj::heap<kj::TaskSet>(*this);
+};
+
+Tasker tasker;
 
 uint64_t get_parent_ino(uint64_t ino, std::string path) {
   if (ino == 1) {
@@ -972,9 +981,7 @@ static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info 
  * }
  */
 static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off,
-                          struct fuse_file_info *fi) {
-  (void)fi;
-
+                          [[maybe_unused]] struct fuse_file_info *fi) {
   // printf("Called .read\n");
 
   ::capnp::MallocMessageBuilder message;
@@ -1076,7 +1083,7 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
     process_write_response(req, response);
   });
 
-  tasks.add(kj::mv(promise));
+  tasker.add(kj::mv(promise));
 
   // std::cout << "hello_ll_write executed correctly: " << payload << std::endl;
 }
@@ -1376,7 +1383,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
