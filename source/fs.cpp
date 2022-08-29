@@ -1073,8 +1073,9 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
   auto promise = request.send();
 
   auto response = promise.wait(waitScope);
+  auto res = response.getRes();
 
-  fuse_reply_write(req, size);
+  fuse_reply_write(req, res.getWritten());
 
   // std::cout << "hello_ll_write executed correctly: " << payload << std::endl;
 }
