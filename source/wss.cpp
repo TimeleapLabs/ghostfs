@@ -180,8 +180,9 @@ template <class T> std::string send_message(T& response, ::capnp::MallocMessageB
   return response_payload;
 }
 
-void WSServer::onAuthMessage([[maybe_unused]] std::shared_ptr<ix::ConnectionState> connectionState,
+void WSServer::onAuthMessage(std::shared_ptr<ix::ConnectionState> connectionState,
                              ix::WebSocket& webSocket, const ix::WebSocketMessagePtr& msg) {
+  (void)connectionState;
   if (msg->type == ix::WebSocketMessageType::Message) {
     const kj::ArrayPtr<const capnp::word> view(
         reinterpret_cast<const capnp::word*>(&(*std::begin(msg->str))),
@@ -471,7 +472,8 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         std::filesystem::directory_iterator iter(
             path, std::filesystem::directory_options::skip_permission_denied);
 
-        for ([[maybe_unused]] const auto& entry : iter) {
+        for (const auto& entry : iter) {
+          (void)entry;
           length++;
         }
 
