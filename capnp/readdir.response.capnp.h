@@ -5,6 +5,9 @@
 
 #include <capnp/generated-header-support.h>
 #include <kj/windows-sanity.h>
+#if !CAPNP_LITE
+#include <capnp/capability.h>
+#endif  // !CAPNP_LITE
 
 #if CAPNP_VERSION != 10002
 #error "Version mismatch between generated code and library headers.  You must use the same version of the Cap'n Proto compiler and library."

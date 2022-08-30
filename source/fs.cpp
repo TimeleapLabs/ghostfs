@@ -995,20 +995,31 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
 
   fillFileInfo(&fuseFileInfo, fi);
 
-  std::string uuid = gen_uuid();
-  requests[uuid] = {.type = Ops::Read, .req = req, .size = size, .off = off};
+  auto &waitScope = rpc->getWaitScope();
+  GhostFS::Client client = rpc->getMain<GhostFS>();
 
-  read.setUuid(uuid);
+  auto request = client.readRequest();
+  request.setReq(read.asReader());
+  auto promise = request.send();
 
-  // std::cout << "hello_ll_read: Request UUID: " << uuid << std::endl;
+  auto result = promise.wait(waitScope);
+  auto response = result.getRes();
 
-  const auto data = capnp::messageToFlatArray(message);
-  const auto bytes = data.asBytes();
-  std::string payload(bytes.begin(), bytes.end());
+  int res = response.getRes();
 
-  ws->send((char)Ops::Read + payload);
+  if (res == -1) {
+    // std::cout << "READ::ENOENT" << std::endl;
+    fuse_reply_err(req, response.getErrno());
+    return;
+  }
 
-  // std::cout << "hello_ll_read executed correctly: " << payload << std::endl;
+  capnp::Data::Reader buf_reader = response.getBuf();
+  const auto chars = buf_reader.asChars();
+  const char *buf = chars.begin();
+
+  // reply_buf_limited(request.req, buf, chars.size(), request.off, request.size);
+
+  fuse_reply_buf(req, buf, chars.size());
 }
 
 /**
@@ -1052,13 +1063,6 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
 
   fillFileInfo(&fuseFileInfo, fi);
 
-  std::string uuid = gen_uuid();
-  requests[uuid] = {.type = Ops::Write, .req = req};
-
-  write.setUuid(uuid);
-
-  // // std::cout << "hello_ll_write: Request UUID: " << uuid << std::endl;
-
   // const auto data = capnp::messageToFlatArray(message);
   // const auto bytes = data.asBytes();
   // std::string payload(bytes.begin(), bytes.end());
@@ -1072,11 +1076,10 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
   request.setReq(write.asReader());
   auto promise = request.send();
 
-  auto response = promise.wait(waitScope);
+  auto result = promise.wait(waitScope);
+  auto response = result.getRes();
 
-  fuse_reply_write(req, size);
-
-  // std::cout << "hello_ll_write executed correctly: " << payload << std::endl;
+  fuse_reply_write(req, response.getWritten());
 }
 
 static void hello_ll_unlink(fuse_req_t req, fuse_ino_t parent, const char *name) {

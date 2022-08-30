@@ -78,78 +78,114 @@ public:
     return kj::READY_NOW;
   }
 
-  // Any method which we don't implement will simply throw
-  // an exception by default.
-};
+  kj::Promise<void> read(ReadContext context) override{
+    auto params = context.getParams();
+    auto req = params.getReq();
 
-using namespace wsserver;
+    auto results = context.getResults();
+    auto response = results.getRes();
 
-WSServer::WSServer(int _port, int _auth_port, std::string _host, std::string _root,
-                   std::string _suffix)
-    : port(std::move(_port)),
-      auth_port(std::move(_auth_port)),
-      host(std::move(_host)),
-      root(std::move(_root)),
-      suffix(std::move(_suffix)) {}
+    if (ino_to_path.find(req.getIno()) == ino_to_path.end()) {
+      // File is unknown
+      response.setRes(-1);
+      response.setErrno(ENOENT);
+      return kj::READY_NOW;
+    }
 
-int WSServer::start() {
-  if (root.length() > 0) {
-    if (!std::filesystem::is_directory(root)) {
-      // std::cout << "ERROR: directory " << '"' << root << '"' << " does not exist." << std::endl;
-      return 1;
-    };
+    size_t size = req.getSize();
+    off_t off = req.getOff();
+
+    char buf[size];
+
+    Read::FuseFileInfo::Reader fi = req.getFi();
+
+    ::lseek(fi.getFh(), off, SEEK_SET);
+    ::read(fi.getFh(), &buf, size);
+
+    int err = errno;
+
+    kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte*)buf, size);
+    capnp::Data::Reader buf_reader(buf_ptr);
+
+    response.setBuf(buf_reader);
+    response.setErrno(err);
+
+    return kj::READY_NOW;
   }
-  // Start the server on port
-  ix::WebSocketServer server(port, host);
-  ix::WebSocketServer auth_server(auth_port);
 
-  std::cout << "Starting ws server on " << host << ":" << port << "..." << std::endl;
-  std::cout << "Starting capnp server on "
-            << "0.0.0.0"
-            << ":" << 5923 << "..." << std::endl;
-  std::cout << "Starting the auth server on port " << auth_port << "..." << std::endl;
+      // Any method which we don't implement will simply throw
+      // an exception by default.
+  };
 
-  // Setup a callback to be fired (in a background thread, watch out for race conditions !)
-  // when a message or an event (open, close, error) is received
-  server.setOnClientMessageCallback(
-      [this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket& webSocket,
-             const ix::WebSocketMessagePtr& msg) { onMessage(connectionState, webSocket, msg); });
-  auth_server.setOnClientMessageCallback(
-      [this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket& webSocket,
-             const ix::WebSocketMessagePtr& msg) {
-        onAuthMessage(connectionState, webSocket, msg);
-      });
+  using namespace wsserver;
 
-  // auto res = server.listen();
-  /*
-   if (!res.first) {
-     // Error handling
-     return 1;
-   } */
+  WSServer::WSServer(int _port, int _auth_port, std::string _host, std::string _root,
+                     std::string _suffix)
+      : port(std::move(_port)),
+        auth_port(std::move(_auth_port)),
+        host(std::move(_host)),
+        root(std::move(_root)),
+        suffix(std::move(_suffix)) {}
 
-  server.listen();
-  auth_server.listen();
+  int WSServer::start() {
+    if (root.length() > 0) {
+      if (!std::filesystem::is_directory(root)) {
+        // std::cout << "ERROR: directory " << '"' << root << '"' << " does not exist." <<
+        // std::endl;
+        return 1;
+      };
+    }
+    // Start the server on port
+    ix::WebSocketServer server(port, host);
+    ix::WebSocketServer auth_server(auth_port);
 
-  // Per message deflate connection is enabled by default. It can be disabled
-  // which might be helpful when running on low power devices such as a Rasbery Pi
-  server.disablePerMessageDeflate();
-  auth_server.disablePerMessageDeflate();
+    std::cout << "Starting ws server on " << host << ":" << port << "..." << std::endl;
+    std::cout << "Starting capnp server on "
+              << "0.0.0.0"
+              << ":" << 5923 << "..." << std::endl;
+    std::cout << "Starting the auth server on port " << auth_port << "..." << std::endl;
 
-  // Run the server in the background. Server can be stoped by calling server.stop()
-  server.start();
-  auth_server.start();
+    // Setup a callback to be fired (in a background thread, watch out for race conditions !)
+    // when a message or an event (open, close, error) is received
+    server.setOnClientMessageCallback(
+        [this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket& webSocket,
+               const ix::WebSocketMessagePtr& msg) { onMessage(connectionState, webSocket, msg); });
+    auth_server.setOnClientMessageCallback(
+        [this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket& webSocket,
+               const ix::WebSocketMessagePtr& msg) {
+          onAuthMessage(connectionState, webSocket, msg);
+        });
 
-  capnp::EzRpcServer rpc_server(kj::heap<GhostFSImpl>(), "0.0.0.0", 5923);
-  auto& waitScope = rpc_server.getWaitScope();
+    // auto res = server.listen();
+    /*
+     if (!res.first) {
+       // Error handling
+       return 1;
+     } */
 
-  // Run forever, accepting connections and handling requests.
-  kj::NEVER_DONE.wait(waitScope);
+    server.listen();
+    auth_server.listen();
 
-  // Block until server.stop() is called.
-  server.wait();
-  auth_server.stop();
+    // Per message deflate connection is enabled by default. It can be disabled
+    // which might be helpful when running on low power devices such as a Rasbery Pi
+    server.disablePerMessageDeflate();
+    auth_server.disablePerMessageDeflate();
 
-  return 0;
+    // Run the server in the background. Server can be stoped by calling server.stop()
+    server.start();
+    auth_server.start();
+
+    capnp::EzRpcServer rpc_server(kj::heap<GhostFSImpl>(), "0.0.0.0", 5923);
+    auto& waitScope = rpc_server.getWaitScope();
+
+    // Run forever, accepting connections and handling requests.
+    kj::NEVER_DONE.wait(waitScope);
+
+    // Block until server.stop() is called.
+    server.wait();
+    auth_server.stop();
+
+    return 0;
 }
 
 template <class T> std::string send_message(T& response, ::capnp::MallocMessageBuilder& message,
