@@ -1,11 +1,10 @@
 @0xe8f7e533ce1c491c;
 
 struct LookupResponse {
-  uuid  @0 :Text;
-  ino   @1 :UInt64;
-  attr  @2 :Attr;
-  res   @3 :Int8;
-  errno @4 :Int8;
+  ino   @0 :UInt64;
+  attr  @1 :Attr;
+  res   @2 :Int8;
+  errno @3 :Int8;
 
   struct Attr {
     stDev     @0  :UInt16;

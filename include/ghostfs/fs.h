@@ -45,7 +45,6 @@ enum class Ops : char {
 // Responses
 void process_auth_response(std::string payload, wsclient::WSClient* wsc);
 void process_getattr_response(std::string payload);
-void process_lookup_response(std::string payload);
 void process_readdir_response(std::string payload);
 void process_open_response(std::string payload);
 void process_setattr_response(std::string payload);

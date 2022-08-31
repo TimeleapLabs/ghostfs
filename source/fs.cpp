@@ -183,62 +183,6 @@ void process_auth_response(std::string payload, wsclient::WSClient *wsc) {
   wsc->ready = success;
 }
 
-void process_lookup_response(std::string payload) {
-  const kj::ArrayPtr<const capnp::word> view(
-      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
-      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
-
-  capnp::FlatArrayMessageReader data(view);
-  LookupResponse::Reader lookup_response = data.getRoot<LookupResponse>();
-
-  struct stat attr;
-
-  memset(&attr, 0, sizeof(attr));
-
-  std::string uuid = lookup_response.getUuid();
-
-  // std::cout << "process_lookup_response: Response UUID: " << uuid << std::endl;
-
-  request request = requests[uuid];
-
-  int res = lookup_response.getRes();
-
-  if (res == -1) {
-    // std::cout << "LOOKUP::ENOENT" << std::endl;
-    fuse_reply_err(request.req, lookup_response.getErrno());
-    return;
-  }
-
-  struct fuse_entry_param e;
-
-  memset(&e, 0, sizeof(e));
-  e.ino = lookup_response.getIno();
-  e.attr_timeout = 1.0;
-  e.entry_timeout = 1.0;
-
-  LookupResponse::Attr::Reader attributes = lookup_response.getAttr();
-
-  e.attr.st_dev = attributes.getStDev();
-  e.attr.st_ino = attributes.getStIno();
-  e.attr.st_mode = attributes.getStMode();
-  e.attr.st_nlink = attributes.getStNlink();
-  e.attr.st_uid = geteuid();  // attributes.getStUid();
-  e.attr.st_gid = getegid();  // attributes.getStGid();
-  e.attr.st_rdev = attributes.getStRdev();
-  e.attr.st_size = attributes.getStSize();
-  e.attr.st_atime = attributes.getStAtime();
-  e.attr.st_mtime = attributes.getStMtime();
-  e.attr.st_ctime = attributes.getStCtime();
-  e.attr.st_blksize = attributes.getStBlksize();
-  e.attr.st_blocks = attributes.getStBlocks();
-
-  // std::cout << "process_lookup_response: Request: " << request.req << std::endl;
-
-  fuse_reply_entry(request.req, &e);
-
-  // std::cout << "process_lookup_response: fuse_reply_entry correctly executed" << std::endl;
-}
-
 void process_getattr_response(std::string payload) {
   const kj::ArrayPtr<const capnp::word> view(
       reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
@@ -703,26 +647,56 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
 static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name) {
   // printf("Called .lookup\n");
 
-  ::capnp::MallocMessageBuilder message;
-  Lookup::Builder lookup = message.initRoot<Lookup>();
+  auto &waitScope = rpc->getWaitScope();
+  auto request = client->lookupRequest();
+
+  Lookup::Builder lookup = request.getReq();
 
   lookup.setParent(parent);
   lookup.setName(name);
 
   // std::cout << "LOOKUP name: " << name << std::endl;
 
-  std::string uuid = gen_uuid();
-  requests[uuid] = {.type = Ops::Lookup, .req = req};
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+  auto response = result.getRes();
 
-  lookup.setUuid(uuid);
+  struct stat attr;
 
-  // std::cout << "hello_ll_lookup: Request UUID: " << uuid << std::endl;
+  memset(&attr, 0, sizeof(attr));
 
-  const auto data = capnp::messageToFlatArray(message);
-  const auto bytes = data.asBytes();
-  std::string payload(bytes.begin(), bytes.end());
+  int res = response.getRes();
 
-  ws->send((char)Ops::Lookup + payload);
+  if (res == -1) {
+    // std::cout << "LOOKUP::ENOENT" << std::endl;
+    fuse_reply_err(req, response.getErrno());
+    return;
+  }
+
+  struct fuse_entry_param e;
+
+  memset(&e, 0, sizeof(e));
+  e.ino = response.getIno();
+  e.attr_timeout = 1.0;
+  e.entry_timeout = 1.0;
+
+  LookupResponse::Attr::Reader attributes = response.getAttr();
+
+  e.attr.st_dev = attributes.getStDev();
+  e.attr.st_ino = attributes.getStIno();
+  e.attr.st_mode = attributes.getStMode();
+  e.attr.st_nlink = attributes.getStNlink();
+  e.attr.st_uid = geteuid();  // attributes.getStUid();
+  e.attr.st_gid = getegid();  // attributes.getStGid();
+  e.attr.st_rdev = attributes.getStRdev();
+  e.attr.st_size = attributes.getStSize();
+  e.attr.st_atime = attributes.getStAtime();
+  e.attr.st_mtime = attributes.getStMtime();
+  e.attr.st_ctime = attributes.getStCtime();
+  e.attr.st_blksize = attributes.getStBlksize();
+  e.attr.st_blocks = attributes.getStBlocks();
+
+  fuse_reply_entry(req, &e);
 
   // std::cout << "hello_ll_lookup executed correctly: " << payload << std::endl;
 }

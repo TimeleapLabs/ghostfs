@@ -60,6 +60,108 @@ public:
   explicit GhostFSImpl(std::string _user, std::string _root, std::string _suffix)
       : user(move(_user)), root(move(_root)), suffix(move(_suffix)) {}
 
+  kj::Promise<void> lookup(LookupContext context) override {
+    auto params = context.getParams();
+    auto req = params.getReq();
+
+    auto results = context.getResults();
+    auto response = results.getRes();
+
+    uint64_t parent = req.getParent();
+    std::string name = req.getName();
+
+    std::string user_root = normalize_path(root, user, suffix);
+    std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
+    std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
+    std::filesystem::path file_path = parent_path / std::filesystem::path(name);
+
+    if (!std::filesystem::exists(file_path)) {
+      int err = errno;
+      response.setErrno(err);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    uint64_t ino;
+
+    if (path_to_ino.find(file_path) == path_to_ino.end()) {
+      ino = ++current_ino;
+      ino_to_path[ino] = file_path;
+      path_to_ino[file_path] = ino;
+    } else {
+      ino = path_to_ino[file_path];
+    }
+
+    response.setIno(ino);
+
+    // e.attr_timeout = 1.0;
+    // e.entry_timeout = 1.0;
+
+    struct stat attr;
+
+    memset(&attr, 0, sizeof(attr));
+
+    int res = hello_stat(ino, &attr);
+    int err = errno;
+
+    LookupResponse::Attr::Builder attributes = response.initAttr();
+
+    attributes.setStDev(attr.st_dev);
+    attributes.setStIno(attr.st_ino);
+    attributes.setStMode(attr.st_mode);
+    attributes.setStNlink(attr.st_nlink);
+    attributes.setStUid(attr.st_uid);
+    attributes.setStGid(attr.st_gid);
+    attributes.setStRdev(attr.st_rdev);
+    attributes.setStSize(attr.st_size);
+    attributes.setStAtime(attr.st_atime);
+    attributes.setStMtime(attr.st_mtime);
+    attributes.setStCtime(attr.st_ctime);
+    attributes.setStBlksize(attr.st_blksize);
+    attributes.setStBlocks(attr.st_blocks);
+
+    response.setErrno(err);
+    response.setRes(0);
+
+    return kj::READY_NOW;
+  }
+
+  kj::Promise<void> read(ReadContext context) override {
+    auto params = context.getParams();
+    auto req = params.getReq();
+
+    auto results = context.getResults();
+    auto response = results.getRes();
+
+    if (ino_to_path.find(req.getIno()) == ino_to_path.end()) {
+      // File is unknown
+      response.setRes(-1);
+      response.setErrno(ENOENT);
+      return kj::READY_NOW;
+    }
+
+    size_t size = req.getSize();
+    off_t off = req.getOff();
+
+    char buf[size];
+
+    Read::FuseFileInfo::Reader fi = req.getFi();
+
+    ::lseek(fi.getFh(), off, SEEK_SET);
+    ::read(fi.getFh(), &buf, size);
+
+    int err = errno;
+
+    kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte*)buf, size);
+    capnp::Data::Reader buf_reader(buf_ptr);
+
+    response.setBuf(buf_reader);
+    response.setErrno(err);
+    response.setRes(0);
+
+    return kj::READY_NOW;
+  }
+
   kj::Promise<void> write(WriteContext context) override {
     auto params = context.getParams();
     auto req = params.getReq();
@@ -82,42 +184,6 @@ public:
       response.setErrno(err);
       response.setIno(req.getIno());
       response.setWritten(written);
-
-      return kj::READY_NOW;
-    }
-
-    kj::Promise<void> read(ReadContext context) override{
-      auto params = context.getParams();
-      auto req = params.getReq();
-
-      auto results = context.getResults();
-      auto response = results.getRes();
-
-      if (ino_to_path.find(req.getIno()) == ino_to_path.end()) {
-        // File is unknown
-        response.setRes(-1);
-        response.setErrno(ENOENT);
-        return kj::READY_NOW;
-      }
-
-      size_t size = req.getSize();
-      off_t off = req.getOff();
-
-      char buf[size];
-
-      Read::FuseFileInfo::Reader fi = req.getFi();
-
-      ::lseek(fi.getFh(), off, SEEK_SET);
-      ::read(fi.getFh(), &buf, size);
-
-      int err = errno;
-
-      kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte*)buf, size);
-      capnp::Data::Reader buf_reader(buf_ptr);
-
-      response.setBuf(buf_reader);
-      response.setErrno(err);
-      response.setRes(0);
 
       return kj::READY_NOW;
     }
@@ -488,86 +554,6 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
             = send_message(getattr_response, message, res, err, webSocket, Ops::Getattr);
 
         // std::cout << "getattr_response sent correctly: " << response_payload << std::endl;
-
-        break;
-      }
-
-      case (char)Ops::Lookup: {
-        const kj::ArrayPtr<const capnp::word> view(
-            reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
-            reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
-
-        capnp::FlatArrayMessageReader data(view);
-        Lookup::Reader lookup = data.getRoot<Lookup>();
-
-        // std::cout << "lookup: Received UUID: " << lookup.getUuid().cStr() << std::endl;
-
-        // char msg[] = {2, parent, *name};
-        // ws->sendBinary(msg);
-
-        ::capnp::MallocMessageBuilder message;
-        LookupResponse::Builder lookup_response = message.initRoot<LookupResponse>();
-
-        lookup_response.setUuid(lookup.getUuid());
-
-        uint64_t parent = lookup.getParent();
-        std::string name = lookup.getName();
-
-        std::string user_root = normalize_path(root, connectionState->getId(), suffix);
-        std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
-        std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
-        std::filesystem::path file_path = parent_path / std::filesystem::path(name);
-
-        if (!std::filesystem::exists(file_path)) {
-          int err = errno;
-          std::string response_payload
-              = send_message(lookup_response, message, -1, err, webSocket, Ops::Lookup);
-          // std::cout << "lookup_response sent error: " << response_payload << std::endl;
-          return;
-        }
-
-        uint64_t ino;
-
-        if (path_to_ino.find(file_path) == path_to_ino.end()) {
-          ino = ++current_ino;
-          ino_to_path[ino] = file_path;
-          path_to_ino[file_path] = ino;
-        } else {
-          ino = path_to_ino[file_path];
-        }
-
-        lookup_response.setIno(ino);
-
-        // e.attr_timeout = 1.0;
-        // e.entry_timeout = 1.0;
-
-        struct stat attr;
-
-        memset(&attr, 0, sizeof(attr));
-
-        int res = hello_stat(ino, &attr);
-        int err = errno;
-
-        LookupResponse::Attr::Builder attributes = lookup_response.initAttr();
-
-        attributes.setStDev(attr.st_dev);
-        attributes.setStIno(attr.st_ino);
-        attributes.setStMode(attr.st_mode);
-        attributes.setStNlink(attr.st_nlink);
-        attributes.setStUid(attr.st_uid);
-        attributes.setStGid(attr.st_gid);
-        attributes.setStRdev(attr.st_rdev);
-        attributes.setStSize(attr.st_size);
-        attributes.setStAtime(attr.st_atime);
-        attributes.setStMtime(attr.st_mtime);
-        attributes.setStCtime(attr.st_ctime);
-        attributes.setStBlksize(attr.st_blksize);
-        attributes.setStBlocks(attr.st_blocks);
-
-        std::string response_payload
-            = send_message(lookup_response, message, res, err, webSocket, Ops::Lookup);
-
-        // std::cout << "lookup_response sent correctly: " << response_payload << std::endl;
 
         break;
       }

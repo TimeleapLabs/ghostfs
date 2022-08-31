@@ -65,10 +65,6 @@ void WSClient::onMessage(const ix::WebSocketMessagePtr& msg) {
         process_getattr_response(payload);
         break;
       }
-      case (char)Ops::Lookup: {
-        process_lookup_response(payload);
-        break;
-      }
       case (char)Ops::Readdir: {
         process_readdir_response(payload);
         break;

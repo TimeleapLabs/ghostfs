@@ -35,7 +35,7 @@ struct LookupResponse {
   struct Attr;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(a367173469ff7212, 2, 2)
+    CAPNP_DECLARE_STRUCT_HEADER(a367173469ff7212, 2, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -76,9 +76,6 @@ public:
   }
 #endif  // !CAPNP_LITE
 
-  inline bool hasUuid() const;
-  inline  ::capnp::Text::Reader getUuid() const;
-
   inline  ::uint64_t getIno() const;
 
   inline bool hasAttr() const;
@@ -115,13 +112,6 @@ public:
 #if !CAPNP_LITE
   inline ::kj::StringTree toString() const { return asReader().toString(); }
 #endif  // !CAPNP_LITE
-
-  inline bool hasUuid();
-  inline  ::capnp::Text::Builder getUuid();
-  inline void setUuid( ::capnp::Text::Reader value);
-  inline  ::capnp::Text::Builder initUuid(unsigned int size);
-  inline void adoptUuid(::capnp::Orphan< ::capnp::Text>&& value);
-  inline ::capnp::Orphan< ::capnp::Text> disownUuid();
 
   inline  ::uint64_t getIno();
   inline void setIno( ::uint64_t value);
@@ -304,40 +294,6 @@ private:
 
 // =======================================================================================
 
-inline bool LookupResponse::Reader::hasUuid() const {
-  return !_reader.getPointerField(
-      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
-}
-inline bool LookupResponse::Builder::hasUuid() {
-  return !_builder.getPointerField(
-      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
-}
-inline  ::capnp::Text::Reader LookupResponse::Reader::getUuid() const {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_reader.getPointerField(
-      ::capnp::bounded<0>() * ::capnp::POINTERS));
-}
-inline  ::capnp::Text::Builder LookupResponse::Builder::getUuid() {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_builder.getPointerField(
-      ::capnp::bounded<0>() * ::capnp::POINTERS));
-}
-inline void LookupResponse::Builder::setUuid( ::capnp::Text::Reader value) {
-  ::capnp::_::PointerHelpers< ::capnp::Text>::set(_builder.getPointerField(
-      ::capnp::bounded<0>() * ::capnp::POINTERS), value);
-}
-inline  ::capnp::Text::Builder LookupResponse::Builder::initUuid(unsigned int size) {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(_builder.getPointerField(
-      ::capnp::bounded<0>() * ::capnp::POINTERS), size);
-}
-inline void LookupResponse::Builder::adoptUuid(
-    ::capnp::Orphan< ::capnp::Text>&& value) {
-  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(_builder.getPointerField(
-      ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
-}
-inline ::capnp::Orphan< ::capnp::Text> LookupResponse::Builder::disownUuid() {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(_builder.getPointerField(
-      ::capnp::bounded<0>() * ::capnp::POINTERS));
-}
-
 inline  ::uint64_t LookupResponse::Reader::getIno() const {
   return _reader.getDataField< ::uint64_t>(
       ::capnp::bounded<0>() * ::capnp::ELEMENTS);
@@ -354,41 +310,41 @@ inline void LookupResponse::Builder::setIno( ::uint64_t value) {
 
 inline bool LookupResponse::Reader::hasAttr() const {
   return !_reader.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS).isNull();
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
 }
 inline bool LookupResponse::Builder::hasAttr() {
   return !_builder.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS).isNull();
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
 }
 inline  ::LookupResponse::Attr::Reader LookupResponse::Reader::getAttr() const {
   return ::capnp::_::PointerHelpers< ::LookupResponse::Attr>::get(_reader.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS));
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 inline  ::LookupResponse::Attr::Builder LookupResponse::Builder::getAttr() {
   return ::capnp::_::PointerHelpers< ::LookupResponse::Attr>::get(_builder.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS));
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 #if !CAPNP_LITE
 inline  ::LookupResponse::Attr::Pipeline LookupResponse::Pipeline::getAttr() {
-  return  ::LookupResponse::Attr::Pipeline(_typeless.getPointerField(1));
+  return  ::LookupResponse::Attr::Pipeline(_typeless.getPointerField(0));
 }
 #endif  // !CAPNP_LITE
 inline void LookupResponse::Builder::setAttr( ::LookupResponse::Attr::Reader value) {
   ::capnp::_::PointerHelpers< ::LookupResponse::Attr>::set(_builder.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS), value);
+      ::capnp::bounded<0>() * ::capnp::POINTERS), value);
 }
 inline  ::LookupResponse::Attr::Builder LookupResponse::Builder::initAttr() {
   return ::capnp::_::PointerHelpers< ::LookupResponse::Attr>::init(_builder.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS));
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 inline void LookupResponse::Builder::adoptAttr(
     ::capnp::Orphan< ::LookupResponse::Attr>&& value) {
   ::capnp::_::PointerHelpers< ::LookupResponse::Attr>::adopt(_builder.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS), kj::mv(value));
+      ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
 }
 inline ::capnp::Orphan< ::LookupResponse::Attr> LookupResponse::Builder::disownAttr() {
   return ::capnp::_::PointerHelpers< ::LookupResponse::Attr>::disown(_builder.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS));
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 
 inline  ::int8_t LookupResponse::Reader::getRes() const {
