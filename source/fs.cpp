@@ -1049,8 +1049,10 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
                            struct fuse_file_info *fi) {
   // printf("Called .write\n");
 
-  ::capnp::MallocMessageBuilder message;
-  Write::Builder write = message.initRoot<Write>();
+  auto &waitScope = rpc->getWaitScope();
+  auto request = client->writeRequest();
+
+  Write::Builder write = request.getReq();
   Write::FuseFileInfo::Builder fuseFileInfo = write.initFi();
 
   kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte *)buf, size);
@@ -1062,17 +1064,6 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
   write.setOff(off);
 
   fillFileInfo(&fuseFileInfo, fi);
-
-  // const auto data = capnp::messageToFlatArray(message);
-  // const auto bytes = data.asBytes();
-  // std::string payload(bytes.begin(), bytes.end());
-
-  // ws->send((char)Ops::Write + payload);
-
-  auto &waitScope = rpc->getWaitScope();
-  auto request = client->writeRequest();
-
-  request.setReq(write.asReader());
 
   auto promise = request.send();
   auto result = promise.wait(waitScope);
@@ -1376,7 +1367,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
