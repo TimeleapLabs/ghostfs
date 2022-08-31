@@ -325,40 +325,6 @@ void process_open_response(std::string payload) {
   // std::cout << "process_getattr_response: fuse_reply_open correctly executed" << std::endl;
 }
 
-
-static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi);
-
-void process_setattr_response(std::string payload) {
-  const kj::ArrayPtr<const capnp::word> view(
-      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
-      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
-
-  capnp::FlatArrayMessageReader data(view);
-  SetattrResponse::Reader setattr_response = data.getRoot<SetattrResponse>();
-
-  struct fuse_file_info fi;
-
-  memset(&fi, 0, sizeof(fi));
-
-  std::string uuid = setattr_response.getUuid();
-
-  // std::cout << "process_setattr_response: Response UUID: " << uuid << std::endl;
-
-  request request = requests[uuid];
-
-  int res = setattr_response.getRes();
-
-  if (res == -1) {
-    // std::cout << "SETATTR::ENOENT" << std::endl;
-    fuse_reply_err(request.req, setattr_response.getErrno());
-    return;
-  }
-
-  hello_ll_getattr(request.req, setattr_response.getIno(), request.fi);
-
-  // std::cout << "process_setattr_response: hello_ll_getattr correctly executed" << std::endl;
-}
-
 void process_setxattr_response(std::string payload) {
   const kj::ArrayPtr<const capnp::word> view(
       reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
@@ -1219,6 +1185,8 @@ static void hello_ll_release(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
   // std::cout << "hello_ll_release executed correctly: " << payload << std::endl;
 }
 
+//static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi);
+
 /**
  * @brief
  *
@@ -1257,9 +1225,10 @@ static void hello_ll_release(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
  */
 static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, int to_set,
                              struct fuse_file_info *fi) {
-  ::capnp::MallocMessageBuilder message;
-  Setattr::Builder setattr = message.initRoot<Setattr>();
+  auto &waitScope = rpc->getWaitScope();
+  auto request = client->setattrRequest();
 
+  Setattr::Builder setattr = request.getReq();
   Setattr::FuseFileInfo::Builder fuseFileInfo = setattr.initFi();
   Setattr::Attr::Builder attributes = setattr.initAttr();
 
@@ -1296,18 +1265,19 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
 
   fillFileInfo(&fuseFileInfo, fi);
 
-  std::string uuid = gen_uuid();
-  requests[uuid] = {.type = Ops::Setattr, .req = req, .fi = fi};
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+  auto response = result.getRes();
 
-  setattr.setUuid(uuid);
+  int res = response.getRes();
 
-  // std::cout << "hello_ll_setattr: Request UUID: " << uuid << std::endl;
+  if (res == -1) {
+    // std::cout << "SETATTR::ENOENT" << std::endl;
+    fuse_reply_err(req, response.getErrno());
+    return;
+  }
 
-  const auto data = capnp::messageToFlatArray(message);
-  const auto bytes = data.asBytes();
-  std::string payload(bytes.begin(), bytes.end());
-
-  ws->send((char)Ops::Setattr + payload);
+  hello_ll_getattr(req, response.getIno(), fi);
 
   // std::cout << "hello_ll_setattr executed correctly: " << payload << std::endl;
 }

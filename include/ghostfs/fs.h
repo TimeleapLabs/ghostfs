@@ -27,7 +27,6 @@ enum class Ops : char {
   Auth = 1,
   Readdir = 4,
   Open = 5,
-  Setattr = 7,
   Setxattr = 9,
   Create = 10,
   Mknod = 11,
@@ -42,7 +41,6 @@ enum class Ops : char {
 void process_auth_response(std::string payload, wsclient::WSClient* wsc);
 void process_readdir_response(std::string payload);
 void process_open_response(std::string payload);
-void process_setattr_response(std::string payload);
 void process_setxattr_response(std::string payload);
 void process_mknod_response(std::string payload);
 void process_mkdir_response(std::string payload);
