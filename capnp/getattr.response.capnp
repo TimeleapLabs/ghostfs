@@ -1,10 +1,9 @@
 @0xce9fa223fdadc118;
 
 struct GetattrResponse {
-  uuid    @0 :Text;
-  attr    @1 :Attr;
-  res     @2 :Int8;
-  errno     @3 :Int8;
+  attr    @0 :Attr;
+  res     @1 :Int8;
+  errno   @2 :Int8;
 
   struct Attr {
     stDev     @0  :UInt16;
