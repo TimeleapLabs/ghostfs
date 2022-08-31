@@ -1185,8 +1185,6 @@ static void hello_ll_release(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
   // std::cout << "hello_ll_release executed correctly: " << payload << std::endl;
 }
 
-//static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi);
-
 /**
  * @brief
  *
