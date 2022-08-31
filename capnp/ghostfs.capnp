@@ -2,6 +2,8 @@
 
 using import "lookup.capnp".Lookup;
 using import "lookup.response.capnp".LookupResponse;
+using import "getattr.capnp".Getattr;
+using import "getattr.response.capnp".GetattrResponse;
 using import "read.capnp".Read;
 using import "read.response.capnp".ReadResponse;
 using import "write.capnp".Write;
@@ -15,7 +17,8 @@ interface GhostFSAuth {
 
 interface GhostFS {
   lookup  @0 (req :Lookup)  -> (res :LookupResponse);
-  read    @1 (req :Read)    -> (res :ReadResponse);
-  write   @2 (req :Write)   -> (res :WriteResponse);
-  create  @3 (req :Create)  -> (res :CreateResponse);
+  getattr @1 (req :Getattr) -> (res :GetattrResponse);
+  read    @2 (req :Read)    -> (res :ReadResponse);
+  write   @3 (req :Write)   -> (res :WriteResponse);
+  create  @4 (req :Create)  -> (res :CreateResponse);
 }

@@ -613,26 +613,49 @@ void process_release_response(std::string payload) {
  * }
  */
 static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
-  ::capnp::MallocMessageBuilder message;
-  Getattr::Builder getattr = message.initRoot<Getattr>();
+  auto &waitScope = rpc->getWaitScope();
+  auto request = client->getattrRequest();
+
+  Getattr::Builder getattr = request.getReq();
   Getattr::FuseFileInfo::Builder fuseFileInfo = getattr.initFi();
 
   getattr.setIno(ino);
 
   fillFileInfo(&fuseFileInfo, fi);
 
-  std::string uuid = gen_uuid();
-  requests[uuid] = {.type = Ops::Getattr, .req = req};
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+  auto response = result.getRes();
 
-  // std::cout << "hello_ll_getattr: Request UUID: " << uuid << std::endl;
+  struct stat attr;
 
-  getattr.setUuid(uuid);
+  memset(&attr, 0, sizeof(attr));
 
-  const auto data = capnp::messageToFlatArray(message);
-  const auto bytes = data.asBytes();
-  std::string payload(bytes.begin(), bytes.end());
+  int res = response.getRes();
 
-  ws->send((char)Ops::Getattr + payload);
+  if (res == -1) {
+    // std::cout << "GETATTR::ENOENT" << std::endl;
+    fuse_reply_err(req, response.getErrno());
+    return;
+  }
+
+  GetattrResponse::Attr::Reader attributes = response.getAttr();
+
+  attr.st_dev = attributes.getStDev();
+  attr.st_ino = attributes.getStIno();
+  attr.st_mode = attributes.getStMode();
+  attr.st_nlink = attributes.getStNlink();
+  attr.st_uid = geteuid();  // attributes.getStUid();
+  attr.st_gid = getegid();  // attributes.getStGid();
+  attr.st_rdev = attributes.getStRdev();
+  attr.st_size = attributes.getStSize();
+  attr.st_atime = attributes.getStAtime();
+  attr.st_mtime = attributes.getStMtime();
+  attr.st_ctime = attributes.getStCtime();
+  attr.st_blksize = attributes.getStBlksize();
+  attr.st_blocks = attributes.getStBlocks();
+
+  fuse_reply_attr(req, &attr, 1.0);
 
   // std::cout << "hello_ll_getattr executed correctly: " << payload << std::endl;
 }

@@ -126,6 +126,60 @@ public:
     return kj::READY_NOW;
   }
 
+  kj::Promise<void> getattr(GetattrContext context) override {
+    auto params = context.getParams();
+    auto req = params.getReq();
+
+    auto results = context.getResults();
+    auto response = results.getRes();
+
+    struct stat attr;
+
+    memset(&attr, 0, sizeof(attr));
+
+    int res = hello_stat(req.getIno(), &attr);
+    int err = errno;
+
+    GetattrResponse::Attr::Builder attributes = response.initAttr();
+
+    attributes.setStDev(attr.st_dev);
+    attributes.setStIno(attr.st_ino);
+    attributes.setStMode(attr.st_mode);
+    attributes.setStNlink(attr.st_nlink);
+    attributes.setStUid(attr.st_uid);
+    attributes.setStGid(attr.st_gid);
+    attributes.setStRdev(attr.st_rdev);
+    attributes.setStSize(attr.st_size);
+    attributes.setStAtime(attr.st_atime);
+    attributes.setStMtime(attr.st_mtime);
+    attributes.setStCtime(attr.st_ctime);
+    attributes.setStBlksize(attr.st_blksize);
+    attributes.setStBlocks(attr.st_blocks);
+
+    // std::cout << "st_dev " << attr.st_dev << " " << attributes.getStDev() << std::endl;
+    // std::cout << "st_ino " << attr.st_ino << " " << attributes.getStIno() << std::endl;
+    // std::cout << "st_mode " << attr.st_mode << " " << attributes.getStMode() << std::endl;
+    // std::cout << "st_nlink " << attr.st_nlink << " " << attributes.getStNlink() <<
+    // std::endl; std::cout << "st_uid " << attr.st_uid << " " << attributes.getStUid() <<
+    // std::endl; std::cout << "st_gid " << attr.st_gid << " " << attributes.getStGid() <<
+    // std::endl; std::cout << "st_rdev " << attr.st_rdev << " " << attributes.getStRdev() <<
+    // std::endl; std::cout << "st_size " << attr.st_size << " " << attributes.getStSize() <<
+    // std::endl; std::cout << "st_atime " << attr.st_atime << " " << attributes.getStAtime()
+    // << std::endl; std::cout << "st_mtime " << attr.st_mtime << " " <<
+    // attributes.getStMtime() << std::endl; std::cout << "st_ctime " << attr.st_ctime << " "
+    // << attributes.getStCtime() << std::endl; std::cout << "st_blksize " << attr.st_blksize
+    // << " " << attributes.getStBlksize() << std::endl; std::cout << "st_blocks " <<
+    // attr.st_blocks << " " << attributes.getStBlocks()
+    // << std::endl;
+
+    response.setErrno(err);
+    response.setRes(res);
+
+    // std::cout << "getattr_response sent correctly: " << response_payload << std::endl;
+
+    return kj::READY_NOW;
+  }
+
   kj::Promise<void> read(ReadContext context) override {
     auto params = context.getParams();
     auto req = params.getReq();
@@ -495,66 +549,6 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         std::string response_payload(bytes.begin(), bytes.end());
 
         webSocket.sendBinary((char)Ops::Auth + response_payload);
-        break;
-      }
-
-      case (char)Ops::Getattr: {
-        const kj::ArrayPtr<const capnp::word> view(
-            reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
-            reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
-
-        capnp::FlatArrayMessageReader data(view);
-        Getattr::Reader getattr = data.getRoot<Getattr>();
-
-        // std::cout << "getattr: Received UUID: " << getattr.getUuid().cStr() << std::endl;
-
-        struct stat attr;
-
-        memset(&attr, 0, sizeof(attr));
-        int res = hello_stat(getattr.getIno(), &attr);
-        int err = errno;
-
-        ::capnp::MallocMessageBuilder message;
-        GetattrResponse::Builder getattr_response = message.initRoot<GetattrResponse>();
-        GetattrResponse::Attr::Builder attributes = getattr_response.initAttr();
-
-        getattr_response.setUuid(getattr.getUuid());
-
-        attributes.setStDev(attr.st_dev);
-        attributes.setStIno(attr.st_ino);
-        attributes.setStMode(attr.st_mode);
-        attributes.setStNlink(attr.st_nlink);
-        attributes.setStUid(attr.st_uid);
-        attributes.setStGid(attr.st_gid);
-        attributes.setStRdev(attr.st_rdev);
-        attributes.setStSize(attr.st_size);
-        attributes.setStAtime(attr.st_atime);
-        attributes.setStMtime(attr.st_mtime);
-        attributes.setStCtime(attr.st_ctime);
-        attributes.setStBlksize(attr.st_blksize);
-        attributes.setStBlocks(attr.st_blocks);
-
-        // std::cout << "st_dev " << attr.st_dev << " " << attributes.getStDev() << std::endl;
-        // std::cout << "st_ino " << attr.st_ino << " " << attributes.getStIno() << std::endl;
-        // std::cout << "st_mode " << attr.st_mode << " " << attributes.getStMode() << std::endl;
-        // std::cout << "st_nlink " << attr.st_nlink << " " << attributes.getStNlink() <<
-        // std::endl; std::cout << "st_uid " << attr.st_uid << " " << attributes.getStUid() <<
-        // std::endl; std::cout << "st_gid " << attr.st_gid << " " << attributes.getStGid() <<
-        // std::endl; std::cout << "st_rdev " << attr.st_rdev << " " << attributes.getStRdev() <<
-        // std::endl; std::cout << "st_size " << attr.st_size << " " << attributes.getStSize() <<
-        // std::endl; std::cout << "st_atime " << attr.st_atime << " " << attributes.getStAtime()
-        // << std::endl; std::cout << "st_mtime " << attr.st_mtime << " " <<
-        // attributes.getStMtime() << std::endl; std::cout << "st_ctime " << attr.st_ctime << " "
-        // << attributes.getStCtime() << std::endl; std::cout << "st_blksize " << attr.st_blksize
-        // << " " << attributes.getStBlksize() << std::endl; std::cout << "st_blocks " <<
-        // attr.st_blocks << " " << attributes.getStBlocks()
-        // << std::endl;
-
-        std::string response_payload
-            = send_message(getattr_response, message, res, err, webSocket, Ops::Getattr);
-
-        // std::cout << "getattr_response sent correctly: " << response_payload << std::endl;
-
         break;
       }
 

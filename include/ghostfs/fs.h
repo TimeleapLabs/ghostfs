@@ -25,13 +25,9 @@ void dirbuf_add(fuse_req_t req, struct dirbuf* b, const char* name, fuse_ino_t i
 
 enum class Ops : char {
   Auth = 1,
-  Getattr = 2,
-  Lookup = 3,
   Readdir = 4,
   Open = 5,
-  Read = 6,
   Setattr = 7,
-  Write = 8,
   Setxattr = 9,
   Create = 10,
   Mknod = 11,
@@ -44,7 +40,6 @@ enum class Ops : char {
 
 // Responses
 void process_auth_response(std::string payload, wsclient::WSClient* wsc);
-void process_getattr_response(std::string payload);
 void process_readdir_response(std::string payload);
 void process_open_response(std::string payload);
 void process_setattr_response(std::string payload);

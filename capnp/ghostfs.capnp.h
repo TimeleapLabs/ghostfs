@@ -15,6 +15,8 @@
 
 #include "create.capnp.h"
 #include "create.response.capnp.h"
+#include "getattr.capnp.h"
+#include "getattr.response.capnp.h"
 #include "lookup.capnp.h"
 #include "lookup.response.capnp.h"
 #include "read.capnp.h"
@@ -39,6 +41,8 @@ CAPNP_DECLARE_SCHEMA(ff558ed77573e67f);
 CAPNP_DECLARE_SCHEMA(e3e30b919a295685);
 CAPNP_DECLARE_SCHEMA(ea36665fcfea5c3d);
 CAPNP_DECLARE_SCHEMA(dbec0e28e62d98f5);
+CAPNP_DECLARE_SCHEMA(d00785fcfdcb2ecc);
+CAPNP_DECLARE_SCHEMA(e77df49b4aa2c163);
 
 }  // namespace schemas
 }  // namespace capnp
@@ -103,6 +107,8 @@ struct GhostFS {
 
   struct LookupParams;
   struct LookupResults;
+  struct GetattrParams;
+  struct GetattrResults;
   struct ReadParams;
   struct ReadResults;
   struct WriteParams;
@@ -148,6 +154,36 @@ struct GhostFS::LookupResults {
   };
 };
 
+struct GhostFS::GetattrParams {
+  GetattrParams() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(bb20fe0f54844336, 0, 1)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct GhostFS::GetattrResults {
+  GetattrResults() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(84f35b28cd3bb0d9, 0, 1)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
+    #endif  // !CAPNP_LITE
+  };
+};
+
 struct GhostFS::ReadParams {
   ReadParams() = delete;
 
@@ -156,7 +192,7 @@ struct GhostFS::ReadParams {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(bb20fe0f54844336, 0, 1)
+    CAPNP_DECLARE_STRUCT_HEADER(ff558ed77573e67f, 0, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -171,7 +207,7 @@ struct GhostFS::ReadResults {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(84f35b28cd3bb0d9, 0, 1)
+    CAPNP_DECLARE_STRUCT_HEADER(e3e30b919a295685, 0, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -186,7 +222,7 @@ struct GhostFS::WriteParams {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(ff558ed77573e67f, 0, 1)
+    CAPNP_DECLARE_STRUCT_HEADER(ea36665fcfea5c3d, 0, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -201,7 +237,7 @@ struct GhostFS::WriteResults {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(e3e30b919a295685, 0, 1)
+    CAPNP_DECLARE_STRUCT_HEADER(dbec0e28e62d98f5, 0, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -216,7 +252,7 @@ struct GhostFS::CreateParams {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(ea36665fcfea5c3d, 0, 1)
+    CAPNP_DECLARE_STRUCT_HEADER(d00785fcfdcb2ecc, 0, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -231,7 +267,7 @@ struct GhostFS::CreateResults {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(dbec0e28e62d98f5, 0, 1)
+    CAPNP_DECLARE_STRUCT_HEADER(e77df49b4aa2c163, 0, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -491,6 +527,8 @@ public:
 
   ::capnp::Request< ::GhostFS::LookupParams,  ::GhostFS::LookupResults> lookupRequest(
       ::kj::Maybe< ::capnp::MessageSize> sizeHint = nullptr);
+  ::capnp::Request< ::GhostFS::GetattrParams,  ::GhostFS::GetattrResults> getattrRequest(
+      ::kj::Maybe< ::capnp::MessageSize> sizeHint = nullptr);
   ::capnp::Request< ::GhostFS::ReadParams,  ::GhostFS::ReadResults> readRequest(
       ::kj::Maybe< ::capnp::MessageSize> sizeHint = nullptr);
   ::capnp::Request< ::GhostFS::WriteParams,  ::GhostFS::WriteResults> writeRequest(
@@ -517,6 +555,10 @@ protected:
   typedef  ::GhostFS::LookupResults LookupResults;
   typedef ::capnp::CallContext<LookupParams, LookupResults> LookupContext;
   virtual ::kj::Promise<void> lookup(LookupContext context);
+  typedef  ::GhostFS::GetattrParams GetattrParams;
+  typedef  ::GhostFS::GetattrResults GetattrResults;
+  typedef ::capnp::CallContext<GetattrParams, GetattrResults> GetattrContext;
+  virtual ::kj::Promise<void> getattr(GetattrContext context);
   typedef  ::GhostFS::ReadParams ReadParams;
   typedef  ::GhostFS::ReadResults ReadResults;
   typedef ::capnp::CallContext<ReadParams, ReadResults> ReadContext;
@@ -697,6 +739,170 @@ public:
       : _typeless(kj::mv(typeless)) {}
 
   inline  ::LookupResponse::Pipeline getRes();
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class GhostFS::GetattrParams::Reader {
+public:
+  typedef GetattrParams Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand());
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool hasReq() const;
+  inline  ::Getattr::Reader getReq() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class GhostFS::GetattrParams::Builder {
+public:
+  typedef GetattrParams Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool hasReq();
+  inline  ::Getattr::Builder getReq();
+  inline void setReq( ::Getattr::Reader value);
+  inline  ::Getattr::Builder initReq();
+  inline void adoptReq(::capnp::Orphan< ::Getattr>&& value);
+  inline ::capnp::Orphan< ::Getattr> disownReq();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class GhostFS::GetattrParams::Pipeline {
+public:
+  typedef GetattrParams Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+  inline  ::Getattr::Pipeline getReq();
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class GhostFS::GetattrResults::Reader {
+public:
+  typedef GetattrResults Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand());
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool hasRes() const;
+  inline  ::GetattrResponse::Reader getRes() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class GhostFS::GetattrResults::Builder {
+public:
+  typedef GetattrResults Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool hasRes();
+  inline  ::GetattrResponse::Builder getRes();
+  inline void setRes( ::GetattrResponse::Reader value);
+  inline  ::GetattrResponse::Builder initRes();
+  inline void adoptRes(::capnp::Orphan< ::GetattrResponse>&& value);
+  inline ::capnp::Orphan< ::GetattrResponse> disownRes();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class GhostFS::GetattrResults::Pipeline {
+public:
+  typedef GetattrResults Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+  inline  ::GetattrResponse::Pipeline getRes();
 private:
   ::capnp::AnyPointer::Pipeline _typeless;
   friend class ::capnp::PipelineHook;
@@ -1429,6 +1635,84 @@ inline void GhostFS::LookupResults::Builder::adoptRes(
 }
 inline ::capnp::Orphan< ::LookupResponse> GhostFS::LookupResults::Builder::disownRes() {
   return ::capnp::_::PointerHelpers< ::LookupResponse>::disown(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+
+inline bool GhostFS::GetattrParams::Reader::hasReq() const {
+  return !_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline bool GhostFS::GetattrParams::Builder::hasReq() {
+  return !_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline  ::Getattr::Reader GhostFS::GetattrParams::Reader::getReq() const {
+  return ::capnp::_::PointerHelpers< ::Getattr>::get(_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline  ::Getattr::Builder GhostFS::GetattrParams::Builder::getReq() {
+  return ::capnp::_::PointerHelpers< ::Getattr>::get(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+#if !CAPNP_LITE
+inline  ::Getattr::Pipeline GhostFS::GetattrParams::Pipeline::getReq() {
+  return  ::Getattr::Pipeline(_typeless.getPointerField(0));
+}
+#endif  // !CAPNP_LITE
+inline void GhostFS::GetattrParams::Builder::setReq( ::Getattr::Reader value) {
+  ::capnp::_::PointerHelpers< ::Getattr>::set(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), value);
+}
+inline  ::Getattr::Builder GhostFS::GetattrParams::Builder::initReq() {
+  return ::capnp::_::PointerHelpers< ::Getattr>::init(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline void GhostFS::GetattrParams::Builder::adoptReq(
+    ::capnp::Orphan< ::Getattr>&& value) {
+  ::capnp::_::PointerHelpers< ::Getattr>::adopt(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::Getattr> GhostFS::GetattrParams::Builder::disownReq() {
+  return ::capnp::_::PointerHelpers< ::Getattr>::disown(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+
+inline bool GhostFS::GetattrResults::Reader::hasRes() const {
+  return !_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline bool GhostFS::GetattrResults::Builder::hasRes() {
+  return !_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline  ::GetattrResponse::Reader GhostFS::GetattrResults::Reader::getRes() const {
+  return ::capnp::_::PointerHelpers< ::GetattrResponse>::get(_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline  ::GetattrResponse::Builder GhostFS::GetattrResults::Builder::getRes() {
+  return ::capnp::_::PointerHelpers< ::GetattrResponse>::get(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+#if !CAPNP_LITE
+inline  ::GetattrResponse::Pipeline GhostFS::GetattrResults::Pipeline::getRes() {
+  return  ::GetattrResponse::Pipeline(_typeless.getPointerField(0));
+}
+#endif  // !CAPNP_LITE
+inline void GhostFS::GetattrResults::Builder::setRes( ::GetattrResponse::Reader value) {
+  ::capnp::_::PointerHelpers< ::GetattrResponse>::set(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), value);
+}
+inline  ::GetattrResponse::Builder GhostFS::GetattrResults::Builder::initRes() {
+  return ::capnp::_::PointerHelpers< ::GetattrResponse>::init(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline void GhostFS::GetattrResults::Builder::adoptRes(
+    ::capnp::Orphan< ::GetattrResponse>&& value) {
+  ::capnp::_::PointerHelpers< ::GetattrResponse>::adopt(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::GetattrResponse> GhostFS::GetattrResults::Builder::disownRes() {
+  return ::capnp::_::PointerHelpers< ::GetattrResponse>::disown(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 
