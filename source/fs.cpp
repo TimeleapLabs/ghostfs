@@ -99,6 +99,7 @@ static int reply_buf_limited(fuse_req_t req, const char *buf, size_t bufsize, of
 std::map<std::string, request> requests;
 
 wsclient::WSClient *ws;
+GhostFS::Client *client;
 capnp::EzRpcClient *rpc;
 
 uint64_t get_parent_ino(uint64_t ino, std::string path) {
@@ -996,12 +997,11 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
   fillFileInfo(&fuseFileInfo, fi);
 
   auto &waitScope = rpc->getWaitScope();
-  GhostFS::Client client = rpc->getMain<GhostFS>();
+  auto request = client->readRequest();
 
-  auto request = client.readRequest();
   request.setReq(read.asReader());
-  auto promise = request.send();
 
+  auto promise = request.send();
   auto result = promise.wait(waitScope);
   auto response = result.getRes();
 
@@ -1070,12 +1070,11 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
   // ws->send((char)Ops::Write + payload);
 
   auto &waitScope = rpc->getWaitScope();
-  GhostFS::Client client = rpc->getMain<GhostFS>();
+  auto request = client->writeRequest();
 
-  auto request = client.writeRequest();
   request.setReq(write.asReader());
-  auto promise = request.send();
 
+  auto promise = request.send();
   auto result = promise.wait(waitScope);
   auto response = result.getRes();
 
@@ -1462,7 +1461,7 @@ static const struct fuse_lowlevel_ops hello_ll_oper = {
 // clang-format on
 
 int start_fs(char *executable, char *argmnt, std::vector<std::string> options,
-             wsclient::WSClient *wsc, std::string host) {
+             wsclient::WSClient *wsc, std::string host, std::string user, std::string token) {
   ws = wsc;
 
   while (true) {
@@ -1477,6 +1476,20 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options,
 
   capnp::EzRpcClient rpc_client(host, 5923);
   rpc = &rpc_client;
+
+  auto &waitScope = rpc_client.getWaitScope();
+  GhostFSAuth::Client authClient = rpc_client.getMain<GhostFSAuth>();
+
+  auto request = authClient.authRequest();
+
+  request.setUser(user);
+  request.setToken(token);
+
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+  auto ghostfsClient = result.getGhostFs();
+
+  client = &ghostfsClient;
 
   int argc = options.size() * 2 + 2;
   char *argv[2048] = {executable, argmnt};

@@ -52,7 +52,14 @@
 #include <iostream>
 
 class GhostFSImpl final : public GhostFS::Server {
+  std::string user;
+  std::string root;
+  std::string suffix;
+
 public:
+  explicit GhostFSImpl(std::string _user, std::string _root, std::string _suffix)
+      : user(move(_user)), root(move(_root)), suffix(move(_suffix)) {}
+
   kj::Promise<void> write(WriteContext context) override {
     auto params = context.getParams();
     auto req = params.getReq();
@@ -78,7 +85,7 @@ public:
     return kj::READY_NOW;
   }
 
-  kj::Promise<void> read(ReadContext context) override{
+  kj::Promise<void> read(ReadContext context) override {
     auto params = context.getParams();
     auto req = params.getReq();
 
@@ -113,79 +120,114 @@ public:
     return kj::READY_NOW;
   }
 
-      // Any method which we don't implement will simply throw
-      // an exception by default.
-  };
+  // Any method which we don't implement will simply throw
+  // an exception by default.
+};
 
-  using namespace wsserver;
+class GhostFSAuthImpl final : public GhostFSAuth::Server {
+  std::string root;
+  std::string suffix;
 
-  WSServer::WSServer(int _port, int _auth_port, std::string _host, std::string _root,
-                     std::string _suffix)
-      : port(std::move(_port)),
-        auth_port(std::move(_auth_port)),
-        host(std::move(_host)),
-        root(std::move(_root)),
-        suffix(std::move(_suffix)) {}
+public:
+  explicit GhostFSAuthImpl(std::string _root, std::string _suffix)
+      : root(move(_root)), suffix(move(_suffix)) {}
 
-  int WSServer::start() {
-    if (root.length() > 0) {
-      if (!std::filesystem::is_directory(root)) {
-        // std::cout << "ERROR: directory " << '"' << root << '"' << " does not exist." <<
-        // std::endl;
-        return 1;
-      };
+  kj::Promise<void> auth(AuthContext context) override {
+    auto params = context.getParams();
+
+    auto userPtr = params.getUser();
+    std::string user(userPtr.begin(), userPtr.end());
+
+    auto tokenPtr = params.getToken();
+    std::string token(tokenPtr.begin(), tokenPtr.end());
+
+    // TODO: in previous WebSocket implementation userId
+    // wasn't equal to user's subdirectory, this needs attention
+    bool isValid = authenticate(token, user, user);
+
+    if (isValid) {
+      auto res = context.getResults();
+      res.setGhostFs(kj::heap<GhostFSImpl>(user, root, suffix));
     }
-    // Start the server on port
-    ix::WebSocketServer server(port, host);
-    ix::WebSocketServer auth_server(auth_port);
 
-    std::cout << "Starting ws server on " << host << ":" << port << "..." << std::endl;
-    std::cout << "Starting capnp server on "
-              << "0.0.0.0"
-              << ":" << 5923 << "..." << std::endl;
-    std::cout << "Starting the auth server on port " << auth_port << "..." << std::endl;
+    return kj::READY_NOW;
+  }
+};
 
-    // Setup a callback to be fired (in a background thread, watch out for race conditions !)
-    // when a message or an event (open, close, error) is received
-    server.setOnClientMessageCallback(
-        [this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket& webSocket,
-               const ix::WebSocketMessagePtr& msg) { onMessage(connectionState, webSocket, msg); });
-    auth_server.setOnClientMessageCallback(
-        [this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket& webSocket,
-               const ix::WebSocketMessagePtr& msg) {
-          onAuthMessage(connectionState, webSocket, msg);
-        });
+using namespace wsserver;
 
-    // auto res = server.listen();
-    /*
-     if (!res.first) {
-       // Error handling
-       return 1;
-     } */
+WSServer::WSServer(int _port, int _auth_port, std::string _host, std::string _root,
+                   std::string _suffix)
+    : port(std::move(_port)),
+      auth_port(std::move(_auth_port)),
+      host(std::move(_host)),
+      root(std::move(_root)),
+      suffix(std::move(_suffix)) {}
 
-    server.listen();
-    auth_server.listen();
+int WSServer::start() {
+  if (root.length() > 0) {
+    if (!std::filesystem::is_directory(root)) {
+      // std::cout << "ERROR: directory " << '"' << root << '"' << " does not exist." <<
+      // std::endl;
+      return 1;
+    };
+  }
+  // Start the server on port
+  ix::WebSocketServer server(port, host);
+  ix::WebSocketServer auth_server(auth_port);
 
-    // Per message deflate connection is enabled by default. It can be disabled
-    // which might be helpful when running on low power devices such as a Rasbery Pi
-    server.disablePerMessageDeflate();
-    auth_server.disablePerMessageDeflate();
+  std::cout << "Starting ws server on " << host << ":" << port << "..." << std::endl;
+  std::cout << "Starting capnp server on "
+            << "0.0.0.0"
+            << ":" << 5923 << "..." << std::endl;
+  std::cout << "Starting the auth server on port " << auth_port << "..." << std::endl;
 
-    // Run the server in the background. Server can be stoped by calling server.stop()
-    server.start();
-    auth_server.start();
+  // Setup a callback to be fired (in a background thread, watch out for race conditions !)
+  // when a message or an event (open, close, error) is received
+  server.setOnClientMessageCallback(
+      [this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket& webSocket,
+             const ix::WebSocketMessagePtr& msg) { onMessage(connectionState, webSocket, msg); });
+  auth_server.setOnClientMessageCallback(
+      [this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket& webSocket,
+             const ix::WebSocketMessagePtr& msg) {
+        onAuthMessage(connectionState, webSocket, msg);
+      });
 
-    capnp::EzRpcServer rpc_server(kj::heap<GhostFSImpl>(), "0.0.0.0", 5923);
-    auto& waitScope = rpc_server.getWaitScope();
+  // auto res = server.listen();
+  /*
+   if (!res.first) {
+     // Error handling
+     return 1;
+   } */
 
-    // Run forever, accepting connections and handling requests.
-    kj::NEVER_DONE.wait(waitScope);
+  server.listen();
+  auth_server.listen();
 
-    // Block until server.stop() is called.
-    server.wait();
-    auth_server.stop();
+  // Per message deflate connection is enabled by default. It can be disabled
+  // which might be helpful when running on low power devices such as a Rasbery Pi
+  server.disablePerMessageDeflate();
+  auth_server.disablePerMessageDeflate();
 
-    return 0;
+  // Run the server in the background. Server can be stoped by calling server.stop()
+  server.start();
+  auth_server.start();
+
+  /**
+   * Capnp RPC server. We need to find out how to pass parameters to the
+   * GhostFSImpl class, instead of assigning them globally.
+   */
+
+  capnp::EzRpcServer rpc_server(kj::heap<GhostFSAuthImpl>(root, suffix), "0.0.0.0", 5923);
+  auto& waitScope = rpc_server.getWaitScope();
+
+  // Run forever, accepting connections and handling requests.
+  kj::NEVER_DONE.wait(waitScope);
+
+  // Block until server.stop() is called.
+  server.wait();
+  auth_server.stop();
+
+  return 0;
 }
 
 template <class T> std::string send_message(T& response, ::capnp::MallocMessageBuilder& message,
@@ -345,16 +387,17 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         // std::cout << "st_dev " << attr.st_dev << " " << attributes.getStDev() << std::endl;
         // std::cout << "st_ino " << attr.st_ino << " " << attributes.getStIno() << std::endl;
         // std::cout << "st_mode " << attr.st_mode << " " << attributes.getStMode() << std::endl;
-        // std::cout << "st_nlink " << attr.st_nlink << " " << attributes.getStNlink() << std::endl;
-        // std::cout << "st_uid " << attr.st_uid << " " << attributes.getStUid() << std::endl;
-        // std::cout << "st_gid " << attr.st_gid << " " << attributes.getStGid() << std::endl;
-        // std::cout << "st_rdev " << attr.st_rdev << " " << attributes.getStRdev() << std::endl;
-        // std::cout << "st_size " << attr.st_size << " " << attributes.getStSize() << std::endl;
-        // std::cout << "st_atime " << attr.st_atime << " " << attributes.getStAtime() << std::endl;
-        // std::cout << "st_mtime " << attr.st_mtime << " " << attributes.getStMtime() << std::endl;
-        // std::cout << "st_ctime " << attr.st_ctime << " " << attributes.getStCtime() << std::endl;
-        // std::cout << "st_blksize " << attr.st_blksize << " " << attributes.getStBlksize() <<
-        // std::endl; std::cout << "st_blocks " << attr.st_blocks << " " << attributes.getStBlocks()
+        // std::cout << "st_nlink " << attr.st_nlink << " " << attributes.getStNlink() <<
+        // std::endl; std::cout << "st_uid " << attr.st_uid << " " << attributes.getStUid() <<
+        // std::endl; std::cout << "st_gid " << attr.st_gid << " " << attributes.getStGid() <<
+        // std::endl; std::cout << "st_rdev " << attr.st_rdev << " " << attributes.getStRdev() <<
+        // std::endl; std::cout << "st_size " << attr.st_size << " " << attributes.getStSize() <<
+        // std::endl; std::cout << "st_atime " << attr.st_atime << " " << attributes.getStAtime()
+        // << std::endl; std::cout << "st_mtime " << attr.st_mtime << " " <<
+        // attributes.getStMtime() << std::endl; std::cout << "st_ctime " << attr.st_ctime << " "
+        // << attributes.getStCtime() << std::endl; std::cout << "st_blksize " << attr.st_blksize
+        // << " " << attributes.getStBlksize() << std::endl; std::cout << "st_blocks " <<
+        // attr.st_blocks << " " << attributes.getStBlocks()
         // << std::endl;
 
         std::string response_payload

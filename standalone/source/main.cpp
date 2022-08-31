@@ -76,7 +76,7 @@ auto main(int argc, char** argv) -> int {
 
     wsclient::WSClient ws(url, user, token);
 
-    return start_fs(argv[0], argv[1], options, &ws, host);
+    return start_fs(argv[0], argv[1], options, &ws, host, user, token);
 
     // ghostfs::GhostFS ghostfs();
   }
