@@ -54,6 +54,10 @@
 class GhostFSImpl final : public GhostFS::Server {
 public:
   kj::Promise<void> write(WriteContext context) override {
+    int fd = this->getFd().orDefault(0);
+
+    std::cout << "FD: " << fd << std::endl;
+
     auto params = context.getParams();
     auto req = params.getReq();
 
