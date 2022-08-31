@@ -381,44 +381,6 @@ void process_open_response(std::string payload) {
   // std::cout << "process_getattr_response: fuse_reply_open correctly executed" << std::endl;
 }
 
-void process_read_response(std::string payload) {
-  const kj::ArrayPtr<const capnp::word> view(
-      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
-      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
-
-  capnp::FlatArrayMessageReader data(view);
-  ReadResponse::Reader read_response = data.getRoot<ReadResponse>();
-
-  struct fuse_file_info fi;
-
-  memset(&fi, 0, sizeof(fi));
-
-  std::string uuid = read_response.getUuid();
-
-  // std::cout << "process_read_response: Response UUID: " << uuid << std::endl;
-
-  request request = requests[uuid];
-
-  int res = read_response.getRes();
-
-  if (res == -1) {
-    // std::cout << "READ::ENOENT" << std::endl;
-    fuse_reply_err(request.req, read_response.getErrno());
-    return;
-  }
-
-  // std::cout << "process_read_response: Request: " << request.req << std::endl;
-
-  capnp::Data::Reader buf_reader = read_response.getBuf();
-  const auto chars = buf_reader.asChars();
-  const char *buf = chars.begin();
-
-  // reply_buf_limited(request.req, buf, chars.size(), request.off, request.size);
-
-  fuse_reply_buf(request.req, buf, chars.size());
-
-  // std::cout << "process_read_response: reply_buf_limited correctly executed" << std::endl;
-}
 
 static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi);
 
@@ -453,33 +415,6 @@ void process_setattr_response(std::string payload) {
   // std::cout << "process_setattr_response: hello_ll_getattr correctly executed" << std::endl;
 }
 
-void process_write_response(std::string payload) {
-  const kj::ArrayPtr<const capnp::word> view(
-      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
-      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
-
-  capnp::FlatArrayMessageReader data(view);
-  WriteResponse::Reader write_response = data.getRoot<WriteResponse>();
-
-  std::string uuid = write_response.getUuid();
-
-  // std::cout << "process_write_response: Response UUID: " << uuid << std::endl;
-
-  request request = requests[uuid];
-
-  int res = write_response.getRes();
-
-  if (res == -1) {
-    // std::cout << "WRITE::ENOENT" << std::endl;
-    fuse_reply_err(request.req, write_response.getErrno());
-    return;
-  }
-
-  fuse_reply_write(request.req, write_response.getWritten());
-
-  // std::cout << "process_setattr_response: fuse_reply_write correctly executed" << std::endl;
-}
-
 void process_setxattr_response(std::string payload) {
   const kj::ArrayPtr<const capnp::word> view(
       reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
@@ -503,66 +438,6 @@ void process_setxattr_response(std::string payload) {
   }
 
   // std::cout << "process_setxattr_response: correctly executed" << std::endl;
-}
-
-void process_create_response(std::string payload) {
-  const kj::ArrayPtr<const capnp::word> view(
-      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
-      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
-
-  capnp::FlatArrayMessageReader data(view);
-  CreateResponse::Reader create_response = data.getRoot<CreateResponse>();
-
-  struct stat attr;
-
-  memset(&attr, 0, sizeof(attr));
-
-  std::string uuid = create_response.getUuid();
-
-  // std::cout << "process_create_response: Response UUID: " << uuid << std::endl;
-
-  request request = requests[uuid];
-
-  int res = create_response.getRes();
-
-  if (res == -1) {
-    // std::cout << "CREATE::ENOENT" << std::endl;
-    fuse_reply_err(request.req, create_response.getErrno());
-    return;
-  }
-
-  struct fuse_entry_param e;
-
-  memset(&e, 0, sizeof(e));
-  e.ino = create_response.getIno();
-  e.attr_timeout = 1.0;
-  e.entry_timeout = 1.0;
-
-  CreateResponse::Attr::Reader attributes = create_response.getAttr();
-
-  e.attr.st_dev = attributes.getStDev();
-  e.attr.st_ino = attributes.getStIno();
-  e.attr.st_mode = attributes.getStMode();
-  e.attr.st_nlink = attributes.getStNlink();
-  e.attr.st_uid = geteuid();  // attributes.getStUid();
-  e.attr.st_gid = getegid();  // attributes.getStGid();
-  e.attr.st_rdev = attributes.getStRdev();
-  e.attr.st_size = attributes.getStSize();
-  e.attr.st_atime = attributes.getStAtime();
-  e.attr.st_mtime = attributes.getStMtime();
-  e.attr.st_ctime = attributes.getStCtime();
-  e.attr.st_blksize = attributes.getStBlksize();
-  e.attr.st_blocks = attributes.getStBlocks();
-
-  // std::cout << "process_create_response: Request: " << request.req << std::endl;
-
-  CreateResponse::FuseFileInfo::Reader fi_response = create_response.getFi();
-
-  request.fi->fh = fi_response.getFh();
-
-  fuse_reply_create(request.req, &e, request.fi);
-
-  // std::cout << "process_create_response: fuse_reply_create correctly executed" << std::endl;
 }
 
 void process_mknod_response(std::string payload) {
@@ -876,7 +751,6 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
  */
 static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off,
                              struct fuse_file_info *fi) {
-  //(void)fi;
 
   ::capnp::MallocMessageBuilder message;
   Readdir::Builder readdir = message.initRoot<Readdir>();
@@ -981,13 +855,13 @@ static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info 
  * }
  */
 static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off,
-                          struct fuse_file_info *fi) {
-  (void)fi;
-
+                         struct fuse_file_info *fi) {
   // printf("Called .read\n");
 
-  ::capnp::MallocMessageBuilder message;
-  Read::Builder read = message.initRoot<Read>();
+  auto &waitScope = rpc->getWaitScope();
+  auto request = client->readRequest();
+
+  Read::Builder read = request.getReq();
   Read::FuseFileInfo::Builder fuseFileInfo = read.initFi();
 
   read.setIno(ino);
@@ -995,11 +869,6 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
   read.setOff(off);
 
   fillFileInfo(&fuseFileInfo, fi);
-
-  auto &waitScope = rpc->getWaitScope();
-  auto request = client->readRequest();
-
-  request.setReq(read.asReader());
 
   auto promise = request.send();
   auto result = promise.wait(waitScope);
@@ -1020,6 +889,8 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
   // reply_buf_limited(request.req, buf, chars.size(), request.off, request.size);
 
   fuse_reply_buf(req, buf, chars.size());
+
+  // std::cout << "hello_ll_read executed correctly: " << payload << std::endl;
 }
 
 /**
@@ -1069,7 +940,17 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
   auto result = promise.wait(waitScope);
   auto response = result.getRes();
 
+  int res = response.getRes();
+
+  if (res == -1) {
+    // std::cout << "WRITE::ENOENT" << std::endl;
+    fuse_reply_err(req, response.getErrno());
+    return;
+  }
+
   fuse_reply_write(req, response.getWritten());
+
+  // std::cout << "hello_ll_write executed correctly: " << payload << std::endl;
 }
 
 static void hello_ll_unlink(fuse_req_t req, fuse_ino_t parent, const char *name) {
@@ -1185,8 +1066,10 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
                             struct fuse_file_info *fi) {
   // printf("Called .create\n");
 
-  ::capnp::MallocMessageBuilder message;
-  Create::Builder create = message.initRoot<Create>();
+  auto &waitScope = rpc->getWaitScope();
+  auto request = client->createRequest();
+
+  Create::Builder create = request.getReq();
   Create::FuseFileInfo::Builder fuseFileInfo = create.initFi();
 
   create.setParent(parent);
@@ -1195,18 +1078,52 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
 
   fillFileInfo(&fuseFileInfo, fi);
 
-  std::string uuid = gen_uuid();
-  requests[uuid] = {.type = Ops::Create, .req = req, .fi = fi};
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+  auto response = result.getRes();
 
-  create.setUuid(uuid);
+  struct stat attr;
 
-  // std::cout << "hello_ll_create: Request UUID: " << uuid << std::endl;
+  memset(&attr, 0, sizeof(attr));
 
-  const auto data = capnp::messageToFlatArray(message);
-  const auto bytes = data.asBytes();
-  std::string payload(bytes.begin(), bytes.end());
+  int res = response.getRes();
 
-  ws->send((char)Ops::Create + payload);
+  if (res == -1) {
+    // std::cout << "CREATE::ENOENT" << std::endl;
+    fuse_reply_err(req, response.getErrno());
+    return;
+  }
+
+  struct fuse_entry_param e;
+
+  memset(&e, 0, sizeof(e));
+  e.ino = response.getIno();
+  e.attr_timeout = 1.0;
+  e.entry_timeout = 1.0;
+
+  CreateResponse::Attr::Reader attributes = response.getAttr();
+
+  e.attr.st_dev = attributes.getStDev();
+  e.attr.st_ino = attributes.getStIno();
+  e.attr.st_mode = attributes.getStMode();
+  e.attr.st_nlink = attributes.getStNlink();
+  e.attr.st_uid = geteuid();  // attributes.getStUid();
+  e.attr.st_gid = getegid();  // attributes.getStGid();
+  e.attr.st_rdev = attributes.getStRdev();
+  e.attr.st_size = attributes.getStSize();
+  e.attr.st_atime = attributes.getStAtime();
+  e.attr.st_mtime = attributes.getStMtime();
+  e.attr.st_ctime = attributes.getStCtime();
+  e.attr.st_blksize = attributes.getStBlksize();
+  e.attr.st_blocks = attributes.getStBlocks();
+
+  // std::cout << "process_create_response: Request: " << request.req << std::endl;
+
+  CreateResponse::FuseFileInfo::Reader fi_response = response.getFi();
+
+  fi->fh = fi_response.getFh();
+
+  fuse_reply_create(req, &e, fi);
 
   // std::cout << "hello_ll_create executed correctly: " << payload << std::endl;
 }

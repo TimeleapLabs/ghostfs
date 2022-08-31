@@ -5,7 +5,6 @@ struct Read {
   size  @1 :UInt64;
   off   @2 :Int64;
   fi    @3 :FuseFileInfo;
-  uuid  @4 :Text;
 
   struct FuseFileInfo {
     flags         @0  :Int8;

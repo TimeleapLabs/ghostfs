@@ -6,7 +6,6 @@ struct CreateResponse {
   errno  @2 :Int8;
   fi     @3 :FuseFileInfo;
   attr   @4 :Attr;
-  uuid   @5 :Text;
 
   struct FuseFileInfo {
     flags         @0  :Int8;

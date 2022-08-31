@@ -77,24 +77,12 @@ void WSClient::onMessage(const ix::WebSocketMessagePtr& msg) {
         process_open_response(payload);
         break;
       }
-      case (char)Ops::Read: {
-        process_read_response(payload);
-        break;
-      }
       case (char)Ops::Setattr: {
         process_setattr_response(payload);
         break;
       }
-      case (char)Ops::Write: {
-        process_write_response(payload);
-        break;
-      }
       case (char)Ops::Setxattr: {
         process_setxattr_response(payload);
-        break;
-      }
-      case (char)Ops::Create: {
-        process_create_response(payload);
         break;
       }
       case (char)Ops::Mknod: {

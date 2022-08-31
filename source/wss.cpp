@@ -64,65 +64,150 @@ public:
     auto params = context.getParams();
     auto req = params.getReq();
 
-    Write::FuseFileInfo::Reader fi = req.getFi();
-    capnp::Data::Reader buf_reader = req.getBuf();
+      Write::FuseFileInfo::Reader fi = req.getFi();
+      capnp::Data::Reader buf_reader = req.getBuf();
 
-    const auto chars = buf_reader.asChars();
-    const char* buf = chars.begin();
+      const auto chars = buf_reader.asChars();
+      const char* buf = chars.begin();
 
-    ::lseek(fi.getFh(), req.getOff(), SEEK_SET);
-    size_t written = ::write(fi.getFh(), buf, req.getSize());
+      ::lseek(fi.getFh(), req.getOff(), SEEK_SET);
+      size_t written = ::write(fi.getFh(), buf, req.getSize());
 
-    int err = errno;
+      int err = errno;
 
-    auto results = context.getResults();
-    auto response = results.getRes();
+      auto results = context.getResults();
+      auto response = results.getRes();
 
-    response.setErrno(err);
-    response.setIno(req.getIno());
-    response.setWritten(written);
+      response.setRes(0);
+      response.setErrno(err);
+      response.setIno(req.getIno());
+      response.setWritten(written);
 
-    return kj::READY_NOW;
-  }
-
-  kj::Promise<void> read(ReadContext context) override {
-    auto params = context.getParams();
-    auto req = params.getReq();
-
-    auto results = context.getResults();
-    auto response = results.getRes();
-
-    if (ino_to_path.find(req.getIno()) == ino_to_path.end()) {
-      // File is unknown
-      response.setRes(-1);
-      response.setErrno(ENOENT);
       return kj::READY_NOW;
     }
 
-    size_t size = req.getSize();
-    off_t off = req.getOff();
+    kj::Promise<void> read(ReadContext context) override{
+      auto params = context.getParams();
+      auto req = params.getReq();
 
-    char buf[size];
+      auto results = context.getResults();
+      auto response = results.getRes();
 
-    Read::FuseFileInfo::Reader fi = req.getFi();
+      if (ino_to_path.find(req.getIno()) == ino_to_path.end()) {
+        // File is unknown
+        response.setRes(-1);
+        response.setErrno(ENOENT);
+        return kj::READY_NOW;
+      }
 
-    ::lseek(fi.getFh(), off, SEEK_SET);
-    ::read(fi.getFh(), &buf, size);
+      size_t size = req.getSize();
+      off_t off = req.getOff();
 
-    int err = errno;
+      char buf[size];
 
-    kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte*)buf, size);
-    capnp::Data::Reader buf_reader(buf_ptr);
+      Read::FuseFileInfo::Reader fi = req.getFi();
 
-    response.setBuf(buf_reader);
-    response.setErrno(err);
+      ::lseek(fi.getFh(), off, SEEK_SET);
+      ::read(fi.getFh(), &buf, size);
 
-    return kj::READY_NOW;
-  }
+      int err = errno;
 
-  // Any method which we don't implement will simply throw
-  // an exception by default.
-};
+      kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte*)buf, size);
+      capnp::Data::Reader buf_reader(buf_ptr);
+
+      response.setBuf(buf_reader);
+      response.setErrno(err);
+      response.setRes(0);
+
+      return kj::READY_NOW;
+    }
+
+    kj::Promise<void> create(CreateContext context) override {
+      auto params = context.getParams();
+      auto req = params.getReq();
+
+      auto results = context.getResults();
+      auto response = results.getRes();
+
+      Create::FuseFileInfo::Reader fi = req.getFi();
+
+      uint64_t parent = req.getParent();
+
+      std::string user_root = normalize_path(root, user, suffix);
+      std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
+      std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
+      std::filesystem::path file_path = parent_path / req.getName();
+
+      // std::cout << "create: open file path: " << file_path.c_str() << std::endl;
+      // std::cout << "create: flags: " << fi.getFlags() << std::endl;
+
+      int res = ::creat(file_path.c_str(), req.getMode());
+
+      if (res == -1) {
+        int err = errno;
+
+        response.setRes(res);
+        response.setErrno(err);
+        return kj::READY_NOW;
+      }
+
+      struct stat attr;
+      memset(&attr, 0, sizeof(attr));
+
+      uint64_t file_ino;
+
+      file_ino = ++current_ino;
+      ino_to_path[file_ino] = file_path;
+      path_to_ino[file_path] = file_ino;
+
+      // e.attr_timeout = 1.0;
+      // e.entry_timeout = 1.0;
+
+      CreateResponse::FuseFileInfo::Builder fi_response = response.initFi();
+
+      fi_response.setCacheReaddir(fi.getCacheReaddir());
+      fi_response.setDirectIo(fi.getDirectIo());
+      fi_response.setFh(res);
+      fi_response.setFlags(fi.getFlags());
+      fi_response.setFlush(fi.getFlush());
+      fi_response.setKeepCache(fi.getKeepCache());
+      fi_response.setLockOwner(fi.getLockOwner());
+      fi_response.setNoflush(fi.getNoflush());
+      fi_response.setNonseekable(fi.getNonseekable());
+      fi_response.setPadding(fi.getPadding());
+      fi_response.setPollEvents(fi.getPollEvents());
+      fi_response.setWritepage(fi.getWritepage());
+
+      res = hello_stat(file_ino, &attr);
+      int err = errno;
+
+      response.setIno(file_ino);
+
+      CreateResponse::Attr::Builder attributes = response.initAttr();
+
+      attributes.setStDev(attr.st_dev);
+      attributes.setStIno(attr.st_ino);
+      attributes.setStMode(attr.st_mode);
+      attributes.setStNlink(attr.st_nlink);
+      attributes.setStUid(attr.st_uid);
+      attributes.setStGid(attr.st_gid);
+      attributes.setStRdev(attr.st_rdev);
+      attributes.setStSize(attr.st_size);
+      attributes.setStAtime(attr.st_atime);
+      attributes.setStMtime(attr.st_mtime);
+      attributes.setStCtime(attr.st_ctime);
+      attributes.setStBlksize(attr.st_blksize);
+      attributes.setStBlocks(attr.st_blocks);
+
+      response.setErrno(err);
+      response.setRes(0);
+
+      return kj::READY_NOW;
+    }
+
+        // Any method which we don't implement will simply throw
+        // an exception by default.
+  };
 
 class GhostFSAuthImpl final : public GhostFSAuth::Server {
   std::string root;
@@ -258,9 +343,8 @@ template <class T> std::string send_message(T& response, ::capnp::MallocMessageB
   return response_payload;
 }
 
-void WSServer::onAuthMessage(std::shared_ptr<ix::ConnectionState> connectionState,
+void WSServer::onAuthMessage([[maybe_unused]] std::shared_ptr<ix::ConnectionState> connectionState,
                              ix::WebSocket& webSocket, const ix::WebSocketMessagePtr& msg) {
-  (void)connectionState;
   if (msg->type == ix::WebSocketMessageType::Message) {
     const kj::ArrayPtr<const capnp::word> view(
         reinterpret_cast<const capnp::word*>(&(*std::begin(msg->str))),
@@ -551,8 +635,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         std::filesystem::directory_iterator iter(
             path, std::filesystem::directory_options::skip_permission_denied);
 
-        for (const auto& entry : iter) {
-          (void)entry;
+        for ([[maybe_unused]] const auto& entry : iter) {
           length++;
         }
 
@@ -655,53 +738,6 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
             = send_message(open_response, message, 0, webSocket, Ops::Open);
 
         // std::cout << "open_response sent correctly: " << response_payload << std::endl;
-
-        break;
-      }
-      case (char)Ops::Read: {
-        const kj::ArrayPtr<const capnp::word> view(
-            reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
-            reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
-
-        capnp::FlatArrayMessageReader data(view);
-        Read::Reader read = data.getRoot<Read>();
-
-        // std::cout << "read: Received UUID: " << read.getUuid().cStr() << std::endl;
-
-        ::capnp::MallocMessageBuilder message;
-        ReadResponse::Builder read_response = message.initRoot<ReadResponse>();
-
-        read_response.setUuid(read.getUuid());
-
-        if (ino_to_path.find(read.getIno()) == ino_to_path.end()) {
-          // File is unknown
-          std::string response_payload
-              = send_message(read_response, message, -1, webSocket, Ops::Read);
-
-          // std::cout << "read_response sent error: " << response_payload << std::endl;
-        }
-
-        size_t size = read.getSize();
-        off_t off = read.getOff();
-
-        char buf[size];
-
-        Read::FuseFileInfo::Reader fi = read.getFi();
-
-        ::lseek(fi.getFh(), off, SEEK_SET);
-        ::read(fi.getFh(), &buf, size);
-
-        int err = errno;
-
-        kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte*)buf, size);
-        capnp::Data::Reader buf_reader(buf_ptr);
-
-        read_response.setBuf(buf_reader);
-
-        std::string response_payload
-            = send_message(read_response, message, 0, err, webSocket, Ops::Read);
-
-        // std::cout << "read_response sent correctly: " << response_payload << std::endl;
 
         break;
       }
@@ -835,41 +871,6 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
 
         break;
       }
-      case (char)Ops::Write: {
-        const kj::ArrayPtr<const capnp::word> view(
-        reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
-        reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
-
-        capnp::FlatArrayMessageReader data(view);
-        Write::Reader write = data.getRoot<Write>();
-
-        // std::cout << "write: Received UUID: " << write.getUuid().cStr() << std::endl;
-
-        ::capnp::MallocMessageBuilder message;
-        WriteResponse::Builder write_response = message.initRoot<WriteResponse>();
-
-        write_response.setUuid(write.getUuid());
-
-        Write::FuseFileInfo::Reader fi = write.getFi();
-
-        capnp::Data::Reader buf_reader = write.getBuf();
-        const auto chars = buf_reader.asChars();
-        const char *buf = chars.begin();
-
-        ::lseek(fi.getFh(), write.getOff(), SEEK_SET);
-        size_t written = ::write(fi.getFh(), buf, write.getSize());
-        
-        int err = errno;
-
-        write_response.setIno(write.getIno());
-        write_response.setWritten(written);
-
-        std::string response_payload = send_message(write_response, message, 0, err, webSocket, Ops::Write);
-
-        // std::cout << "write_response sent correctly: " << response_payload << std::endl;
-
-        break;
-      }
       #ifdef __APPLE__
       case (char)Ops::Setxattr: {
         const kj::ArrayPtr<const capnp::word> view(
@@ -908,99 +909,6 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         break;
       }
       #endif
-      case (char)Ops::Create: {
-        const kj::ArrayPtr<const capnp::word> view(
-            reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
-            reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
-
-        capnp::FlatArrayMessageReader data(view);
-        Create::Reader create = data.getRoot<Create>();
-        Create::FuseFileInfo::Reader fi = create.getFi();
-
-        // std::cout << "create: Received UUID: " << create.getUuid().cStr() << std::endl;
-
-        ::capnp::MallocMessageBuilder message;
-        CreateResponse::Builder create_response = message.initRoot<CreateResponse>();
-
-        create_response.setUuid(create.getUuid());
-
-        uint64_t parent = create.getParent();
-
-        std::string user_root = normalize_path(root, connectionState->getId(), suffix);
-        std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
-        std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
-        std::filesystem::path file_path = parent_path / create.getName();
-
-        // std::cout << "create: open file path: " << file_path.c_str() << std::endl;
-        // std::cout << "create: flags: " << fi.getFlags() << std::endl;
-
-        int res = ::creat(file_path.c_str(), create.getMode());
-
-        if (res == -1) {
-            int err = errno;
-
-            // std::cout << "create: open errno: " << err << std::endl;
-
-            std::string response_payload = send_message(create_response, message, res, err, webSocket, Ops::Create);
-
-            // std::cout << "create_response sent error: " << response_payload << std::endl;
-            return;
-        }
-
-        struct stat attr;
-        memset(&attr, 0, sizeof(attr));
-
-        uint64_t file_ino;
-
-        file_ino = ++current_ino;
-        ino_to_path[file_ino] = file_path;
-        path_to_ino[file_path] = file_ino;
-
-        // e.attr_timeout = 1.0;
-        // e.entry_timeout = 1.0;
-
-        CreateResponse::FuseFileInfo::Builder fi_response = create_response.initFi();
-
-        fi_response.setCacheReaddir(fi.getCacheReaddir());
-        fi_response.setDirectIo(fi.getDirectIo());
-        fi_response.setFh(res);
-        fi_response.setFlags(fi.getFlags());
-        fi_response.setFlush(fi.getFlush());
-        fi_response.setKeepCache(fi.getKeepCache());
-        fi_response.setLockOwner(fi.getLockOwner());
-        fi_response.setNoflush(fi.getNoflush());
-        fi_response.setNonseekable(fi.getNonseekable());
-        fi_response.setPadding(fi.getPadding());
-        fi_response.setPollEvents(fi.getPollEvents());
-        fi_response.setWritepage(fi.getWritepage());
-
-        res = hello_stat(file_ino, &attr);
-        int err = errno;
-
-        create_response.setIno(file_ino);
-
-        CreateResponse::Attr::Builder attributes = create_response.initAttr();
-
-        attributes.setStDev(attr.st_dev);
-        attributes.setStIno(attr.st_ino);
-        attributes.setStMode(attr.st_mode);
-        attributes.setStNlink(attr.st_nlink);
-        attributes.setStUid(attr.st_uid);
-        attributes.setStGid(attr.st_gid);
-        attributes.setStRdev(attr.st_rdev);
-        attributes.setStSize(attr.st_size);
-        attributes.setStAtime(attr.st_atime);
-        attributes.setStMtime(attr.st_mtime);
-        attributes.setStCtime(attr.st_ctime);
-        attributes.setStBlksize(attr.st_blksize);
-        attributes.setStBlocks(attr.st_blocks);
-        
-        std::string response_payload = send_message(create_response, message, res, err, webSocket, Ops::Create);
-
-        // std::cout << "create_response sent correctly: " << response_payload << std::endl;
-
-        break;
-      }
       case (char)Ops::Mknod: {
         const kj::ArrayPtr<const capnp::word> view(
             reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),

@@ -6,8 +6,6 @@ struct Write {
   size  @2 :UInt64;
   off   @3 :Int64;
   fi    @4 :FuseFileInfo;
-  uuid  @5 :Text;
-
 
   struct FuseFileInfo {
     flags         @0  :Int8;

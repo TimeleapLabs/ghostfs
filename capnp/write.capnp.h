@@ -35,7 +35,7 @@ struct Write {
   struct FuseFileInfo;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(931883f8920c7515, 3, 3)
+    CAPNP_DECLARE_STRUCT_HEADER(931883f8920c7515, 3, 2)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -88,9 +88,6 @@ public:
   inline bool hasFi() const;
   inline  ::Write::FuseFileInfo::Reader getFi() const;
 
-  inline bool hasUuid() const;
-  inline  ::capnp::Text::Reader getUuid() const;
-
 private:
   ::capnp::_::StructReader _reader;
   template <typename, ::capnp::Kind>
@@ -141,13 +138,6 @@ public:
   inline  ::Write::FuseFileInfo::Builder initFi();
   inline void adoptFi(::capnp::Orphan< ::Write::FuseFileInfo>&& value);
   inline ::capnp::Orphan< ::Write::FuseFileInfo> disownFi();
-
-  inline bool hasUuid();
-  inline  ::capnp::Text::Builder getUuid();
-  inline void setUuid( ::capnp::Text::Reader value);
-  inline  ::capnp::Text::Builder initUuid(unsigned int size);
-  inline void adoptUuid(::capnp::Orphan< ::capnp::Text>&& value);
-  inline ::capnp::Orphan< ::capnp::Text> disownUuid();
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -422,40 +412,6 @@ inline void Write::Builder::adoptFi(
 inline ::capnp::Orphan< ::Write::FuseFileInfo> Write::Builder::disownFi() {
   return ::capnp::_::PointerHelpers< ::Write::FuseFileInfo>::disown(_builder.getPointerField(
       ::capnp::bounded<1>() * ::capnp::POINTERS));
-}
-
-inline bool Write::Reader::hasUuid() const {
-  return !_reader.getPointerField(
-      ::capnp::bounded<2>() * ::capnp::POINTERS).isNull();
-}
-inline bool Write::Builder::hasUuid() {
-  return !_builder.getPointerField(
-      ::capnp::bounded<2>() * ::capnp::POINTERS).isNull();
-}
-inline  ::capnp::Text::Reader Write::Reader::getUuid() const {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_reader.getPointerField(
-      ::capnp::bounded<2>() * ::capnp::POINTERS));
-}
-inline  ::capnp::Text::Builder Write::Builder::getUuid() {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_builder.getPointerField(
-      ::capnp::bounded<2>() * ::capnp::POINTERS));
-}
-inline void Write::Builder::setUuid( ::capnp::Text::Reader value) {
-  ::capnp::_::PointerHelpers< ::capnp::Text>::set(_builder.getPointerField(
-      ::capnp::bounded<2>() * ::capnp::POINTERS), value);
-}
-inline  ::capnp::Text::Builder Write::Builder::initUuid(unsigned int size) {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(_builder.getPointerField(
-      ::capnp::bounded<2>() * ::capnp::POINTERS), size);
-}
-inline void Write::Builder::adoptUuid(
-    ::capnp::Orphan< ::capnp::Text>&& value) {
-  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(_builder.getPointerField(
-      ::capnp::bounded<2>() * ::capnp::POINTERS), kj::mv(value));
-}
-inline ::capnp::Orphan< ::capnp::Text> Write::Builder::disownUuid() {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(_builder.getPointerField(
-      ::capnp::bounded<2>() * ::capnp::POINTERS));
 }
 
 inline  ::int8_t Write::FuseFileInfo::Reader::getFlags() const {

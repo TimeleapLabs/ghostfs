@@ -33,7 +33,7 @@ struct ReadResponse {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(99ad65448e087865, 2, 2)
+    CAPNP_DECLARE_STRUCT_HEADER(99ad65448e087865, 2, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -63,9 +63,6 @@ public:
 
   inline bool hasBuf() const;
   inline  ::capnp::Data::Reader getBuf() const;
-
-  inline bool hasUuid() const;
-  inline  ::capnp::Text::Reader getUuid() const;
 
   inline  ::int8_t getRes() const;
 
@@ -108,13 +105,6 @@ public:
   inline  ::capnp::Data::Builder initBuf(unsigned int size);
   inline void adoptBuf(::capnp::Orphan< ::capnp::Data>&& value);
   inline ::capnp::Orphan< ::capnp::Data> disownBuf();
-
-  inline bool hasUuid();
-  inline  ::capnp::Text::Builder getUuid();
-  inline void setUuid( ::capnp::Text::Reader value);
-  inline  ::capnp::Text::Builder initUuid(unsigned int size);
-  inline void adoptUuid(::capnp::Orphan< ::capnp::Text>&& value);
-  inline ::capnp::Orphan< ::capnp::Text> disownUuid();
 
   inline  ::int8_t getRes();
   inline void setRes( ::int8_t value);
@@ -196,40 +186,6 @@ inline void ReadResponse::Builder::adoptBuf(
 inline ::capnp::Orphan< ::capnp::Data> ReadResponse::Builder::disownBuf() {
   return ::capnp::_::PointerHelpers< ::capnp::Data>::disown(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS));
-}
-
-inline bool ReadResponse::Reader::hasUuid() const {
-  return !_reader.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS).isNull();
-}
-inline bool ReadResponse::Builder::hasUuid() {
-  return !_builder.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS).isNull();
-}
-inline  ::capnp::Text::Reader ReadResponse::Reader::getUuid() const {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_reader.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS));
-}
-inline  ::capnp::Text::Builder ReadResponse::Builder::getUuid() {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_builder.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS));
-}
-inline void ReadResponse::Builder::setUuid( ::capnp::Text::Reader value) {
-  ::capnp::_::PointerHelpers< ::capnp::Text>::set(_builder.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS), value);
-}
-inline  ::capnp::Text::Builder ReadResponse::Builder::initUuid(unsigned int size) {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(_builder.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS), size);
-}
-inline void ReadResponse::Builder::adoptUuid(
-    ::capnp::Orphan< ::capnp::Text>&& value) {
-  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(_builder.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS), kj::mv(value));
-}
-inline ::capnp::Orphan< ::capnp::Text> ReadResponse::Builder::disownUuid() {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(_builder.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS));
 }
 
 inline  ::int8_t ReadResponse::Reader::getRes() const {

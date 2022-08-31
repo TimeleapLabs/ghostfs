@@ -34,7 +34,7 @@ struct CreateResponse {
   struct Attr;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(82ccc8c4cceb633f, 2, 3)
+    CAPNP_DECLARE_STRUCT_HEADER(82ccc8c4cceb633f, 2, 2)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -102,9 +102,6 @@ public:
   inline bool hasAttr() const;
   inline  ::CreateResponse::Attr::Reader getAttr() const;
 
-  inline bool hasUuid() const;
-  inline  ::capnp::Text::Reader getUuid() const;
-
 private:
   ::capnp::_::StructReader _reader;
   template <typename, ::capnp::Kind>
@@ -155,13 +152,6 @@ public:
   inline  ::CreateResponse::Attr::Builder initAttr();
   inline void adoptAttr(::capnp::Orphan< ::CreateResponse::Attr>&& value);
   inline ::capnp::Orphan< ::CreateResponse::Attr> disownAttr();
-
-  inline bool hasUuid();
-  inline  ::capnp::Text::Builder getUuid();
-  inline void setUuid( ::capnp::Text::Reader value);
-  inline  ::capnp::Text::Builder initUuid(unsigned int size);
-  inline void adoptUuid(::capnp::Orphan< ::capnp::Text>&& value);
-  inline ::capnp::Orphan< ::capnp::Text> disownUuid();
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -578,40 +568,6 @@ inline void CreateResponse::Builder::adoptAttr(
 inline ::capnp::Orphan< ::CreateResponse::Attr> CreateResponse::Builder::disownAttr() {
   return ::capnp::_::PointerHelpers< ::CreateResponse::Attr>::disown(_builder.getPointerField(
       ::capnp::bounded<1>() * ::capnp::POINTERS));
-}
-
-inline bool CreateResponse::Reader::hasUuid() const {
-  return !_reader.getPointerField(
-      ::capnp::bounded<2>() * ::capnp::POINTERS).isNull();
-}
-inline bool CreateResponse::Builder::hasUuid() {
-  return !_builder.getPointerField(
-      ::capnp::bounded<2>() * ::capnp::POINTERS).isNull();
-}
-inline  ::capnp::Text::Reader CreateResponse::Reader::getUuid() const {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_reader.getPointerField(
-      ::capnp::bounded<2>() * ::capnp::POINTERS));
-}
-inline  ::capnp::Text::Builder CreateResponse::Builder::getUuid() {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_builder.getPointerField(
-      ::capnp::bounded<2>() * ::capnp::POINTERS));
-}
-inline void CreateResponse::Builder::setUuid( ::capnp::Text::Reader value) {
-  ::capnp::_::PointerHelpers< ::capnp::Text>::set(_builder.getPointerField(
-      ::capnp::bounded<2>() * ::capnp::POINTERS), value);
-}
-inline  ::capnp::Text::Builder CreateResponse::Builder::initUuid(unsigned int size) {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(_builder.getPointerField(
-      ::capnp::bounded<2>() * ::capnp::POINTERS), size);
-}
-inline void CreateResponse::Builder::adoptUuid(
-    ::capnp::Orphan< ::capnp::Text>&& value) {
-  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(_builder.getPointerField(
-      ::capnp::bounded<2>() * ::capnp::POINTERS), kj::mv(value));
-}
-inline ::capnp::Orphan< ::capnp::Text> CreateResponse::Builder::disownUuid() {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(_builder.getPointerField(
-      ::capnp::bounded<2>() * ::capnp::POINTERS));
 }
 
 inline  ::int8_t CreateResponse::FuseFileInfo::Reader::getFlags() const {
