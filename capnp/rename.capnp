@@ -5,5 +5,4 @@ struct Rename {
     name      @1 :Text;
     newparent @2 :UInt64;
     newname   @3 :Text;
-    uuid      @4 :Text;
 }

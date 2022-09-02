@@ -25,6 +25,8 @@
 #include "mknod.response.capnp.h"
 #include "read.capnp.h"
 #include "read.response.capnp.h"
+#include "rename.capnp.h"
+#include "rename.response.capnp.h"
 #include "rmdir.capnp.h"
 #include "rmdir.response.capnp.h"
 #include "setattr.capnp.h"
@@ -63,6 +65,8 @@ CAPNP_DECLARE_SCHEMA(ea909f865c57200f);
 CAPNP_DECLARE_SCHEMA(a49769577e97ea80);
 CAPNP_DECLARE_SCHEMA(e8df6f597cb4d47e);
 CAPNP_DECLARE_SCHEMA(b4465ae88f2787ef);
+CAPNP_DECLARE_SCHEMA(87b05446a9f38ce6);
+CAPNP_DECLARE_SCHEMA(da1d34ae44e78453);
 
 }  // namespace schemas
 }  // namespace capnp
@@ -139,6 +143,8 @@ struct GhostFS {
   struct UnlinkResults;
   struct RmdirParams;
   struct RmdirResults;
+  struct RenameParams;
+  struct RenameResults;
   struct ReadParams;
   struct ReadResults;
   struct WriteParams;
@@ -364,6 +370,36 @@ struct GhostFS::RmdirResults {
   };
 };
 
+struct GhostFS::RenameParams {
+  RenameParams() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(edf4e9dedbe2f82b, 0, 1)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct GhostFS::RenameResults {
+  RenameResults() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(de8fa1f07e074612, 0, 1)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
+    #endif  // !CAPNP_LITE
+  };
+};
+
 struct GhostFS::ReadParams {
   ReadParams() = delete;
 
@@ -372,7 +408,7 @@ struct GhostFS::ReadParams {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(edf4e9dedbe2f82b, 0, 1)
+    CAPNP_DECLARE_STRUCT_HEADER(ea909f865c57200f, 0, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -387,7 +423,7 @@ struct GhostFS::ReadResults {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(de8fa1f07e074612, 0, 1)
+    CAPNP_DECLARE_STRUCT_HEADER(a49769577e97ea80, 0, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -402,7 +438,7 @@ struct GhostFS::WriteParams {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(ea909f865c57200f, 0, 1)
+    CAPNP_DECLARE_STRUCT_HEADER(e8df6f597cb4d47e, 0, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -417,7 +453,7 @@ struct GhostFS::WriteResults {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(a49769577e97ea80, 0, 1)
+    CAPNP_DECLARE_STRUCT_HEADER(b4465ae88f2787ef, 0, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -432,7 +468,7 @@ struct GhostFS::CreateParams {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(e8df6f597cb4d47e, 0, 1)
+    CAPNP_DECLARE_STRUCT_HEADER(87b05446a9f38ce6, 0, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -447,7 +483,7 @@ struct GhostFS::CreateResults {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(b4465ae88f2787ef, 0, 1)
+    CAPNP_DECLARE_STRUCT_HEADER(da1d34ae44e78453, 0, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -719,6 +755,8 @@ public:
       ::kj::Maybe< ::capnp::MessageSize> sizeHint = nullptr);
   ::capnp::Request< ::GhostFS::RmdirParams,  ::GhostFS::RmdirResults> rmdirRequest(
       ::kj::Maybe< ::capnp::MessageSize> sizeHint = nullptr);
+  ::capnp::Request< ::GhostFS::RenameParams,  ::GhostFS::RenameResults> renameRequest(
+      ::kj::Maybe< ::capnp::MessageSize> sizeHint = nullptr);
   ::capnp::Request< ::GhostFS::ReadParams,  ::GhostFS::ReadResults> readRequest(
       ::kj::Maybe< ::capnp::MessageSize> sizeHint = nullptr);
   ::capnp::Request< ::GhostFS::WriteParams,  ::GhostFS::WriteResults> writeRequest(
@@ -769,6 +807,10 @@ protected:
   typedef  ::GhostFS::RmdirResults RmdirResults;
   typedef ::capnp::CallContext<RmdirParams, RmdirResults> RmdirContext;
   virtual ::kj::Promise<void> rmdir(RmdirContext context);
+  typedef  ::GhostFS::RenameParams RenameParams;
+  typedef  ::GhostFS::RenameResults RenameResults;
+  typedef ::capnp::CallContext<RenameParams, RenameResults> RenameContext;
+  virtual ::kj::Promise<void> rename(RenameContext context);
   typedef  ::GhostFS::ReadParams ReadParams;
   typedef  ::GhostFS::ReadResults ReadResults;
   typedef ::capnp::CallContext<ReadParams, ReadResults> ReadContext;
@@ -1933,6 +1975,170 @@ public:
       : _typeless(kj::mv(typeless)) {}
 
   inline  ::RmdirResponse::Pipeline getRes();
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class GhostFS::RenameParams::Reader {
+public:
+  typedef RenameParams Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand());
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool hasReq() const;
+  inline  ::Rename::Reader getReq() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class GhostFS::RenameParams::Builder {
+public:
+  typedef RenameParams Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool hasReq();
+  inline  ::Rename::Builder getReq();
+  inline void setReq( ::Rename::Reader value);
+  inline  ::Rename::Builder initReq();
+  inline void adoptReq(::capnp::Orphan< ::Rename>&& value);
+  inline ::capnp::Orphan< ::Rename> disownReq();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class GhostFS::RenameParams::Pipeline {
+public:
+  typedef RenameParams Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+  inline  ::Rename::Pipeline getReq();
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class GhostFS::RenameResults::Reader {
+public:
+  typedef RenameResults Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand());
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool hasRes() const;
+  inline  ::RenameResponse::Reader getRes() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class GhostFS::RenameResults::Builder {
+public:
+  typedef RenameResults Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool hasRes();
+  inline  ::RenameResponse::Builder getRes();
+  inline void setRes( ::RenameResponse::Reader value);
+  inline  ::RenameResponse::Builder initRes();
+  inline void adoptRes(::capnp::Orphan< ::RenameResponse>&& value);
+  inline ::capnp::Orphan< ::RenameResponse> disownRes();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class GhostFS::RenameResults::Pipeline {
+public:
+  typedef RenameResults Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+  inline  ::RenameResponse::Pipeline getRes();
 private:
   ::capnp::AnyPointer::Pipeline _typeless;
   friend class ::capnp::PipelineHook;
@@ -3133,6 +3339,84 @@ inline void GhostFS::RmdirResults::Builder::adoptRes(
 }
 inline ::capnp::Orphan< ::RmdirResponse> GhostFS::RmdirResults::Builder::disownRes() {
   return ::capnp::_::PointerHelpers< ::RmdirResponse>::disown(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+
+inline bool GhostFS::RenameParams::Reader::hasReq() const {
+  return !_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline bool GhostFS::RenameParams::Builder::hasReq() {
+  return !_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline  ::Rename::Reader GhostFS::RenameParams::Reader::getReq() const {
+  return ::capnp::_::PointerHelpers< ::Rename>::get(_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline  ::Rename::Builder GhostFS::RenameParams::Builder::getReq() {
+  return ::capnp::_::PointerHelpers< ::Rename>::get(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+#if !CAPNP_LITE
+inline  ::Rename::Pipeline GhostFS::RenameParams::Pipeline::getReq() {
+  return  ::Rename::Pipeline(_typeless.getPointerField(0));
+}
+#endif  // !CAPNP_LITE
+inline void GhostFS::RenameParams::Builder::setReq( ::Rename::Reader value) {
+  ::capnp::_::PointerHelpers< ::Rename>::set(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), value);
+}
+inline  ::Rename::Builder GhostFS::RenameParams::Builder::initReq() {
+  return ::capnp::_::PointerHelpers< ::Rename>::init(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline void GhostFS::RenameParams::Builder::adoptReq(
+    ::capnp::Orphan< ::Rename>&& value) {
+  ::capnp::_::PointerHelpers< ::Rename>::adopt(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::Rename> GhostFS::RenameParams::Builder::disownReq() {
+  return ::capnp::_::PointerHelpers< ::Rename>::disown(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+
+inline bool GhostFS::RenameResults::Reader::hasRes() const {
+  return !_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline bool GhostFS::RenameResults::Builder::hasRes() {
+  return !_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline  ::RenameResponse::Reader GhostFS::RenameResults::Reader::getRes() const {
+  return ::capnp::_::PointerHelpers< ::RenameResponse>::get(_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline  ::RenameResponse::Builder GhostFS::RenameResults::Builder::getRes() {
+  return ::capnp::_::PointerHelpers< ::RenameResponse>::get(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+#if !CAPNP_LITE
+inline  ::RenameResponse::Pipeline GhostFS::RenameResults::Pipeline::getRes() {
+  return  ::RenameResponse::Pipeline(_typeless.getPointerField(0));
+}
+#endif  // !CAPNP_LITE
+inline void GhostFS::RenameResults::Builder::setRes( ::RenameResponse::Reader value) {
+  ::capnp::_::PointerHelpers< ::RenameResponse>::set(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), value);
+}
+inline  ::RenameResponse::Builder GhostFS::RenameResults::Builder::initRes() {
+  return ::capnp::_::PointerHelpers< ::RenameResponse>::init(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline void GhostFS::RenameResults::Builder::adoptRes(
+    ::capnp::Orphan< ::RenameResponse>&& value) {
+  ::capnp::_::PointerHelpers< ::RenameResponse>::adopt(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::RenameResponse> GhostFS::RenameResults::Builder::disownRes() {
+  return ::capnp::_::PointerHelpers< ::RenameResponse>::disown(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 

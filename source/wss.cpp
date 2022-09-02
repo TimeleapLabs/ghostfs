@@ -475,7 +475,41 @@ public:
     return kj::READY_NOW;
   }
 
-  kj::Promise<void> read(ReadContext context) override {
+  kj::Promise<void> rename(RenameContext context) override {
+    auto params = context.getParams();
+    auto req = params.getReq();
+
+    auto results = context.getResults();
+    auto response = results.getRes();
+
+    uint64_t parent = req.getParent();
+    std::string name = req.getName();
+    uint64_t newparent = req.getNewparent();
+    std::string newname = req.getNewname();
+
+    std::string user_root = normalize_path(root, user, suffix);
+
+    std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
+    std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
+    std::filesystem::path file_path = parent_path / std::filesystem::path(name);
+
+    std::string newparent_path_name = newparent == 1 ? user_root : ino_to_path[newparent];
+    std::filesystem::path newparent_path = std::filesystem::path(newparent_path_name);
+    std::filesystem::path newfile_path = newparent_path / std::filesystem::path(newname);
+
+    // use rename
+    int res = ::rename(file_path.c_str(), newfile_path.c_str());
+    int err = errno;
+
+    response.setErrno(err);
+    response.setRes(res);
+
+    // std::cout << "rename_response sent correctly: " << response_payload << std::endl;
+
+    return kj::READY_NOW;
+  }
+
+   kj::Promise<void> read(ReadContext context) override {
     auto params = context.getParams();
     auto req = params.getReq();
 
@@ -1054,45 +1088,6 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         break;
       }
       #endif
-      case (char)Ops::Rename: {
-        const kj::ArrayPtr<const capnp::word> view(
-            reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
-            reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
-
-        capnp::FlatArrayMessageReader data(view);
-        Rename::Reader rename = data.getRoot<Rename>();
-
-        // std::cout << "rename: Received UUID: " << rename.getUuid().cStr() << std::endl;
-
-        ::capnp::MallocMessageBuilder message;
-        RenameResponse::Builder rename_response = message.initRoot<RenameResponse>();
-
-        rename_response.setUuid(rename.getUuid());
-
-        uint64_t parent = rename.getParent();
-        std::string name = rename.getName();
-        uint64_t newparent = rename.getNewparent();
-        std::string newname = rename.getNewname();
-
-        std::string user_root = normalize_path(root, connectionState->getId(), suffix);
-
-        std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
-        std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
-        std::filesystem::path file_path = parent_path / std::filesystem::path(name);
-
-        std::string newparent_path_name = newparent == 1 ? user_root : ino_to_path[newparent];
-        std::filesystem::path newparent_path = std::filesystem::path(newparent_path_name);
-        std::filesystem::path newfile_path = newparent_path / std::filesystem::path(newname);
-
-        // use rename
-        int res = ::rename(file_path.c_str(), newfile_path.c_str());
-        int err = errno;
-
-        std::string response_payload = send_message(rename_response, message, res, err, webSocket, Ops::Rename);
-        // std::cout << "rename_response sent correctly: " << response_payload << std::endl;
-
-        break;
-      }
       case (char)Ops::Release: {
         const kj::ArrayPtr<const capnp::word> view(
             reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),

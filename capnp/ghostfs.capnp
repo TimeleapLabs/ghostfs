@@ -14,6 +14,8 @@ using import "unlink.capnp".Unlink;
 using import "unlink.response.capnp".UnlinkResponse;
 using import "rmdir.capnp".Rmdir;
 using import "rmdir.response.capnp".RmdirResponse;
+using import "rename.capnp".Rename;
+using import "rename.response.capnp".RenameResponse;
 using import "read.capnp".Read;
 using import "read.response.capnp".ReadResponse;
 using import "write.capnp".Write;
@@ -26,14 +28,15 @@ interface GhostFSAuth {
 }
 
 interface GhostFS {
-  lookup  @0 (req :Lookup)  -> (res :LookupResponse);
-  getattr @1 (req :Getattr) -> (res :GetattrResponse);
-  setattr @2 (req :Setattr) -> (res :SetattrResponse);
-  mknod   @3 (req :Mknod)   -> (res :MknodResponse);
-  mkdir   @4 (req :Mkdir)   -> (res :MkdirResponse);
-  unlink  @5 (req :Unlink)  -> (res :UnlinkResponse);
-  rmdir   @6 (req :Rmdir)   -> (res :RmdirResponse);
-  read    @7 (req :Read)    -> (res :ReadResponse);
-  write   @8 (req :Write)   -> (res :WriteResponse);
-  create  @9 (req :Create)  -> (res :CreateResponse);
+  lookup  @0  (req :Lookup)  -> (res :LookupResponse);
+  getattr @1  (req :Getattr) -> (res :GetattrResponse);
+  setattr @2  (req :Setattr) -> (res :SetattrResponse);
+  mknod   @3  (req :Mknod)   -> (res :MknodResponse);
+  mkdir   @4  (req :Mkdir)   -> (res :MkdirResponse);
+  unlink  @5  (req :Unlink)  -> (res :UnlinkResponse);
+  rmdir   @6  (req :Rmdir)   -> (res :RmdirResponse);
+  rename  @7  (req :Rename)  -> (res :RenameResponse);
+  read    @8  (req :Read)    -> (res :ReadResponse);
+  write   @9  (req :Write)   -> (res :WriteResponse);
+  create  @10 (req :Create)  -> (res :CreateResponse);
 }

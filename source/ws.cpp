@@ -73,10 +73,6 @@ void WSClient::onMessage(const ix::WebSocketMessagePtr& msg) {
         process_setxattr_response(payload);
         break;
       }
-      case (char)Ops::Rename: {
-        process_rename_response(payload);
-        break;
-      }
       case (char)Ops::Release: {
         process_release_response(payload);
         break;

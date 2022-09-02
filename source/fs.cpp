@@ -302,30 +302,6 @@ void process_setxattr_response(std::string payload) {
   // std::cout << "process_setxattr_response: correctly executed" << std::endl;
 }
 
-void process_rename_response(std::string payload) {
-  const kj::ArrayPtr<const capnp::word> view(
-      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
-      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
-
-  capnp::FlatArrayMessageReader data(view);
-  RenameResponse::Reader rename_response = data.getRoot<RenameResponse>();
-
-  std::string uuid = rename_response.getUuid();
-
-  // std::cout << "process_rename_response: Response UUID: " << uuid << std::endl;
-
-  request request = requests[uuid];
-
-  int res = rename_response.getRes();
-  int err = rename_response.getErrno();
-
-  fuse_reply_err(request.req, res == -1 ? err : 0);
-
-  // std::cout << "rename_rmdir_response: Request: " << request.req << std::endl;
-
-  // std::cout << "rename_rmdir_response executed with result: " << res << std::endl;
-}
-
 void process_release_response(std::string payload) {
   const kj::ArrayPtr<const capnp::word> view(
       reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
@@ -969,26 +945,24 @@ static void hello_ll_rename(fuse_req_t req, fuse_ino_t parent, const char *name,
                             fuse_ino_t newparent, const char *newname) {
   // printf("Called .rename\n");
 
-  ::capnp::MallocMessageBuilder message;
-  Rename::Builder rename = message.initRoot<Rename>();
+  auto &waitScope = rpc->getWaitScope();
+  auto request = client->renameRequest();
+
+  Rename::Builder rename = request.getReq();
 
   rename.setParent(parent);
   rename.setName(name);
   rename.setNewparent(newparent);
   rename.setNewname(newname);
 
-  std::string uuid = gen_uuid();
-  requests[uuid] = {.type = Ops::Rename, .req = req};
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+  auto response = result.getRes();
 
-  rename.setUuid(uuid);
+  int res = response.getRes();
+  int err = response.getErrno();
 
-  // std::cout << "hello_ll_rename: Request UUID: " << uuid << std::endl;
-
-  const auto data = capnp::messageToFlatArray(message);
-  const auto bytes = data.asBytes();
-  std::string payload(bytes.begin(), bytes.end());
-
-  ws->send((char)Ops::Rename + payload);
+  fuse_reply_err(req, res == -1 ? err : 0);
 
   // std::cout << "hello_ll_rename executed correctly: " << payload << std::endl;
 }
