@@ -183,54 +183,6 @@ void process_auth_response(std::string payload, wsclient::WSClient *wsc) {
   wsc->ready = success;
 }
 
-void process_getattr_response(std::string payload) {
-  const kj::ArrayPtr<const capnp::word> view(
-      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
-      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
-
-  capnp::FlatArrayMessageReader data(view);
-  GetattrResponse::Reader getattr_response = data.getRoot<GetattrResponse>();
-
-  struct stat attr;
-
-  memset(&attr, 0, sizeof(attr));
-
-  std::string uuid = getattr_response.getUuid();
-
-  // std::cout << "process_getattr_response: Response UUID: " << uuid << std::endl;
-
-  request request = requests[uuid];
-
-  int res = getattr_response.getRes();
-
-  if (res == -1) {
-    fuse_reply_err(request.req, getattr_response.getErrno());
-    return;
-  }
-
-  GetattrResponse::Attr::Reader attributes = getattr_response.getAttr();
-
-  attr.st_dev = attributes.getStDev();
-  attr.st_ino = attributes.getStIno();
-  attr.st_mode = attributes.getStMode();
-  attr.st_nlink = attributes.getStNlink();
-  attr.st_uid = geteuid();  // attributes.getStUid();
-  attr.st_gid = getegid();  // attributes.getStGid();
-  attr.st_rdev = attributes.getStRdev();
-  attr.st_size = attributes.getStSize();
-  attr.st_atime = attributes.getStAtime();
-  attr.st_mtime = attributes.getStMtime();
-  attr.st_ctime = attributes.getStCtime();
-  attr.st_blksize = attributes.getStBlksize();
-  attr.st_blocks = attributes.getStBlocks();
-
-  // std::cout << "process_getattr_response: Request: " << request.req << std::endl;
-
-  fuse_reply_attr(request.req, &attr, 1.0);
-
-  // std::cout << "process_getattr_response: fuse_reply_attr correctly executed" << std::endl;
-}
-
 void dirbuf_add(fuse_req_t req, struct dirbuf *b, const char *name, fuse_ino_t ino) {
   struct stat stbuf;
   size_t oldsize = b->size;
@@ -348,62 +300,6 @@ void process_setxattr_response(std::string payload) {
   }
 
   // std::cout << "process_setxattr_response: correctly executed" << std::endl;
-}
-
-void process_mknod_response(std::string payload) {
-  const kj::ArrayPtr<const capnp::word> view(
-      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
-      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
-
-  capnp::FlatArrayMessageReader data(view);
-  MknodResponse::Reader mknod_response = data.getRoot<MknodResponse>();
-
-  struct stat attr;
-
-  memset(&attr, 0, sizeof(attr));
-
-  std::string uuid = mknod_response.getUuid();
-
-  // std::cout << "process_mknod_response: Response UUID: " << uuid << std::endl;
-
-  request request = requests[uuid];
-
-  int res = mknod_response.getRes();
-
-  if (res == -1) {
-    // std::cout << "MKNOD::ENOENT" << std::endl;
-    fuse_reply_err(request.req, mknod_response.getErrno());
-    return;
-  }
-
-  struct fuse_entry_param e;
-
-  memset(&e, 0, sizeof(e));
-  e.ino = mknod_response.getIno();
-  e.attr_timeout = 1.0;
-  e.entry_timeout = 1.0;
-
-  MknodResponse::Attr::Reader attributes = mknod_response.getAttr();
-
-  e.attr.st_dev = attributes.getStDev();
-  e.attr.st_ino = attributes.getStIno();
-  e.attr.st_mode = attributes.getStMode();
-  e.attr.st_nlink = attributes.getStNlink();
-  e.attr.st_uid = geteuid();  // attributes.getStUid();
-  e.attr.st_gid = getegid();  // attributes.getStGid();
-  e.attr.st_rdev = attributes.getStRdev();
-  e.attr.st_size = attributes.getStSize();
-  e.attr.st_atime = attributes.getStAtime();
-  e.attr.st_mtime = attributes.getStMtime();
-  e.attr.st_ctime = attributes.getStCtime();
-  e.attr.st_blksize = attributes.getStBlksize();
-  e.attr.st_blocks = attributes.getStBlocks();
-
-  // std::cout << "process_mknod_response: Request: " << request.req << std::endl;
-
-  fuse_reply_entry(request.req, &e);
-
-  // std::cout << "process_mknod_response: fuse_reply_entry correctly executed" << std::endl;
 }
 
 void process_mkdir_response(std::string payload) {
@@ -979,26 +875,52 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
                            dev_t rdev) {
   // printf("Called .mknod\n");
 
-  ::capnp::MallocMessageBuilder message;
-  Mknod::Builder mknod = message.initRoot<Mknod>();
+  auto &waitScope = rpc->getWaitScope();
+  auto request = client->mknodRequest();
+
+  Mknod::Builder mknod = request.getReq();
 
   mknod.setParent(parent);
   mknod.setName(name);
   mknod.setMode(mode);
   mknod.setRdev(rdev);
 
-  std::string uuid = gen_uuid();
-  requests[uuid] = {.type = Ops::Mknod, .req = req};
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+  auto response = result.getRes();
 
-  mknod.setUuid(uuid);
+  int res = response.getRes();
 
-  // std::cout << "hello_ll_mknod: Request UUID: " << uuid << std::endl;
+  if (res == -1) {
+    // std::cout << "MKNOD::ENOENT" << std::endl;
+    fuse_reply_err(req, response.getErrno());
+    return;
+  }
 
-  const auto data = capnp::messageToFlatArray(message);
-  const auto bytes = data.asBytes();
-  std::string payload(bytes.begin(), bytes.end());
+  struct fuse_entry_param e;
 
-  ws->send((char)Ops::Mknod + payload);
+  memset(&e, 0, sizeof(e));
+  e.ino = response.getIno();
+  e.attr_timeout = 1.0;
+  e.entry_timeout = 1.0;
+
+  MknodResponse::Attr::Reader attributes = response.getAttr();
+
+  e.attr.st_dev = attributes.getStDev();
+  e.attr.st_ino = attributes.getStIno();
+  e.attr.st_mode = attributes.getStMode();
+  e.attr.st_nlink = attributes.getStNlink();
+  e.attr.st_uid = geteuid();  // attributes.getStUid();
+  e.attr.st_gid = getegid();  // attributes.getStGid();
+  e.attr.st_rdev = attributes.getStRdev();
+  e.attr.st_size = attributes.getStSize();
+  e.attr.st_atime = attributes.getStAtime();
+  e.attr.st_mtime = attributes.getStMtime();
+  e.attr.st_ctime = attributes.getStCtime();
+  e.attr.st_blksize = attributes.getStBlksize();
+  e.attr.st_blocks = attributes.getStBlocks();
+
+  fuse_reply_entry(req, &e);
 
   // std::cout << "hello_ll_mknod executed correctly: " << payload << std::endl;
 }

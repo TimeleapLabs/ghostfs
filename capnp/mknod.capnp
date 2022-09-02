@@ -5,5 +5,4 @@ struct Mknod {
     name   @1 :Text;
     mode   @2 :UInt64;
     rdev   @3 :UInt16;
-    uuid   @4 :Text;
 }

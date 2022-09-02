@@ -5,7 +5,6 @@ struct MknodResponse {
   res    @1 :Int8;
   errno  @2 :Int8;
   attr   @3 :Attr;
-  uuid   @4 :Text;
 
   struct Attr {
     stDev     @0  :UInt16;

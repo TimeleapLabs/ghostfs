@@ -35,7 +35,7 @@ struct MknodResponse {
   struct Attr;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(8ea80748ab590ecd, 2, 2)
+    CAPNP_DECLARE_STRUCT_HEADER(8ea80748ab590ecd, 2, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -85,9 +85,6 @@ public:
   inline bool hasAttr() const;
   inline  ::MknodResponse::Attr::Reader getAttr() const;
 
-  inline bool hasUuid() const;
-  inline  ::capnp::Text::Reader getUuid() const;
-
 private:
   ::capnp::_::StructReader _reader;
   template <typename, ::capnp::Kind>
@@ -131,13 +128,6 @@ public:
   inline  ::MknodResponse::Attr::Builder initAttr();
   inline void adoptAttr(::capnp::Orphan< ::MknodResponse::Attr>&& value);
   inline ::capnp::Orphan< ::MknodResponse::Attr> disownAttr();
-
-  inline bool hasUuid();
-  inline  ::capnp::Text::Builder getUuid();
-  inline void setUuid( ::capnp::Text::Reader value);
-  inline  ::capnp::Text::Builder initUuid(unsigned int size);
-  inline void adoptUuid(::capnp::Orphan< ::capnp::Text>&& value);
-  inline ::capnp::Orphan< ::capnp::Text> disownUuid();
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -383,40 +373,6 @@ inline void MknodResponse::Builder::adoptAttr(
 inline ::capnp::Orphan< ::MknodResponse::Attr> MknodResponse::Builder::disownAttr() {
   return ::capnp::_::PointerHelpers< ::MknodResponse::Attr>::disown(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS));
-}
-
-inline bool MknodResponse::Reader::hasUuid() const {
-  return !_reader.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS).isNull();
-}
-inline bool MknodResponse::Builder::hasUuid() {
-  return !_builder.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS).isNull();
-}
-inline  ::capnp::Text::Reader MknodResponse::Reader::getUuid() const {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_reader.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS));
-}
-inline  ::capnp::Text::Builder MknodResponse::Builder::getUuid() {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_builder.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS));
-}
-inline void MknodResponse::Builder::setUuid( ::capnp::Text::Reader value) {
-  ::capnp::_::PointerHelpers< ::capnp::Text>::set(_builder.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS), value);
-}
-inline  ::capnp::Text::Builder MknodResponse::Builder::initUuid(unsigned int size) {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(_builder.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS), size);
-}
-inline void MknodResponse::Builder::adoptUuid(
-    ::capnp::Orphan< ::capnp::Text>&& value) {
-  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(_builder.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS), kj::mv(value));
-}
-inline ::capnp::Orphan< ::capnp::Text> MknodResponse::Builder::disownUuid() {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(_builder.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS));
 }
 
 inline  ::uint16_t MknodResponse::Attr::Reader::getStDev() const {

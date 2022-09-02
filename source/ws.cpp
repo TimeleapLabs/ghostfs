@@ -73,10 +73,6 @@ void WSClient::onMessage(const ix::WebSocketMessagePtr& msg) {
         process_setxattr_response(payload);
         break;
       }
-      case (char)Ops::Mknod: {
-        process_mknod_response(payload);
-        break;
-      }
       case (char)Ops::Mkdir: {
         process_mkdir_response(payload);
         break;

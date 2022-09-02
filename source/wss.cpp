@@ -291,6 +291,75 @@ public:
     return kj::READY_NOW;
   }
 
+  kj::Promise<void> mknod(MknodContext context) override {
+    auto params = context.getParams();
+    auto req = params.getReq();
+
+    auto results = context.getResults();
+    auto response = results.getRes();
+
+    uint64_t parent = req.getParent();
+
+    std::string user_root = normalize_path(root, user, suffix);
+    std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
+    std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
+    std::filesystem::path file_path = parent_path / req.getName();
+
+    uint64_t file_ino;
+
+    file_ino = ++current_ino;
+    ino_to_path[file_ino] = file_path;
+    path_to_ino[file_path] = file_ino;
+
+    int res = ::mknod(file_path.c_str(), req.getMode(), req.getRdev());
+
+    int err;
+
+    if (res == -1) {
+      err = errno;
+      
+      ino_to_path.erase(file_ino);
+      path_to_ino.erase(file_path);
+      
+      response.setErrno(err);
+      response.setRes(res);
+      return kj::READY_NOW;
+    } else {
+      response.setIno(file_ino);
+
+      struct stat attr;
+      memset(&attr, 0, sizeof(attr));
+
+      //e.attr_timeout = 1.0;
+      //e.entry_timeout = 1.0;
+
+      hello_stat(file_ino, &attr);
+      
+      MknodResponse::Attr::Builder attributes = response.initAttr();
+
+      attributes.setStDev(attr.st_dev);
+      attributes.setStIno(attr.st_ino);
+      attributes.setStMode(attr.st_mode);
+      attributes.setStNlink(attr.st_nlink);
+      attributes.setStUid(attr.st_uid);
+      attributes.setStGid(attr.st_gid);
+      attributes.setStRdev(attr.st_rdev);
+      attributes.setStSize(attr.st_size);
+      attributes.setStAtime(attr.st_atime);
+      attributes.setStMtime(attr.st_mtime);
+      attributes.setStCtime(attr.st_ctime);
+      attributes.setStBlksize(attr.st_blksize);
+      attributes.setStBlocks(attr.st_blocks);
+    }
+    
+    response.setErrno(err);
+    response.setRes(res);
+
+    // std::cout << "mknod_response sent correctly: " << response_payload << std::endl;
+
+    return kj::READY_NOW;
+  }
+
   kj::Promise<void> read(ReadContext context) override {
     auto params = context.getParams();
     auto req = params.getReq();
@@ -870,79 +939,6 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         break;
       }
       #endif
-      case (char)Ops::Mknod: {
-        const kj::ArrayPtr<const capnp::word> view(
-            reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
-            reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
-
-        capnp::FlatArrayMessageReader data(view);
-        Mknod::Reader mknod = data.getRoot<Mknod>();
-
-        // std::cout << "mknod: Received UUID: " << mknod.getUuid().cStr() << std::endl;
-
-        ::capnp::MallocMessageBuilder message;
-        MknodResponse::Builder mknod_response = message.initRoot<MknodResponse>();
-
-        mknod_response.setUuid(mknod.getUuid());
-
-        uint64_t parent = mknod.getParent();
-
-        std::string user_root = normalize_path(root, connectionState->getId(), suffix);
-        std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
-        std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
-        std::filesystem::path file_path = parent_path / mknod.getName();
-
-        uint64_t file_ino;
-
-        file_ino = ++current_ino;
-        ino_to_path[file_ino] = file_path;
-        path_to_ino[file_path] = file_ino;
-
-        int res = ::mknod(file_path.c_str(), mknod.getMode(), mknod.getRdev());
-
-        if (res == -1) {
-          ino_to_path.erase(file_ino);
-          path_to_ino.erase(file_path);
-          int err = errno;
-
-          std::string response_payload = send_message(mknod_response, message, res, err, webSocket, Ops::Mknod);
-
-          // std::cout << "mknod_response sent error: " << response_payload << std::endl;
-          return;
-        } else {
-          mknod_response.setIno(file_ino);
-
-          struct stat attr;
-          memset(&attr, 0, sizeof(attr));
-
-          //e.attr_timeout = 1.0;
-          //e.entry_timeout = 1.0;
-
-          hello_stat(file_ino, &attr);
-          
-          MknodResponse::Attr::Builder attributes = mknod_response.initAttr();
-
-          attributes.setStDev(attr.st_dev);
-          attributes.setStIno(attr.st_ino);
-          attributes.setStMode(attr.st_mode);
-          attributes.setStNlink(attr.st_nlink);
-          attributes.setStUid(attr.st_uid);
-          attributes.setStGid(attr.st_gid);
-          attributes.setStRdev(attr.st_rdev);
-          attributes.setStSize(attr.st_size);
-          attributes.setStAtime(attr.st_atime);
-          attributes.setStMtime(attr.st_mtime);
-          attributes.setStCtime(attr.st_ctime);
-          attributes.setStBlksize(attr.st_blksize);
-          attributes.setStBlocks(attr.st_blocks);
-        }
-        
-        std::string response_payload = send_message(mknod_response, message, res, webSocket, Ops::Mknod);
-
-        // std::cout << "mknod_response sent correctly: " << response_payload << std::endl;
-
-        break;
-      }
       case (char)Ops::Mkdir: {
         const kj::ArrayPtr<const capnp::word> view(
             reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
@@ -1008,7 +1004,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
           attributes.setStBlocks(attr.st_blocks);
         }
         
-        std::string response_payload = send_message(mkdir_response, message, res, webSocket, Ops::Mknod);
+        std::string response_payload = send_message(mkdir_response, message, res, webSocket, Ops::Mkdir);
 
         // std::cout << "mkdir_response sent correctly: " << response_payload << std::endl;
 
