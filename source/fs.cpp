@@ -302,30 +302,6 @@ void process_setxattr_response(std::string payload) {
   // std::cout << "process_setxattr_response: correctly executed" << std::endl;
 }
 
-void process_rmdir_response(std::string payload) {
-  const kj::ArrayPtr<const capnp::word> view(
-      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
-      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
-
-  capnp::FlatArrayMessageReader data(view);
-  RmdirResponse::Reader rmdir_response = data.getRoot<RmdirResponse>();
-
-  std::string uuid = rmdir_response.getUuid();
-
-  // std::cout << "process_rmdir_response: Response UUID: " << uuid << std::endl;
-
-  request request = requests[uuid];
-
-  int res = rmdir_response.getRes();
-  int err = rmdir_response.getErrno();
-
-  fuse_reply_err(request.req, res == -1 ? err : 0);
-
-  // std::cout << "process_rmdir_response: Request: " << request.req << std::endl;
-
-  // std::cout << "process_rmdir_response executed with result: " << res << std::endl;
-}
-
 void process_rename_response(std::string payload) {
   const kj::ArrayPtr<const capnp::word> view(
       reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
@@ -758,24 +734,22 @@ static void hello_ll_unlink(fuse_req_t req, fuse_ino_t parent, const char *name)
 static void hello_ll_rmdir(fuse_req_t req, fuse_ino_t parent, const char *name) {
   // printf("Called .rmdir\n");
 
-  ::capnp::MallocMessageBuilder message;
-  Rmdir::Builder rmdir = message.initRoot<Rmdir>();
+  auto &waitScope = rpc->getWaitScope();
+  auto request = client->rmdirRequest();
+
+  Rmdir::Builder rmdir = request.getReq();
 
   rmdir.setParent(parent);
   rmdir.setName(name);
 
-  std::string uuid = gen_uuid();
-  requests[uuid] = {.type = Ops::Rmdir, .req = req};
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+  auto response = result.getRes();
 
-  rmdir.setUuid(uuid);
+  int res = response.getRes();
+  int err = response.getErrno();
 
-  // std::cout << "hello_ll_rmdir: Request UUID: " << uuid << std::endl;
-
-  const auto data = capnp::messageToFlatArray(message);
-  const auto bytes = data.asBytes();
-  std::string payload(bytes.begin(), bytes.end());
-
-  ws->send((char)Ops::Rmdir + payload);
+  fuse_reply_err(req, res == -1 ? err : 0);
 
   // std::cout << "rmdir executed correctly: " << payload << std::endl;
 }

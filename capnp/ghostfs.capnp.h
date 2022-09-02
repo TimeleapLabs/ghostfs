@@ -25,6 +25,8 @@
 #include "mknod.response.capnp.h"
 #include "read.capnp.h"
 #include "read.response.capnp.h"
+#include "rmdir.capnp.h"
+#include "rmdir.response.capnp.h"
 #include "setattr.capnp.h"
 #include "setattr.response.capnp.h"
 #include "unlink.capnp.h"
@@ -59,6 +61,8 @@ CAPNP_DECLARE_SCHEMA(edf4e9dedbe2f82b);
 CAPNP_DECLARE_SCHEMA(de8fa1f07e074612);
 CAPNP_DECLARE_SCHEMA(ea909f865c57200f);
 CAPNP_DECLARE_SCHEMA(a49769577e97ea80);
+CAPNP_DECLARE_SCHEMA(e8df6f597cb4d47e);
+CAPNP_DECLARE_SCHEMA(b4465ae88f2787ef);
 
 }  // namespace schemas
 }  // namespace capnp
@@ -133,6 +137,8 @@ struct GhostFS {
   struct MkdirResults;
   struct UnlinkParams;
   struct UnlinkResults;
+  struct RmdirParams;
+  struct RmdirResults;
   struct ReadParams;
   struct ReadResults;
   struct WriteParams;
@@ -328,6 +334,36 @@ struct GhostFS::UnlinkResults {
   };
 };
 
+struct GhostFS::RmdirParams {
+  RmdirParams() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(cde0b07a2572b36d, 0, 1)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct GhostFS::RmdirResults {
+  RmdirResults() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(c009e93b9bb4516f, 0, 1)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
+    #endif  // !CAPNP_LITE
+  };
+};
+
 struct GhostFS::ReadParams {
   ReadParams() = delete;
 
@@ -336,7 +372,7 @@ struct GhostFS::ReadParams {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(cde0b07a2572b36d, 0, 1)
+    CAPNP_DECLARE_STRUCT_HEADER(edf4e9dedbe2f82b, 0, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -351,7 +387,7 @@ struct GhostFS::ReadResults {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(c009e93b9bb4516f, 0, 1)
+    CAPNP_DECLARE_STRUCT_HEADER(de8fa1f07e074612, 0, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -366,7 +402,7 @@ struct GhostFS::WriteParams {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(edf4e9dedbe2f82b, 0, 1)
+    CAPNP_DECLARE_STRUCT_HEADER(ea909f865c57200f, 0, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -381,7 +417,7 @@ struct GhostFS::WriteResults {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(de8fa1f07e074612, 0, 1)
+    CAPNP_DECLARE_STRUCT_HEADER(a49769577e97ea80, 0, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -396,7 +432,7 @@ struct GhostFS::CreateParams {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(ea909f865c57200f, 0, 1)
+    CAPNP_DECLARE_STRUCT_HEADER(e8df6f597cb4d47e, 0, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -411,7 +447,7 @@ struct GhostFS::CreateResults {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(a49769577e97ea80, 0, 1)
+    CAPNP_DECLARE_STRUCT_HEADER(b4465ae88f2787ef, 0, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -681,6 +717,8 @@ public:
       ::kj::Maybe< ::capnp::MessageSize> sizeHint = nullptr);
   ::capnp::Request< ::GhostFS::UnlinkParams,  ::GhostFS::UnlinkResults> unlinkRequest(
       ::kj::Maybe< ::capnp::MessageSize> sizeHint = nullptr);
+  ::capnp::Request< ::GhostFS::RmdirParams,  ::GhostFS::RmdirResults> rmdirRequest(
+      ::kj::Maybe< ::capnp::MessageSize> sizeHint = nullptr);
   ::capnp::Request< ::GhostFS::ReadParams,  ::GhostFS::ReadResults> readRequest(
       ::kj::Maybe< ::capnp::MessageSize> sizeHint = nullptr);
   ::capnp::Request< ::GhostFS::WriteParams,  ::GhostFS::WriteResults> writeRequest(
@@ -727,6 +765,10 @@ protected:
   typedef  ::GhostFS::UnlinkResults UnlinkResults;
   typedef ::capnp::CallContext<UnlinkParams, UnlinkResults> UnlinkContext;
   virtual ::kj::Promise<void> unlink(UnlinkContext context);
+  typedef  ::GhostFS::RmdirParams RmdirParams;
+  typedef  ::GhostFS::RmdirResults RmdirResults;
+  typedef ::capnp::CallContext<RmdirParams, RmdirResults> RmdirContext;
+  virtual ::kj::Promise<void> rmdir(RmdirContext context);
   typedef  ::GhostFS::ReadParams ReadParams;
   typedef  ::GhostFS::ReadResults ReadResults;
   typedef ::capnp::CallContext<ReadParams, ReadResults> ReadContext;
@@ -1727,6 +1769,170 @@ public:
       : _typeless(kj::mv(typeless)) {}
 
   inline  ::UnlinkResponse::Pipeline getRes();
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class GhostFS::RmdirParams::Reader {
+public:
+  typedef RmdirParams Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand());
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool hasReq() const;
+  inline  ::Rmdir::Reader getReq() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class GhostFS::RmdirParams::Builder {
+public:
+  typedef RmdirParams Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool hasReq();
+  inline  ::Rmdir::Builder getReq();
+  inline void setReq( ::Rmdir::Reader value);
+  inline  ::Rmdir::Builder initReq();
+  inline void adoptReq(::capnp::Orphan< ::Rmdir>&& value);
+  inline ::capnp::Orphan< ::Rmdir> disownReq();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class GhostFS::RmdirParams::Pipeline {
+public:
+  typedef RmdirParams Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+  inline  ::Rmdir::Pipeline getReq();
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class GhostFS::RmdirResults::Reader {
+public:
+  typedef RmdirResults Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand());
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool hasRes() const;
+  inline  ::RmdirResponse::Reader getRes() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class GhostFS::RmdirResults::Builder {
+public:
+  typedef RmdirResults Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool hasRes();
+  inline  ::RmdirResponse::Builder getRes();
+  inline void setRes( ::RmdirResponse::Reader value);
+  inline  ::RmdirResponse::Builder initRes();
+  inline void adoptRes(::capnp::Orphan< ::RmdirResponse>&& value);
+  inline ::capnp::Orphan< ::RmdirResponse> disownRes();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class GhostFS::RmdirResults::Pipeline {
+public:
+  typedef RmdirResults Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+  inline  ::RmdirResponse::Pipeline getRes();
 private:
   ::capnp::AnyPointer::Pipeline _typeless;
   friend class ::capnp::PipelineHook;
@@ -2849,6 +3055,84 @@ inline void GhostFS::UnlinkResults::Builder::adoptRes(
 }
 inline ::capnp::Orphan< ::UnlinkResponse> GhostFS::UnlinkResults::Builder::disownRes() {
   return ::capnp::_::PointerHelpers< ::UnlinkResponse>::disown(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+
+inline bool GhostFS::RmdirParams::Reader::hasReq() const {
+  return !_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline bool GhostFS::RmdirParams::Builder::hasReq() {
+  return !_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline  ::Rmdir::Reader GhostFS::RmdirParams::Reader::getReq() const {
+  return ::capnp::_::PointerHelpers< ::Rmdir>::get(_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline  ::Rmdir::Builder GhostFS::RmdirParams::Builder::getReq() {
+  return ::capnp::_::PointerHelpers< ::Rmdir>::get(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+#if !CAPNP_LITE
+inline  ::Rmdir::Pipeline GhostFS::RmdirParams::Pipeline::getReq() {
+  return  ::Rmdir::Pipeline(_typeless.getPointerField(0));
+}
+#endif  // !CAPNP_LITE
+inline void GhostFS::RmdirParams::Builder::setReq( ::Rmdir::Reader value) {
+  ::capnp::_::PointerHelpers< ::Rmdir>::set(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), value);
+}
+inline  ::Rmdir::Builder GhostFS::RmdirParams::Builder::initReq() {
+  return ::capnp::_::PointerHelpers< ::Rmdir>::init(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline void GhostFS::RmdirParams::Builder::adoptReq(
+    ::capnp::Orphan< ::Rmdir>&& value) {
+  ::capnp::_::PointerHelpers< ::Rmdir>::adopt(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::Rmdir> GhostFS::RmdirParams::Builder::disownReq() {
+  return ::capnp::_::PointerHelpers< ::Rmdir>::disown(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+
+inline bool GhostFS::RmdirResults::Reader::hasRes() const {
+  return !_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline bool GhostFS::RmdirResults::Builder::hasRes() {
+  return !_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline  ::RmdirResponse::Reader GhostFS::RmdirResults::Reader::getRes() const {
+  return ::capnp::_::PointerHelpers< ::RmdirResponse>::get(_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline  ::RmdirResponse::Builder GhostFS::RmdirResults::Builder::getRes() {
+  return ::capnp::_::PointerHelpers< ::RmdirResponse>::get(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+#if !CAPNP_LITE
+inline  ::RmdirResponse::Pipeline GhostFS::RmdirResults::Pipeline::getRes() {
+  return  ::RmdirResponse::Pipeline(_typeless.getPointerField(0));
+}
+#endif  // !CAPNP_LITE
+inline void GhostFS::RmdirResults::Builder::setRes( ::RmdirResponse::Reader value) {
+  ::capnp::_::PointerHelpers< ::RmdirResponse>::set(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), value);
+}
+inline  ::RmdirResponse::Builder GhostFS::RmdirResults::Builder::initRes() {
+  return ::capnp::_::PointerHelpers< ::RmdirResponse>::init(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline void GhostFS::RmdirResults::Builder::adoptRes(
+    ::capnp::Orphan< ::RmdirResponse>&& value) {
+  ::capnp::_::PointerHelpers< ::RmdirResponse>::adopt(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::RmdirResponse> GhostFS::RmdirResults::Builder::disownRes() {
+  return ::capnp::_::PointerHelpers< ::RmdirResponse>::disown(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 

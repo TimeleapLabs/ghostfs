@@ -437,9 +437,38 @@ public:
     std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
     std::filesystem::path file_path = parent_path / std::filesystem::path(name);
 
+    // TODO: this removes write protected files without warning
     int res = ::unlink(file_path.c_str());
     int err = errno;
 
+    response.setErrno(err);
+    response.setRes(res);
+
+    return kj::READY_NOW;
+  }
+
+  kj::Promise<void> rmdir(RmdirContext context) override {
+    auto params = context.getParams();
+    auto req = params.getReq();
+
+    auto results = context.getResults();
+    auto response = results.getRes();
+
+    uint64_t parent = req.getParent();
+    std::string name = req.getName();
+
+    // std::cout << "RMDIR name: " << name << std::endl;
+
+    std::string user_root = normalize_path(root, user, suffix);
+    std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
+    std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
+    std::filesystem::path file_path = parent_path / std::filesystem::path(name);
+
+    // std::cout << "RMDIR file_path: " << file_path.c_str() << std::endl;
+
+    int res = ::rmdir(file_path.c_str());
+    int err = errno;
+    
     response.setErrno(err);
     response.setRes(res);
 
@@ -1025,41 +1054,6 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         break;
       }
       #endif
-      case (char)Ops::Rmdir: {
-        const kj::ArrayPtr<const capnp::word> view(
-            reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
-            reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
-
-        capnp::FlatArrayMessageReader data(view);
-        Rmdir::Reader rmdir = data.getRoot<Rmdir>();
-
-        // std::cout << "rmdir: Received UUID: " << rmdir.getUuid().cStr() << std::endl;
-
-        ::capnp::MallocMessageBuilder message;
-        RmdirResponse::Builder rmdir_response = message.initRoot<RmdirResponse>();
-
-        rmdir_response.setUuid(rmdir.getUuid());
-
-        uint64_t parent = rmdir.getParent();
-        std::string name = rmdir.getName();
-
-        // std::cout << "RMDIR name: " << name << std::endl;
-
-        std::string user_root = normalize_path(root, connectionState->getId(), suffix);
-        std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
-        std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
-        std::filesystem::path file_path = parent_path / std::filesystem::path(name);
-
-        // std::cout << "RMDIR file_path: " << file_path.c_str() << std::endl;
-
-        int res = ::rmdir(file_path.c_str());
-        int err = errno;
-        
-        std::string response_payload = send_message(rmdir_response, message, res, err, webSocket, Ops::Rmdir);
-        // std::cout << "rmdir_response sent correctly: " << response_payload << std::endl;
-
-        break;
-      }
       case (char)Ops::Rename: {
         const kj::ArrayPtr<const capnp::word> view(
             reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
@@ -1094,7 +1088,7 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         int res = ::rename(file_path.c_str(), newfile_path.c_str());
         int err = errno;
 
-        std::string response_payload = send_message(rename_response, message, res, err, webSocket, Ops::Rmdir);
+        std::string response_payload = send_message(rename_response, message, res, err, webSocket, Ops::Rename);
         // std::cout << "rename_response sent correctly: " << response_payload << std::endl;
 
         break;
