@@ -5,17 +5,17 @@
 
 namespace capnp {
 namespace schemas {
-static const ::capnp::_::AlignedData<65> b_cd12adb290adece9 = {
+static const ::capnp::_::AlignedData<50> b_cd12adb290adece9 = {
   {   0,   0,   0,   0,   5,   0,   6,   0,
     233, 236, 173, 144, 178, 173,  18, 205,
      11,   0,   0,   0,   1,   0,   1,   0,
     221, 184,  29, 213, 129, 231, 123, 178,
-      2,   0,   7,   0,   0,   0,   0,   0,
+      1,   0,   7,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
      21,   0,   0,   0, 130,   0,   0,   0,
      25,   0,   0,   0,  23,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
-     37,   0,   0,   0, 175,   0,   0,   0,
+     37,   0,   0,   0, 119,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
     111, 112, 101, 110,  46,  99,  97, 112,
@@ -25,28 +25,21 @@ static const ::capnp::_::AlignedData<65> b_cd12adb290adece9 = {
       1,   0,   0,   0, 106,   0,   0,   0,
      70, 117, 115, 101,  70, 105, 108, 101,
      73, 110, 102, 111,   0,   0,   0,   0,
-     12,   0,   0,   0,   3,   0,   4,   0,
+      8,   0,   0,   0,   3,   0,   4,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   1,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
-     69,   0,   0,   0,  34,   0,   0,   0,
+     41,   0,   0,   0,  34,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
-     64,   0,   0,   0,   3,   0,   1,   0,
-     76,   0,   0,   0,   2,   0,   1,   0,
+     36,   0,   0,   0,   3,   0,   1,   0,
+     48,   0,   0,   0,   2,   0,   1,   0,
       1,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   1,   0,   1,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
-     73,   0,   0,   0,  26,   0,   0,   0,
+     45,   0,   0,   0,  26,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
-     68,   0,   0,   0,   3,   0,   1,   0,
-     80,   0,   0,   0,   2,   0,   1,   0,
-      2,   0,   0,   0,   1,   0,   0,   0,
-      0,   0,   1,   0,   2,   0,   0,   0,
-      0,   0,   0,   0,   0,   0,   0,   0,
-     77,   0,   0,   0,  42,   0,   0,   0,
-      0,   0,   0,   0,   0,   0,   0,   0,
-     72,   0,   0,   0,   3,   0,   1,   0,
-     84,   0,   0,   0,   2,   0,   1,   0,
+     40,   0,   0,   0,   3,   0,   1,   0,
+     52,   0,   0,   0,   2,   0,   1,   0,
     105, 110, 111,   0,   0,   0,   0,   0,
       9,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
@@ -62,14 +55,6 @@ static const ::capnp::_::AlignedData<65> b_cd12adb290adece9 = {
       0,   0,   0,   0,   0,   0,   0,   0,
      16,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
-      0,   0,   0,   0,   0,   0,   0,   0,
-    117, 117, 105, 100,   0,   0,   0,   0,
-     12,   0,   0,   0,   0,   0,   0,   0,
-      0,   0,   0,   0,   0,   0,   0,   0,
-      0,   0,   0,   0,   0,   0,   0,   0,
-      0,   0,   0,   0,   0,   0,   0,   0,
-     12,   0,   0,   0,   0,   0,   0,   0,
-      0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0, }
 };
 ::capnp::word const* const bp_cd12adb290adece9 = b_cd12adb290adece9.words;
@@ -77,11 +62,11 @@ static const ::capnp::_::AlignedData<65> b_cd12adb290adece9 = {
 static const ::capnp::_::RawSchema* const d_cd12adb290adece9[] = {
   &s_c2595540df013d9c,
 };
-static const uint16_t m_cd12adb290adece9[] = {1, 0, 2};
-static const uint16_t i_cd12adb290adece9[] = {0, 1, 2};
+static const uint16_t m_cd12adb290adece9[] = {1, 0};
+static const uint16_t i_cd12adb290adece9[] = {0, 1};
 const ::capnp::_::RawSchema s_cd12adb290adece9 = {
-  0xcd12adb290adece9, b_cd12adb290adece9.words, 65, d_cd12adb290adece9, m_cd12adb290adece9,
-  1, 3, i_cd12adb290adece9, nullptr, nullptr, { &s_cd12adb290adece9, nullptr, nullptr, 0, 0, nullptr }
+  0xcd12adb290adece9, b_cd12adb290adece9.words, 50, d_cd12adb290adece9, m_cd12adb290adece9,
+  1, 2, i_cd12adb290adece9, nullptr, nullptr, { &s_cd12adb290adece9, nullptr, nullptr, 0, 0, nullptr }
 };
 #endif  // !CAPNP_LITE
 static const ::capnp::_::AlignedData<205> b_c2595540df013d9c = {

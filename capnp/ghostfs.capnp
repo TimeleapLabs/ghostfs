@@ -16,6 +16,8 @@ using import "rmdir.capnp".Rmdir;
 using import "rmdir.response.capnp".RmdirResponse;
 using import "rename.capnp".Rename;
 using import "rename.response.capnp".RenameResponse;
+using import "open.capnp".Open;
+using import "open.response.capnp".OpenResponse;
 using import "read.capnp".Read;
 using import "read.response.capnp".ReadResponse;
 using import "write.capnp".Write;
@@ -36,7 +38,8 @@ interface GhostFS {
   unlink  @5  (req :Unlink)  -> (res :UnlinkResponse);
   rmdir   @6  (req :Rmdir)   -> (res :RmdirResponse);
   rename  @7  (req :Rename)  -> (res :RenameResponse);
-  read    @8  (req :Read)    -> (res :ReadResponse);
-  write   @9  (req :Write)   -> (res :WriteResponse);
-  create  @10 (req :Create)  -> (res :CreateResponse);
+  open    @8  (req :Open)    -> (res :OpenResponse);
+  read    @9  (req :Read)    -> (res :ReadResponse);
+  write   @10 (req :Write)   -> (res :WriteResponse);
+  create  @11 (req :Create)  -> (res :CreateResponse);
 }

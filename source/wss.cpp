@@ -509,7 +509,55 @@ public:
     return kj::READY_NOW;
   }
 
-   kj::Promise<void> read(ReadContext context) override {
+   kj::Promise<void> open(OpenContext context) override {
+    auto params = context.getParams();
+    auto req = params.getReq();
+
+    auto results = context.getResults();
+    auto response = results.getRes();
+
+    if (ino_to_path.find(req.getIno()) == ino_to_path.end()) {
+      // File is unknown
+      response.setRes(-1);
+      response.setErrno(ENOENT);
+      return kj::READY_NOW;
+    }
+
+    response.setIno(req.getIno());
+
+    Open::FuseFileInfo::Reader fi = req.getFi();
+
+    int64_t fh = ::open(ino_to_path[req.getIno()].c_str(), fi.getFlags());
+    int err = errno;
+    response.setErrno(err);
+    response.setRes(fh);
+
+    if (fh == -1) {
+      response.setRes(fh);
+      return kj::READY_NOW;
+    }
+
+    OpenResponse::FuseFileInfo::Builder fi_response = response.initFi();
+
+    fi_response.setCacheReaddir(fi.getCacheReaddir());
+    fi_response.setDirectIo(fi.getDirectIo());
+    fi_response.setFh(fh);
+    fi_response.setFlags(fi.getFlags());
+    fi_response.setFlush(fi.getFlush());
+    fi_response.setKeepCache(fi.getKeepCache());
+    fi_response.setLockOwner(fi.getLockOwner());
+    fi_response.setNoflush(fi.getNoflush());
+    fi_response.setNonseekable(fi.getNonseekable());
+    fi_response.setPadding(fi.getPadding());
+    fi_response.setPollEvents(fi.getPollEvents());
+    fi_response.setWritepage(fi.getWritepage());
+
+    // std::cout << "open_response sent correctly: " << response_payload << std::endl;
+
+    return kj::READY_NOW;
+  }
+
+  kj::Promise<void> read(ReadContext context) override {
     auto params = context.getParams();
     auto req = params.getReq();
 
@@ -986,67 +1034,6 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
             = send_message(readdir_response, message, 0, webSocket, Ops::Readdir);
 
         // std::cout << "readdir_response sent correctly: " << response_payload << std::endl;
-
-        break;
-      }
-      case (char)Ops::Open: {
-        const kj::ArrayPtr<const capnp::word> view(
-            reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
-            reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
-
-        capnp::FlatArrayMessageReader data(view);
-        Open::Reader open = data.getRoot<Open>();
-
-        // std::cout << "open: Received UUID: " << open.getUuid().cStr() << std::endl;
-
-        ::capnp::MallocMessageBuilder message;
-        OpenResponse::Builder open_response = message.initRoot<OpenResponse>();
-
-        open_response.setUuid(open.getUuid());
-
-        if (ino_to_path.find(open.getIno()) == ino_to_path.end()) {
-          // File is unknown
-          std::string response_payload
-              = send_message(open_response, message, -1, webSocket, Ops::Open);
-
-          // std::cout << "readdir_response sent error: " << response_payload << std::endl;
-          return;
-        }
-
-        open_response.setIno(open.getIno());
-
-        Open::FuseFileInfo::Reader fi = open.getFi();
-
-        int64_t fh = ::open(ino_to_path[open.getIno()].c_str(), fi.getFlags());
-
-        if (fh == -1) {
-          int err = errno;
-
-          std::string response_payload
-              = send_message(open_response, message, fh, err, webSocket, Ops::Open);
-
-          return;
-        }
-
-        OpenResponse::FuseFileInfo::Builder fi_response = open_response.initFi();
-
-        fi_response.setCacheReaddir(fi.getCacheReaddir());
-        fi_response.setDirectIo(fi.getDirectIo());
-        fi_response.setFh(fh);
-        fi_response.setFlags(fi.getFlags());
-        fi_response.setFlush(fi.getFlush());
-        fi_response.setKeepCache(fi.getKeepCache());
-        fi_response.setLockOwner(fi.getLockOwner());
-        fi_response.setNoflush(fi.getNoflush());
-        fi_response.setNonseekable(fi.getNonseekable());
-        fi_response.setPadding(fi.getPadding());
-        fi_response.setPollEvents(fi.getPollEvents());
-        fi_response.setWritepage(fi.getWritepage());
-
-        std::string response_payload
-            = send_message(open_response, message, 0, webSocket, Ops::Open);
-
-        // std::cout << "open_response sent correctly: " << response_payload << std::endl;
 
         break;
       }

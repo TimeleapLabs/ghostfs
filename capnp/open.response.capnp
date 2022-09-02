@@ -3,9 +3,8 @@
 struct OpenResponse {
   ino   @0 :UInt64;
   fi    @1 :FuseFileInfo;
-  uuid  @2 :Text;
-  res   @3 :Int8;
-  errno @4 :UInt64;
+  res   @2 :Int8;
+  errno @3 :UInt64;
 
   struct FuseFileInfo {
     flags         @0  :Int8;

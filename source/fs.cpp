@@ -229,54 +229,6 @@ void process_readdir_response(std::string payload) {
   // std::cout << "process_readdir_response: reply_buf_limited correctly executed" << std::endl;
 }
 
-void process_open_response(std::string payload) {
-  const kj::ArrayPtr<const capnp::word> view(
-      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
-      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
-
-  capnp::FlatArrayMessageReader data(view);
-  OpenResponse::Reader open_response = data.getRoot<OpenResponse>();
-
-  // struct fuse_file_info fi;
-
-  // memset(&fi, 0, sizeof(fi));
-
-  std::string uuid = open_response.getUuid();
-
-  // std::cout << "process_open_response: Response UUID: " << uuid << std::endl;
-
-  request request = requests[uuid];
-
-  int res = open_response.getRes();
-
-  if (res == -1) {
-    int err = open_response.getErrno();
-    fuse_reply_err(request.req, err);
-    return;
-  }
-
-  OpenResponse::FuseFileInfo::Reader fi_response = open_response.getFi();
-
-  // fi.cache_readdir = fi_response.getCacheReaddir();
-  // fi.direct_io = fi_response.getDirectIo();
-  request.fi->fh = fi_response.getFh();
-  // fi.flags = fi_response.getFlags();
-  //  fi.flush = fi_response.getFlush();
-  // fi.keep_cache = fi_response.getKeepCache();
-  // fi.lock_owner = fi_response.getLockOwner();
-  //  fi.noflush = fi_response.getNoflush();
-  // fi.nonseekable = fi_response.getNonseekable();
-  // fi.padding = fi_response.getPadding();
-  //  fi.poll_events = fi_response.getPollEvents();
-  // fi.writepage = fi_response.getWritepage();
-
-  // std::cout << "process_getattr_response: Request: " << request.req << std::endl;
-
-  fuse_reply_open(request.req, request.fi);
-
-  // std::cout << "process_getattr_response: fuse_reply_open correctly executed" << std::endl;
-}
-
 void process_setxattr_response(std::string payload) {
   const kj::ArrayPtr<const capnp::word> view(
       reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
@@ -539,26 +491,45 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
 static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
   // printf("Called .open\n");
 
-  ::capnp::MallocMessageBuilder message;
-  Open::Builder open = message.initRoot<Open>();
+  auto &waitScope = rpc->getWaitScope();
+  auto request = client->openRequest();
+
+  Open::Builder open = request.getReq();
   Open::FuseFileInfo::Builder fuseFileInfo = open.initFi();
 
   open.setIno(ino);
 
-  std::string uuid = gen_uuid();
-  requests[uuid] = {.type = Ops::Open, .req = req, .fi = fi};
-
-  open.setUuid(uuid);
-
   fillFileInfo(&fuseFileInfo, fi);
 
-  // std::cout << "hello_ll_open: Request UUID: " << uuid << std::endl;
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+  auto response = result.getRes();
 
-  const auto data = capnp::messageToFlatArray(message);
-  const auto bytes = data.asBytes();
-  std::string payload(bytes.begin(), bytes.end());
+  int res = response.getRes();
 
-  ws->send((char)Ops::Open + payload);
+  if (res == -1) {
+    int err = response.getErrno();
+    fuse_reply_err(req, err);
+    return;
+  }
+
+  OpenResponse::FuseFileInfo::Reader fi_response = response.getFi();
+
+  // fi.cache_readdir = fi_response.getCacheReaddir();
+  // fi.direct_io = fi_response.getDirectIo();
+  fi->fh = fi_response.getFh();
+  // fi.flags = fi_response.getFlags();
+  //  fi.flush = fi_response.getFlush();
+  // fi.keep_cache = fi_response.getKeepCache();
+  // fi.lock_owner = fi_response.getLockOwner();
+  //  fi.noflush = fi_response.getNoflush();
+  // fi.nonseekable = fi_response.getNonseekable();
+  // fi.padding = fi_response.getPadding();
+  //  fi.poll_events = fi_response.getPollEvents();
+  // fi.writepage = fi_response.getWritepage();
+
+
+  fuse_reply_open(req, fi);
 
   // std::cout << "hello_ll_open executed correctly: " << payload << std::endl;
 }
