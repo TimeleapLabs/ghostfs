@@ -29,7 +29,6 @@ enum class Ops : char {
   Open = 5,
   Setxattr = 9,
   Create = 10,
-  Unlink = 13,
   Rmdir = 14,
   Rename = 15,
   Release = 16
@@ -40,7 +39,6 @@ void process_auth_response(std::string payload, wsclient::WSClient* wsc);
 void process_readdir_response(std::string payload);
 void process_open_response(std::string payload);
 void process_setxattr_response(std::string payload);
-void process_unlink_response(std::string payload);
 void process_rmdir_response(std::string payload);
 void process_rename_response(std::string payload);
 void process_release_response(std::string payload);

@@ -302,30 +302,6 @@ void process_setxattr_response(std::string payload) {
   // std::cout << "process_setxattr_response: correctly executed" << std::endl;
 }
 
-void process_unlink_response(std::string payload) {
-  const kj::ArrayPtr<const capnp::word> view(
-      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
-      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
-
-  capnp::FlatArrayMessageReader data(view);
-  UnlinkResponse::Reader unlink_response = data.getRoot<UnlinkResponse>();
-
-  std::string uuid = unlink_response.getUuid();
-
-  // std::cout << "process_unlink_response: Response UUID: " << uuid << std::endl;
-
-  request request = requests[uuid];
-
-  int res = unlink_response.getRes();
-  int err = unlink_response.getErrno();
-
-  fuse_reply_err(request.req, res == -1 ? err : 0);
-
-  // std::cout << "process_unlink_response: Request: " << request.req << std::endl;
-
-  // std::cout << "process_unlink_response: executed" << std::endl;
-}
-
 void process_rmdir_response(std::string payload) {
   const kj::ArrayPtr<const capnp::word> view(
       reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
@@ -759,24 +735,22 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
 static void hello_ll_unlink(fuse_req_t req, fuse_ino_t parent, const char *name) {
   // printf("Called .unlink\n");
 
-  ::capnp::MallocMessageBuilder message;
-  Unlink::Builder unlink = message.initRoot<Unlink>();
+  auto &waitScope = rpc->getWaitScope();
+  auto request = client->unlinkRequest();
+
+  Unlink::Builder unlink = request.getReq();
 
   unlink.setParent(parent);
   unlink.setName(name);
 
-  std::string uuid = gen_uuid();
-  requests[uuid] = {.type = Ops::Unlink, .req = req};
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+  auto response = result.getRes();
 
-  unlink.setUuid(uuid);
+  int res = response.getRes();
+  int err = response.getErrno();
 
-  // std::cout << "hello_ll_unlink: Request UUID: " << uuid << std::endl;
-
-  const auto data = capnp::messageToFlatArray(message);
-  const auto bytes = data.asBytes();
-  std::string payload(bytes.begin(), bytes.end());
-
-  ws->send((char)Ops::Unlink + payload);
+  fuse_reply_err(req, res == -1 ? err : 0);
 
   // std::cout << "unlink executed correctly: " << payload << std::endl;
 }

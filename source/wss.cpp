@@ -121,7 +121,7 @@ public:
     attributes.setStBlocks(attr.st_blocks);
 
     response.setErrno(err);
-    response.setRes(0);
+    response.setRes(res);
 
     return kj::READY_NOW;
   }
@@ -277,6 +277,8 @@ public:
 
       res = utimensat(AT_FDCWD, file_path.c_str(), tv, 0);
       err = errno;
+      response.setErrno(err);
+
 
       if (res == -1) {
         response.setErrno(err);
@@ -286,7 +288,6 @@ public:
     }
 
     response.setIno(ino);
-    response.setErrno(err);
     response.setRes(0);
     return kj::READY_NOW;
   }
@@ -417,6 +418,30 @@ public:
     response.setRes(res);
 
     // std::cout << "mkdir_response sent correctly: " << response_payload << std::endl;
+
+    return kj::READY_NOW;
+  }
+
+  kj::Promise<void> unlink(UnlinkContext context) override {
+    auto params = context.getParams();
+    auto req = params.getReq();
+
+    auto results = context.getResults();
+    auto response = results.getRes();
+
+    uint64_t parent = req.getParent();
+    std::string name = req.getName();
+
+    std::string user_root = normalize_path(root, user, suffix);
+    std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
+    std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
+    std::filesystem::path file_path = parent_path / std::filesystem::path(name);
+
+    int res = ::unlink(file_path.c_str());
+    int err = errno;
+
+    response.setErrno(err);
+    response.setRes(res);
 
     return kj::READY_NOW;
   }
@@ -1000,37 +1025,6 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         break;
       }
       #endif
-      case (char)Ops::Unlink: {
-        const kj::ArrayPtr<const capnp::word> view(
-            reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
-            reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
-
-        capnp::FlatArrayMessageReader data(view);
-        Unlink::Reader unlink = data.getRoot<Unlink>();
-
-        // std::cout << "unlink: Received UUID: " << unlink.getUuid().cStr() << std::endl;
-
-        ::capnp::MallocMessageBuilder message;
-        UnlinkResponse::Builder unlink_response = message.initRoot<UnlinkResponse>();
-
-        unlink_response.setUuid(unlink.getUuid());
-
-        uint64_t parent = unlink.getParent();
-        std::string name = unlink.getName();
-
-        std::string user_root = normalize_path(root, connectionState->getId(), suffix);
-        std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
-        std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
-        std::filesystem::path file_path = parent_path / std::filesystem::path(name);
-
-        int res = ::unlink(file_path.c_str());
-        int err = errno;
-        
-        std::string response_payload = send_message(unlink_response, message, res, err, webSocket, Ops::Unlink);
-        // std::cout << "unlink_response sent correctly: " << response_payload << std::endl;
-
-        break;
-      }
       case (char)Ops::Rmdir: {
         const kj::ArrayPtr<const capnp::word> view(
             reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
