@@ -8,6 +8,8 @@ using import "setattr.capnp".Setattr;
 using import "setattr.response.capnp".SetattrResponse;
 using import "mknod.capnp".Mknod;
 using import "mknod.response.capnp".MknodResponse;
+using import "mkdir.capnp".Mkdir;
+using import "mkdir.response.capnp".MkdirResponse;
 using import "read.capnp".Read;
 using import "read.response.capnp".ReadResponse;
 using import "write.capnp".Write;
@@ -24,7 +26,8 @@ interface GhostFS {
   getattr @1 (req :Getattr) -> (res :GetattrResponse);
   setattr @2 (req :Setattr) -> (res :SetattrResponse);
   mknod   @3 (req :Mknod)   -> (res :MknodResponse);
-  read    @4 (req :Read)    -> (res :ReadResponse);
-  write   @5 (req :Write)   -> (res :WriteResponse);
-  create  @6 (req :Create)  -> (res :CreateResponse);
+  mkdir   @4 (req :Mkdir)   -> (res :MkdirResponse);
+  read    @5 (req :Read)    -> (res :ReadResponse);
+  write   @6 (req :Write)   -> (res :WriteResponse);
+  create  @7 (req :Create)  -> (res :CreateResponse);
 }

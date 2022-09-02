@@ -276,9 +276,9 @@ public:
       }
 
       res = utimensat(AT_FDCWD, file_path.c_str(), tv, 0);
+      err = errno;
 
       if (res == -1) {
-        err = errno;
         response.setErrno(err);
         response.setRes(res);
         return kj::READY_NOW;
@@ -312,12 +312,9 @@ public:
     path_to_ino[file_path] = file_ino;
 
     int res = ::mknod(file_path.c_str(), req.getMode(), req.getRdev());
+    int err = errno;
 
-    int err;
-
-    if (res == -1) {
-      err = errno;
-      
+    if (res == -1) {      
       ino_to_path.erase(file_ino);
       path_to_ino.erase(file_path);
       
@@ -356,6 +353,70 @@ public:
     response.setRes(res);
 
     // std::cout << "mknod_response sent correctly: " << response_payload << std::endl;
+
+    return kj::READY_NOW;
+  }
+
+   kj::Promise<void> mkdir(MkdirContext context) override {
+    auto params = context.getParams();
+    auto req = params.getReq();
+
+    auto results = context.getResults();
+    auto response = results.getRes();
+
+    uint64_t parent = req.getParent();
+
+    std::string user_root = normalize_path(root, user, suffix);
+    std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
+    std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
+    std::filesystem::path file_path = parent_path / req.getName();
+
+    int res = ::mkdir(file_path.c_str(), req.getMode());
+    int err = errno;
+
+    if (res == -1) {
+      response.setRes(-1);
+      response.setErrno(err);
+      return kj::READY_NOW;
+    }
+    else {
+      struct stat attr;
+      memset(&attr, 0, sizeof(attr));
+
+      uint64_t file_ino;
+
+      file_ino = ++current_ino;
+      ino_to_path[file_ino] = file_path;
+      path_to_ino[file_path] = file_ino;
+
+      //e.attr_timeout = 1.0;
+      //e.entry_timeout = 1.0;
+      
+      response.setIno(file_ino);
+
+      hello_stat(file_ino, &attr);
+
+      MkdirResponse::Attr::Builder attributes = response.initAttr();
+
+      attributes.setStDev(attr.st_dev);
+      attributes.setStIno(attr.st_ino);
+      attributes.setStMode(attr.st_mode);
+      attributes.setStNlink(attr.st_nlink);
+      attributes.setStUid(attr.st_uid);
+      attributes.setStGid(attr.st_gid);
+      attributes.setStRdev(attr.st_rdev);
+      attributes.setStSize(attr.st_size);
+      attributes.setStAtime(attr.st_atime);
+      attributes.setStMtime(attr.st_mtime);
+      attributes.setStCtime(attr.st_ctime);
+      attributes.setStBlksize(attr.st_blksize);
+      attributes.setStBlocks(attr.st_blocks);
+    }
+    
+    response.setErrno(err);
+    response.setRes(res);
+
+    // std::cout << "mkdir_response sent correctly: " << response_payload << std::endl;
 
     return kj::READY_NOW;
   }
@@ -939,77 +1000,6 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         break;
       }
       #endif
-      case (char)Ops::Mkdir: {
-        const kj::ArrayPtr<const capnp::word> view(
-            reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
-            reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
-
-        capnp::FlatArrayMessageReader data(view);
-        Mkdir::Reader mkdir = data.getRoot<Mkdir>();
-
-        // std::cout << "mkdir: Received UUID: " << mkdir.getUuid().cStr() << std::endl;
-
-        ::capnp::MallocMessageBuilder message;
-        MkdirResponse::Builder mkdir_response = message.initRoot<MkdirResponse>();
-
-        mkdir_response.setUuid(mkdir.getUuid());
-
-        uint64_t parent = mkdir.getParent();
-
-        std::string user_root = normalize_path(root, connectionState->getId(), suffix);
-        std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
-        std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
-        std::filesystem::path file_path = parent_path / mkdir.getName();
-
-        int res = ::mkdir(file_path.c_str(), mkdir.getMode());
-
-        if (res == -1) {
-          int err = errno;
-          std::string response_payload = send_message(mkdir_response, message, res, err, webSocket, Ops::Mkdir);
-
-          // std::cout << "mkdir_response sent error: " << response_payload << std::endl;
-          return;
-        }
-        else {
-          struct stat attr;
-          memset(&attr, 0, sizeof(attr));
-
-          uint64_t file_ino;
-
-          file_ino = ++current_ino;
-          ino_to_path[file_ino] = file_path;
-          path_to_ino[file_path] = file_ino;
-
-          //e.attr_timeout = 1.0;
-          //e.entry_timeout = 1.0;
-          
-          mkdir_response.setIno(file_ino);
-
-          hello_stat(file_ino, &attr);
-
-          MkdirResponse::Attr::Builder attributes = mkdir_response.initAttr();
-
-          attributes.setStDev(attr.st_dev);
-          attributes.setStIno(attr.st_ino);
-          attributes.setStMode(attr.st_mode);
-          attributes.setStNlink(attr.st_nlink);
-          attributes.setStUid(attr.st_uid);
-          attributes.setStGid(attr.st_gid);
-          attributes.setStRdev(attr.st_rdev);
-          attributes.setStSize(attr.st_size);
-          attributes.setStAtime(attr.st_atime);
-          attributes.setStMtime(attr.st_mtime);
-          attributes.setStCtime(attr.st_ctime);
-          attributes.setStBlksize(attr.st_blksize);
-          attributes.setStBlocks(attr.st_blocks);
-        }
-        
-        std::string response_payload = send_message(mkdir_response, message, res, webSocket, Ops::Mkdir);
-
-        // std::cout << "mkdir_response sent correctly: " << response_payload << std::endl;
-
-        break;
-      }
       case (char)Ops::Unlink: {
         const kj::ArrayPtr<const capnp::word> view(
             reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),

@@ -302,62 +302,6 @@ void process_setxattr_response(std::string payload) {
   // std::cout << "process_setxattr_response: correctly executed" << std::endl;
 }
 
-void process_mkdir_response(std::string payload) {
-  const kj::ArrayPtr<const capnp::word> view(
-      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
-      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
-
-  capnp::FlatArrayMessageReader data(view);
-  MkdirResponse::Reader mkdir_response = data.getRoot<MkdirResponse>();
-
-  struct stat attr;
-
-  memset(&attr, 0, sizeof(attr));
-
-  std::string uuid = mkdir_response.getUuid();
-
-  // std::cout << "process_mkdir_response: Response UUID: " << uuid << std::endl;
-
-  request request = requests[uuid];
-
-  int res = mkdir_response.getRes();
-
-  if (res == -1) {
-    // std::cout << "MKDIR::ENOENT" << std::endl;
-    fuse_reply_err(request.req, mkdir_response.getErrno());
-    return;
-  }
-
-  struct fuse_entry_param e;
-
-  memset(&e, 0, sizeof(e));
-  e.ino = mkdir_response.getIno();
-  e.attr_timeout = 1.0;
-  e.entry_timeout = 1.0;
-
-  MkdirResponse::Attr::Reader attributes = mkdir_response.getAttr();
-
-  e.attr.st_dev = attributes.getStDev();
-  e.attr.st_ino = attributes.getStIno();
-  e.attr.st_mode = attributes.getStMode();
-  e.attr.st_nlink = attributes.getStNlink();
-  e.attr.st_uid = geteuid();  // attributes.getStUid();
-  e.attr.st_gid = getegid();  // attributes.getStGid();
-  e.attr.st_rdev = attributes.getStRdev();
-  e.attr.st_size = attributes.getStSize();
-  e.attr.st_atime = attributes.getStAtime();
-  e.attr.st_mtime = attributes.getStMtime();
-  e.attr.st_ctime = attributes.getStCtime();
-  e.attr.st_blksize = attributes.getStBlksize();
-  e.attr.st_blocks = attributes.getStBlocks();
-
-  // std::cout << "process_mkdir_response: Request: " << request.req << std::endl;
-
-  fuse_reply_entry(request.req, &e);
-
-  // std::cout << "process_mkdir_response: fuse_reply_entry correctly executed" << std::endl;
-}
-
 void process_unlink_response(std::string payload) {
   const kj::ArrayPtr<const capnp::word> view(
       reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
@@ -1024,25 +968,51 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
 static void hello_ll_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode) {
   // printf("Called .mkdir\n");
 
-  ::capnp::MallocMessageBuilder message;
-  Mkdir::Builder mkdir = message.initRoot<Mkdir>();
+  auto &waitScope = rpc->getWaitScope();
+  auto request = client->mkdirRequest();
+
+  Mkdir::Builder mkdir = request.getReq();
 
   mkdir.setParent(parent);
   mkdir.setName(name);
   mkdir.setMode(mode);
 
-  std::string uuid = gen_uuid();
-  requests[uuid] = {.type = Ops::Mkdir, .req = req};
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+  auto response = result.getRes();
 
-  mkdir.setUuid(uuid);
+  int res = response.getRes();
 
-  // std::cout << "hello_ll_mkdir: Request UUID: " << uuid << std::endl;
+  if (res == -1) {
+    // std::cout << "MKDIR::ENOENT" << std::endl;
+    fuse_reply_err(req, response.getErrno());
+    return;
+  }
 
-  const auto data = capnp::messageToFlatArray(message);
-  const auto bytes = data.asBytes();
-  std::string payload(bytes.begin(), bytes.end());
+  struct fuse_entry_param e;
 
-  ws->send((char)Ops::Mkdir + payload);
+  memset(&e, 0, sizeof(e));
+  e.ino = response.getIno();
+  e.attr_timeout = 1.0;
+  e.entry_timeout = 1.0;
+
+  MkdirResponse::Attr::Reader attributes = response.getAttr();
+
+  e.attr.st_dev = attributes.getStDev();
+  e.attr.st_ino = attributes.getStIno();
+  e.attr.st_mode = attributes.getStMode();
+  e.attr.st_nlink = attributes.getStNlink();
+  e.attr.st_uid = geteuid();  // attributes.getStUid();
+  e.attr.st_gid = getegid();  // attributes.getStGid();
+  e.attr.st_rdev = attributes.getStRdev();
+  e.attr.st_size = attributes.getStSize();
+  e.attr.st_atime = attributes.getStAtime();
+  e.attr.st_mtime = attributes.getStMtime();
+  e.attr.st_ctime = attributes.getStCtime();
+  e.attr.st_blksize = attributes.getStBlksize();
+  e.attr.st_blocks = attributes.getStBlocks();
+
+  fuse_reply_entry(req, &e);
 
   // std::cout << "hello_ll_mkdir executed correctly: " << payload << std::endl;
 }
@@ -1092,7 +1062,7 @@ static void hello_ll_release(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
   fillFileInfo(&fuseFileInfo, fi);
 
   std::string uuid = gen_uuid();
-  requests[uuid] = {.type = Ops::Mkdir, .req = req};
+  requests[uuid] = {.type = Ops::Release, .req = req};
 
   release.setUuid(uuid);
 
