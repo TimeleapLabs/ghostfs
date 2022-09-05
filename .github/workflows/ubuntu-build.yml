@@ -40,9 +40,6 @@ jobs:
       - name: Build
         run: cmake --build build/standalone -j3
 
-      - name: Compress tools
-        run: tar -zcvf tools.tgz tools
-
       - name: Make Release Body
         id: info
         run: |
@@ -52,7 +49,7 @@ jobs:
       - name: Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "build/standalone/GhostFS,tools.tgz"
+          artifacts: "build/standalone/GhostFS"
           bodyFile: "release.md"
           prerelease: true
           tag: ${{ steps.info.outputs.tag }}

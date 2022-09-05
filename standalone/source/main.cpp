@@ -1,7 +1,7 @@
 #include <ghostfs/fs.h>
 #include <ghostfs/ghostfs.h>
+#include <ghostfs/rpc.h>
 #include <ghostfs/version.h>
-#include <ghostfs/wss.h>
 
 #include <cxxopts.hpp>
 #include <filesystem>
@@ -26,8 +26,10 @@ auto main(int argc, char** argv) -> int {
     ("S,suffix", "User data subdirectory suffix", cxxopts::value<std::string>()->default_value(""))
     ("o,options", "Fuse mount options", cxxopts::value<std::vector<std::string>>())
     ("U,user", "Username (GhostFS subdirectory)", cxxopts::value<std::string>())
-    ("t,token", "Authentication token", cxxopts::value<std::string>())
-    ("s,server", "Run in server mode")  // a bool parameter
+    ("t,token", "Authentication token", cxxopts::value<std::string>()->default_value(""))
+    ("R,retries", "Authentication token retries", cxxopts::value<int64_t>()->default_value("-1"))
+    ("A,authorize", "Run in authorizer mode")
+    ("s,server", "Run in server mode")
     ("c,client", "Run in client mode");
 
   // options.add_options()
@@ -71,5 +73,12 @@ auto main(int argc, char** argv) -> int {
     std::vector<std::string> options = result["options"].as<std::vector<std::string>>();
 
     return start_fs(argv[0], argv[1], options, host, port, user, token);
+  } else if (result["authorize"].as<bool>()) {
+    uint16_t port = result["port"].as<uint16_t>();
+    std::string user = result["user"].as<std::string>();
+    std::string token = result["token"].as<std::string>();
+    int64_t retries = result["retries"].as<int64_t>();
+
+    return rpc_add_token(port, user, token, retries);
   }
 }

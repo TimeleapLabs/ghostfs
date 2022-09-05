@@ -49,6 +49,9 @@ CAPNP_BEGIN_HEADER
 namespace capnp {
 namespace schemas {
 
+CAPNP_DECLARE_SCHEMA(95a8f5ede3b691d4);
+CAPNP_DECLARE_SCHEMA(e7fca01f0854d3a2);
+CAPNP_DECLARE_SCHEMA(ead688e314f47909);
 CAPNP_DECLARE_SCHEMA(b7e9256c41304f3c);
 CAPNP_DECLARE_SCHEMA(9e07e383bd464b04);
 CAPNP_DECLARE_SCHEMA(c6f18d208cd0cd46);
@@ -87,6 +90,55 @@ CAPNP_DECLARE_SCHEMA(acc7602ba05907b4);
 }  // namespace schemas
 }  // namespace capnp
 
+
+struct GhostFSAuthServer {
+  GhostFSAuthServer() = delete;
+
+#if !CAPNP_LITE
+  class Client;
+  class Server;
+#endif  // !CAPNP_LITE
+
+  struct AuthorizeParams;
+  struct AuthorizeResults;
+
+  #if !CAPNP_LITE
+  struct _capnpPrivate {
+    CAPNP_DECLARE_INTERFACE_HEADER(95a8f5ede3b691d4)
+    static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
+  };
+  #endif  // !CAPNP_LITE
+};
+
+struct GhostFSAuthServer::AuthorizeParams {
+  AuthorizeParams() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(e7fca01f0854d3a2, 2, 2)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct GhostFSAuthServer::AuthorizeResults {
+  AuthorizeResults() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(ead688e314f47909, 0, 1)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
+    #endif  // !CAPNP_LITE
+  };
+};
 
 struct GhostFSAuth {
   GhostFSAuth() = delete;
@@ -635,6 +687,241 @@ struct GhostFS::CreateResults {
 };
 
 // =======================================================================================
+
+#if !CAPNP_LITE
+class GhostFSAuthServer::Client
+    : public virtual ::capnp::Capability::Client {
+public:
+  typedef GhostFSAuthServer Calls;
+  typedef GhostFSAuthServer Reads;
+
+  Client(decltype(nullptr));
+  explicit Client(::kj::Own< ::capnp::ClientHook>&& hook);
+  template <typename _t, typename = ::kj::EnableIf< ::kj::canConvert<_t*, Server*>()>>
+  Client(::kj::Own<_t>&& server);
+  template <typename _t, typename = ::kj::EnableIf< ::kj::canConvert<_t*, Client*>()>>
+  Client(::kj::Promise<_t>&& promise);
+  Client(::kj::Exception&& exception);
+  Client(Client&) = default;
+  Client(Client&&) = default;
+  Client& operator=(Client& other);
+  Client& operator=(Client&& other);
+
+  ::capnp::Request< ::GhostFSAuthServer::AuthorizeParams,  ::GhostFSAuthServer::AuthorizeResults> authorizeRequest(
+      ::kj::Maybe< ::capnp::MessageSize> sizeHint = nullptr);
+
+protected:
+  Client() = default;
+};
+
+class GhostFSAuthServer::Server
+    : public virtual ::capnp::Capability::Server {
+public:
+  typedef GhostFSAuthServer Serves;
+
+  ::capnp::Capability::Server::DispatchCallResult dispatchCall(
+      uint64_t interfaceId, uint16_t methodId,
+      ::capnp::CallContext< ::capnp::AnyPointer, ::capnp::AnyPointer> context)
+      override;
+
+protected:
+  typedef  ::GhostFSAuthServer::AuthorizeParams AuthorizeParams;
+  typedef  ::GhostFSAuthServer::AuthorizeResults AuthorizeResults;
+  typedef ::capnp::CallContext<AuthorizeParams, AuthorizeResults> AuthorizeContext;
+  virtual ::kj::Promise<void> authorize(AuthorizeContext context);
+
+  inline  ::GhostFSAuthServer::Client thisCap() {
+    return ::capnp::Capability::Server::thisCap()
+        .template castAs< ::GhostFSAuthServer>();
+  }
+
+  ::capnp::Capability::Server::DispatchCallResult dispatchCallInternal(
+      uint16_t methodId,
+      ::capnp::CallContext< ::capnp::AnyPointer, ::capnp::AnyPointer> context);
+};
+#endif  // !CAPNP_LITE
+
+class GhostFSAuthServer::AuthorizeParams::Reader {
+public:
+  typedef AuthorizeParams Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand());
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool hasUser() const;
+  inline  ::capnp::Text::Reader getUser() const;
+
+  inline bool hasToken() const;
+  inline  ::capnp::Text::Reader getToken() const;
+
+  inline  ::int64_t getRetries() const;
+
+  inline  ::uint64_t getExpires() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class GhostFSAuthServer::AuthorizeParams::Builder {
+public:
+  typedef AuthorizeParams Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool hasUser();
+  inline  ::capnp::Text::Builder getUser();
+  inline void setUser( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initUser(unsigned int size);
+  inline void adoptUser(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownUser();
+
+  inline bool hasToken();
+  inline  ::capnp::Text::Builder getToken();
+  inline void setToken( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initToken(unsigned int size);
+  inline void adoptToken(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownToken();
+
+  inline  ::int64_t getRetries();
+  inline void setRetries( ::int64_t value);
+
+  inline  ::uint64_t getExpires();
+  inline void setExpires( ::uint64_t value);
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class GhostFSAuthServer::AuthorizeParams::Pipeline {
+public:
+  typedef AuthorizeParams Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class GhostFSAuthServer::AuthorizeResults::Reader {
+public:
+  typedef AuthorizeResults Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand());
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool hasToken() const;
+  inline  ::capnp::Text::Reader getToken() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class GhostFSAuthServer::AuthorizeResults::Builder {
+public:
+  typedef AuthorizeResults Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool hasToken();
+  inline  ::capnp::Text::Builder getToken();
+  inline void setToken( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initToken(unsigned int size);
+  inline void adoptToken(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownToken();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class GhostFSAuthServer::AuthorizeResults::Pipeline {
+public:
+  typedef AuthorizeResults Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
 
 #if !CAPNP_LITE
 class GhostFSAuth::Client
@@ -3469,6 +3756,160 @@ private:
 #endif  // !CAPNP_LITE
 
 // =======================================================================================
+
+#if !CAPNP_LITE
+inline GhostFSAuthServer::Client::Client(decltype(nullptr))
+    : ::capnp::Capability::Client(nullptr) {}
+inline GhostFSAuthServer::Client::Client(
+    ::kj::Own< ::capnp::ClientHook>&& hook)
+    : ::capnp::Capability::Client(::kj::mv(hook)) {}
+template <typename _t, typename>
+inline GhostFSAuthServer::Client::Client(::kj::Own<_t>&& server)
+    : ::capnp::Capability::Client(::kj::mv(server)) {}
+template <typename _t, typename>
+inline GhostFSAuthServer::Client::Client(::kj::Promise<_t>&& promise)
+    : ::capnp::Capability::Client(::kj::mv(promise)) {}
+inline GhostFSAuthServer::Client::Client(::kj::Exception&& exception)
+    : ::capnp::Capability::Client(::kj::mv(exception)) {}
+inline  ::GhostFSAuthServer::Client& GhostFSAuthServer::Client::operator=(Client& other) {
+  ::capnp::Capability::Client::operator=(other);
+  return *this;
+}
+inline  ::GhostFSAuthServer::Client& GhostFSAuthServer::Client::operator=(Client&& other) {
+  ::capnp::Capability::Client::operator=(kj::mv(other));
+  return *this;
+}
+
+#endif  // !CAPNP_LITE
+inline bool GhostFSAuthServer::AuthorizeParams::Reader::hasUser() const {
+  return !_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline bool GhostFSAuthServer::AuthorizeParams::Builder::hasUser() {
+  return !_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader GhostFSAuthServer::AuthorizeParams::Reader::getUser() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder GhostFSAuthServer::AuthorizeParams::Builder::getUser() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline void GhostFSAuthServer::AuthorizeParams::Builder::setUser( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder GhostFSAuthServer::AuthorizeParams::Builder::initUser(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), size);
+}
+inline void GhostFSAuthServer::AuthorizeParams::Builder::adoptUser(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> GhostFSAuthServer::AuthorizeParams::Builder::disownUser() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+
+inline bool GhostFSAuthServer::AuthorizeParams::Reader::hasToken() const {
+  return !_reader.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS).isNull();
+}
+inline bool GhostFSAuthServer::AuthorizeParams::Builder::hasToken() {
+  return !_builder.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader GhostFSAuthServer::AuthorizeParams::Reader::getToken() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_reader.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder GhostFSAuthServer::AuthorizeParams::Builder::getToken() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_builder.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS));
+}
+inline void GhostFSAuthServer::AuthorizeParams::Builder::setToken( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(_builder.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder GhostFSAuthServer::AuthorizeParams::Builder::initToken(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(_builder.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS), size);
+}
+inline void GhostFSAuthServer::AuthorizeParams::Builder::adoptToken(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(_builder.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> GhostFSAuthServer::AuthorizeParams::Builder::disownToken() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(_builder.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS));
+}
+
+inline  ::int64_t GhostFSAuthServer::AuthorizeParams::Reader::getRetries() const {
+  return _reader.getDataField< ::int64_t>(
+      ::capnp::bounded<0>() * ::capnp::ELEMENTS);
+}
+
+inline  ::int64_t GhostFSAuthServer::AuthorizeParams::Builder::getRetries() {
+  return _builder.getDataField< ::int64_t>(
+      ::capnp::bounded<0>() * ::capnp::ELEMENTS);
+}
+inline void GhostFSAuthServer::AuthorizeParams::Builder::setRetries( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
+      ::capnp::bounded<0>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint64_t GhostFSAuthServer::AuthorizeParams::Reader::getExpires() const {
+  return _reader.getDataField< ::uint64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+
+inline  ::uint64_t GhostFSAuthServer::AuthorizeParams::Builder::getExpires() {
+  return _builder.getDataField< ::uint64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+inline void GhostFSAuthServer::AuthorizeParams::Builder::setExpires( ::uint64_t value) {
+  _builder.setDataField< ::uint64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS, value);
+}
+
+inline bool GhostFSAuthServer::AuthorizeResults::Reader::hasToken() const {
+  return !_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline bool GhostFSAuthServer::AuthorizeResults::Builder::hasToken() {
+  return !_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader GhostFSAuthServer::AuthorizeResults::Reader::getToken() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder GhostFSAuthServer::AuthorizeResults::Builder::getToken() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline void GhostFSAuthServer::AuthorizeResults::Builder::setToken( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder GhostFSAuthServer::AuthorizeResults::Builder::initToken(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), size);
+}
+inline void GhostFSAuthServer::AuthorizeResults::Builder::adoptToken(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> GhostFSAuthServer::AuthorizeResults::Builder::disownToken() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
 
 #if !CAPNP_LITE
 inline GhostFSAuth::Client::Client(decltype(nullptr))

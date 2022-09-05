@@ -31,6 +31,10 @@ using import "setxattr.response.capnp".SetxattrResponse;
 using import "create.capnp".Create;
 using import "create.response.capnp".CreateResponse;
 
+interface GhostFSAuthServer {
+  authorize @0 (user :Text, token :Text, retries :Int64, expires :UInt64) -> (token :Text);
+}
+
 interface GhostFSAuth {
   auth @0 (user :Text, token :Text) -> (ghostFs :GhostFS, authSuccess :Bool);
 }

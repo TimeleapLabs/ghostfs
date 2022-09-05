@@ -3,7 +3,7 @@
 #include <fuse_lowlevel.h>
 #include <ghostfs/auth.h>
 #include <ghostfs/fs.h>
-#include <ghostfs/wss.h>
+#include <ghostfs/rpc.h>
 #include <sys/xattr.h>
 #include <unistd.h>
 
@@ -55,7 +55,9 @@ class GhostFSImpl final : public GhostFS::Server {
 
 public:
   explicit GhostFSImpl(std::string _user, std::string _root, std::string _suffix)
-      : user(move(_user)), root(move(_root)), suffix(move(_suffix)) {}
+      : user(move(_user)), root(move(_root)), suffix(move(_suffix)) {
+    std::cout << "User " << user << "connected.";
+  }
 
   kj::Promise<void> lookup(LookupContext context) override {
     auto params = context.getParams();
@@ -851,6 +853,51 @@ public:
   // an exception by default.
 };
 
+class GhostFSAuthServerImpl final : public GhostFSAuthServer::Server {
+  public:
+
+    kj::Promise<void> authorize(AuthorizeContext context) override {
+      auto params = context.getParams();
+
+      auto userPtr = params.getUser();
+      std::string user(userPtr.begin(), userPtr.end());
+
+      auto tokenPtr = params.getToken();
+      std::string token(tokenPtr.begin(), tokenPtr.end());
+
+      uint64_t retries = params.getRetries();
+
+      std::string token_final = add_token(user, token, retries);
+
+      auto res = context.getResults();
+      res.setToken(token_final);
+      
+      return kj::READY_NOW;
+    }
+};
+
+int rpc_add_token(uint16_t port, std::string user, std::string token, int64_t retries) {
+  capnp::EzRpcClient rpc("127.0.0.1", port);
+
+  auto& waitScope = rpc.getWaitScope();
+  GhostFSAuthServer::Client authClient = rpc.getMain<GhostFSAuthServer>();
+
+  auto request = authClient.authorizeRequest();
+
+  request.setUser(user);
+  request.setToken(token);
+  request.setRetries(retries);
+
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+  auto tokenPtr = result.getToken();
+
+  std::string tokenFinal(tokenPtr.begin(), tokenPtr.end());
+  std::cout << tokenFinal << std::endl;
+
+  return 0;
+}
+
 class GhostFSAuthImpl final : public GhostFSAuth::Server {
   std::string root;
   std::string suffix;
@@ -891,18 +938,19 @@ int start_rpc_server(std::string bind, int port, int auth_port, std::string root
     };
   }
 
-  std::cout << "Starting capnp server on " << bind << ":" << port << "..." << std::endl;
-  std::cout << "Starting the auth server on port " << auth_port << "..." << std::endl;
+  std::cout << "Starting GhostFS server on " << bind << ":" << port << "..." << std::endl;
+  std::cout << "Starting GhostFS auth server on port " << auth_port << "..." << std::endl;
 
   /**
    * Capnp RPC server. We need to find out how to pass parameters to the
    * GhostFSImpl class, instead of assigning them globally.
    */
 
+  capnp::EzRpcServer auth_rpc_server(kj::heap<GhostFSAuthServerImpl>(), "127.0.0.1", auth_port);
   capnp::EzRpcServer rpc_server(kj::heap<GhostFSAuthImpl>(root, suffix), bind, port);
-  auto& waitScope = rpc_server.getWaitScope();
 
   // Run forever, accepting connections and handling requests.
+  auto& waitScope = rpc_server.getWaitScope();
   kj::NEVER_DONE.wait(waitScope);
 
   return 0;
