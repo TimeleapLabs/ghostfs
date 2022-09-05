@@ -925,7 +925,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-// clang-format off
+  // clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
@@ -1036,6 +1036,8 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options, s
   auto ghostfsClient = result.getGhostFs();
   client = &ghostfsClient;
 
+  std::cout << "Connected to the GhostFS server." << std::endl;
+
   int argc = options.size() * 2 + 2;
   char *argv[2048] = {executable, argmnt};
 
@@ -1057,6 +1059,7 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options, s
     se = fuse_lowlevel_new(&args, &hello_ll_oper, sizeof(hello_ll_oper), NULL);
     if (se != NULL) {
       if (fuse_set_signal_handlers(se) != -1) {
+        std::cout << "Mounted the GhostFS endpoint." << std::endl;
         fuse_session_add_chan(se, ch);
         err = fuse_session_loop(se);
         fuse_remove_signal_handlers(se);

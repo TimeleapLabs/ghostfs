@@ -53,9 +53,7 @@ class GhostFSImpl final : public GhostFS::Server {
 
 public:
   explicit GhostFSImpl(std::string _user, std::string _root, std::string _suffix)
-      : user(move(_user)), root(move(_root)), suffix(move(_suffix)) {
-    std::cout << "User " << user << "connected.";
-  }
+      : user(move(_user)), root(move(_root)), suffix(move(_suffix)) {}
 
   kj::Promise<void> lookup(LookupContext context) override {
     auto params = context.getParams();
@@ -922,6 +920,7 @@ public:
 
     if (isValid) {
       res.setGhostFs(kj::heap<GhostFSImpl>(user, root, suffix));
+      std::cout << "User " << user << "connected.";
     }
 
     return kj::READY_NOW;
