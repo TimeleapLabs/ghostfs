@@ -22,6 +22,8 @@ using import "read.capnp".Read;
 using import "read.response.capnp".ReadResponse;
 using import "write.capnp".Write;
 using import "write.response.capnp".WriteResponse;
+using import "release.capnp".Release;
+using import "release.response.capnp".ReleaseResponse;
 using import "create.capnp".Create;
 using import "create.response.capnp".CreateResponse;
 
@@ -41,5 +43,6 @@ interface GhostFS {
   open    @8  (req :Open)    -> (res :OpenResponse);
   read    @9  (req :Read)    -> (res :ReadResponse);
   write   @10 (req :Write)   -> (res :WriteResponse);
-  create  @11 (req :Create)  -> (res :CreateResponse);
+  release @11 (req :Release) -> (res :ReleaseResponse);
+  create  @12 (req :Create)  -> (res :CreateResponse);
 }

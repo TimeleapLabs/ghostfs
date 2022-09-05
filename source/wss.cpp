@@ -619,6 +619,24 @@ public:
       return kj::READY_NOW;
     }
 
+    kj::Promise<void> release(ReleaseContext context) override {
+    auto params = context.getParams();
+    auto req = params.getReq();
+
+    auto results = context.getResults();
+    auto response = results.getRes();
+
+    Release::FuseFileInfo::Reader fi = req.getFi();
+
+    int res = ::close(fi.getFh());
+    int err = errno;
+
+    response.setErrno(err);
+    response.setRes(res);
+
+    return kj::READY_NOW;
+  }
+
     kj::Promise<void> create(CreateContext context) override {
       auto params = context.getParams();
       auto req = params.getReq();
@@ -1075,28 +1093,6 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         break;
       }
       #endif
-      case (char)Ops::Release: {
-        const kj::ArrayPtr<const capnp::word> view(
-            reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
-            reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
-
-        capnp::FlatArrayMessageReader data(view);
-        Release::Reader release = data.getRoot<Release>();
-        Release::FuseFileInfo::Reader fi = release.getFi();
-
-        int res = ::close(fi.getFh());
-        int err = errno;
-
-        // std::cout << "release: Received UUID: " << release.getUuid().cStr() << std::endl;
-
-        ::capnp::MallocMessageBuilder message;
-        ReleaseResponse::Builder release_response = message.initRoot<ReleaseResponse>();
-
-        release_response.setUuid(release.getUuid());
-        std::string response_payload = send_message(release_response, message, res, err, webSocket, Ops::Release);
-
-        break;
-      }
 
       default:
         break;

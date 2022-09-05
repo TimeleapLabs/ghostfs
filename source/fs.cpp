@@ -254,30 +254,6 @@ void process_setxattr_response(std::string payload) {
   // std::cout << "process_setxattr_response: correctly executed" << std::endl;
 }
 
-void process_release_response(std::string payload) {
-  const kj::ArrayPtr<const capnp::word> view(
-      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
-      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
-
-  capnp::FlatArrayMessageReader data(view);
-  ReleaseResponse::Reader release_response = data.getRoot<ReleaseResponse>();
-
-  std::string uuid = release_response.getUuid();
-
-  // std::cout << "process_release_response: Response UUID: " << uuid << std::endl;
-
-  request request = requests[uuid];
-
-  int res = release_response.getRes();
-  int err = release_response.getErrno();
-
-  fuse_reply_err(request.req, res == -1 ? err : 0);
-
-  // std::cout << "process_release_response: Request: " << request.req << std::endl;
-
-  // std::cout << "process_release_response executed with result: " << res << std::endl;
-}
-
 /**
  * @brief
  *
@@ -947,25 +923,23 @@ static void hello_ll_rename(fuse_req_t req, fuse_ino_t parent, const char *name,
  * @param mode -> uint64_t
  */
 static void hello_ll_release(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
-  ::capnp::MallocMessageBuilder message;
-  Release::Builder release = message.initRoot<Release>();
+  auto &waitScope = rpc->getWaitScope();
+  auto request = client->releaseRequest();
+
+  Release::Builder release = request.getReq();
   Release::FuseFileInfo::Builder fuseFileInfo = release.initFi();
 
   release.setIno(ino);
   fillFileInfo(&fuseFileInfo, fi);
 
-  std::string uuid = gen_uuid();
-  requests[uuid] = {.type = Ops::Release, .req = req};
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+  auto response = result.getRes();
 
-  release.setUuid(uuid);
+  int res = response.getRes();
+  int err = response.getErrno();
 
-  // std::cout << "hello_ll_release: Request UUID: " << uuid << std::endl;
-
-  const auto data = capnp::messageToFlatArray(message);
-  const auto bytes = data.asBytes();
-  std::string payload(bytes.begin(), bytes.end());
-
-  ws->send((char)Ops::Release + payload);
+  fuse_reply_err(req, res == -1 ? err : 0);
 
   // std::cout << "hello_ll_release executed correctly: " << payload << std::endl;
 }
