@@ -35,7 +35,7 @@ struct ReaddirResponse {
   struct Entry;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(f790988c45aa0691, 1, 2)
+    CAPNP_DECLARE_STRUCT_HEADER(f790988c45aa0691, 1, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -76,10 +76,9 @@ public:
   }
 #endif  // !CAPNP_LITE
 
-  inline bool hasUuid() const;
-  inline  ::capnp::Text::Reader getUuid() const;
-
   inline  ::int8_t getRes() const;
+
+  inline  ::int8_t getErrno() const;
 
   inline bool hasEntries() const;
   inline  ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>::Reader getEntries() const;
@@ -112,15 +111,11 @@ public:
   inline ::kj::StringTree toString() const { return asReader().toString(); }
 #endif  // !CAPNP_LITE
 
-  inline bool hasUuid();
-  inline  ::capnp::Text::Builder getUuid();
-  inline void setUuid( ::capnp::Text::Reader value);
-  inline  ::capnp::Text::Builder initUuid(unsigned int size);
-  inline void adoptUuid(::capnp::Orphan< ::capnp::Text>&& value);
-  inline ::capnp::Orphan< ::capnp::Text> disownUuid();
-
   inline  ::int8_t getRes();
   inline void setRes( ::int8_t value);
+
+  inline  ::int8_t getErrno();
+  inline void setErrno( ::int8_t value);
 
   inline bool hasEntries();
   inline  ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>::Builder getEntries();
@@ -243,40 +238,6 @@ private:
 
 // =======================================================================================
 
-inline bool ReaddirResponse::Reader::hasUuid() const {
-  return !_reader.getPointerField(
-      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
-}
-inline bool ReaddirResponse::Builder::hasUuid() {
-  return !_builder.getPointerField(
-      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
-}
-inline  ::capnp::Text::Reader ReaddirResponse::Reader::getUuid() const {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_reader.getPointerField(
-      ::capnp::bounded<0>() * ::capnp::POINTERS));
-}
-inline  ::capnp::Text::Builder ReaddirResponse::Builder::getUuid() {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_builder.getPointerField(
-      ::capnp::bounded<0>() * ::capnp::POINTERS));
-}
-inline void ReaddirResponse::Builder::setUuid( ::capnp::Text::Reader value) {
-  ::capnp::_::PointerHelpers< ::capnp::Text>::set(_builder.getPointerField(
-      ::capnp::bounded<0>() * ::capnp::POINTERS), value);
-}
-inline  ::capnp::Text::Builder ReaddirResponse::Builder::initUuid(unsigned int size) {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(_builder.getPointerField(
-      ::capnp::bounded<0>() * ::capnp::POINTERS), size);
-}
-inline void ReaddirResponse::Builder::adoptUuid(
-    ::capnp::Orphan< ::capnp::Text>&& value) {
-  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(_builder.getPointerField(
-      ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
-}
-inline ::capnp::Orphan< ::capnp::Text> ReaddirResponse::Builder::disownUuid() {
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(_builder.getPointerField(
-      ::capnp::bounded<0>() * ::capnp::POINTERS));
-}
-
 inline  ::int8_t ReaddirResponse::Reader::getRes() const {
   return _reader.getDataField< ::int8_t>(
       ::capnp::bounded<0>() * ::capnp::ELEMENTS);
@@ -291,38 +252,52 @@ inline void ReaddirResponse::Builder::setRes( ::int8_t value) {
       ::capnp::bounded<0>() * ::capnp::ELEMENTS, value);
 }
 
+inline  ::int8_t ReaddirResponse::Reader::getErrno() const {
+  return _reader.getDataField< ::int8_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+
+inline  ::int8_t ReaddirResponse::Builder::getErrno() {
+  return _builder.getDataField< ::int8_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+inline void ReaddirResponse::Builder::setErrno( ::int8_t value) {
+  _builder.setDataField< ::int8_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS, value);
+}
+
 inline bool ReaddirResponse::Reader::hasEntries() const {
   return !_reader.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS).isNull();
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
 }
 inline bool ReaddirResponse::Builder::hasEntries() {
   return !_builder.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS).isNull();
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
 }
 inline  ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>::Reader ReaddirResponse::Reader::getEntries() const {
   return ::capnp::_::PointerHelpers< ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>>::get(_reader.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS));
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 inline  ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>::Builder ReaddirResponse::Builder::getEntries() {
   return ::capnp::_::PointerHelpers< ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>>::get(_builder.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS));
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 inline void ReaddirResponse::Builder::setEntries( ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>::Reader value) {
   ::capnp::_::PointerHelpers< ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>>::set(_builder.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS), value);
+      ::capnp::bounded<0>() * ::capnp::POINTERS), value);
 }
 inline  ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>::Builder ReaddirResponse::Builder::initEntries(unsigned int size) {
   return ::capnp::_::PointerHelpers< ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>>::init(_builder.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS), size);
+      ::capnp::bounded<0>() * ::capnp::POINTERS), size);
 }
 inline void ReaddirResponse::Builder::adoptEntries(
     ::capnp::Orphan< ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>>&& value) {
   ::capnp::_::PointerHelpers< ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>>::adopt(_builder.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS), kj::mv(value));
+      ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
 }
 inline ::capnp::Orphan< ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>> ReaddirResponse::Builder::disownEntries() {
   return ::capnp::_::PointerHelpers< ::capnp::List< ::ReaddirResponse::Entry,  ::capnp::Kind::STRUCT>>::disown(_builder.getPointerField(
-      ::capnp::bounded<1>() * ::capnp::POINTERS));
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 
 inline bool ReaddirResponse::Entry::Reader::hasName() const {

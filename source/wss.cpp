@@ -189,7 +189,7 @@ public:
 
     uint64_t ino = req.getIno();
 
-    int err;
+    int err = 0;
 
     if (ino_to_path.find(ino) == ino_to_path.end()) {
       // Parent is unknown
@@ -288,6 +288,7 @@ public:
     }
 
     response.setIno(ino);
+    response.setErrno(err);
     response.setRes(0);
     return kj::READY_NOW;
   }
@@ -597,29 +598,29 @@ public:
     auto params = context.getParams();
     auto req = params.getReq();
 
-      Write::FuseFileInfo::Reader fi = req.getFi();
-      capnp::Data::Reader buf_reader = req.getBuf();
+    Write::FuseFileInfo::Reader fi = req.getFi();
+    capnp::Data::Reader buf_reader = req.getBuf();
 
-      const auto chars = buf_reader.asChars();
-      const char* buf = chars.begin();
+    const auto chars = buf_reader.asChars();
+    const char* buf = chars.begin();
 
-      ::lseek(fi.getFh(), req.getOff(), SEEK_SET);
-      size_t written = ::write(fi.getFh(), buf, req.getSize());
+    ::lseek(fi.getFh(), req.getOff(), SEEK_SET);
+    size_t written = ::write(fi.getFh(), buf, req.getSize());
 
-      int err = errno;
+    int err = errno;
 
-      auto results = context.getResults();
-      auto response = results.getRes();
+    auto results = context.getResults();
+    auto response = results.getRes();
 
-      response.setRes(0);
-      response.setErrno(err);
-      response.setIno(req.getIno());
-      response.setWritten(written);
+    response.setRes(0);
+    response.setErrno(err);
+    response.setIno(req.getIno());
+    response.setWritten(written);
 
-      return kj::READY_NOW;
-    }
+    return kj::READY_NOW;
+  }
 
-    kj::Promise<void> release(ReleaseContext context) override {
+  kj::Promise<void> release(ReleaseContext context) override {
     auto params = context.getParams();
     auto req = params.getReq();
 
@@ -637,92 +638,193 @@ public:
     return kj::READY_NOW;
   }
 
-    kj::Promise<void> create(CreateContext context) override {
-      auto params = context.getParams();
-      auto req = params.getReq();
+  kj::Promise<void> readdir(ReaddirContext context) override {
+    auto params = context.getParams();
+    auto req = params.getReq();
 
-      auto results = context.getResults();
-      auto response = results.getRes();
+    auto results = context.getResults();
+    auto response = results.getRes();
 
-      Create::FuseFileInfo::Reader fi = req.getFi();
+    uint64_t ino = req.getIno();
 
-      uint64_t parent = req.getParent();
+    /**
+     * Check if authenticated (example).
+     * On fail we need to return a fuse error.
+     * EACCESS for access denied.
+     */
+    // TODO
+    bool auth = is_authenticated(user);
 
-      std::string user_root = normalize_path(root, user, suffix);
-      std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
-      std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
-      std::filesystem::path file_path = parent_path / req.getName();
+    if (!auth) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
 
-      // std::cout << "create: open file path: " << file_path.c_str() << std::endl;
-      // std::cout << "create: flags: " << fi.getFlags() << std::endl;
+      return kj::READY_NOW;
+    }  // END EXAMPLE
 
-      int res = ::creat(file_path.c_str(), req.getMode());
+    std::string path;
 
-      if (res == -1) {
-        int err = errno;
-
-        response.setRes(res);
-        response.setErrno(err);
-        return kj::READY_NOW;
-      }
-
-      struct stat attr;
-      memset(&attr, 0, sizeof(attr));
-
-      uint64_t file_ino;
-
-      file_ino = ++current_ino;
-      ino_to_path[file_ino] = file_path;
-      path_to_ino[file_path] = file_ino;
-
-      // e.attr_timeout = 1.0;
-      // e.entry_timeout = 1.0;
-
-      CreateResponse::FuseFileInfo::Builder fi_response = response.initFi();
-
-      fi_response.setCacheReaddir(fi.getCacheReaddir());
-      fi_response.setDirectIo(fi.getDirectIo());
-      fi_response.setFh(res);
-      fi_response.setFlags(fi.getFlags());
-      fi_response.setFlush(fi.getFlush());
-      fi_response.setKeepCache(fi.getKeepCache());
-      fi_response.setLockOwner(fi.getLockOwner());
-      fi_response.setNoflush(fi.getNoflush());
-      fi_response.setNonseekable(fi.getNonseekable());
-      fi_response.setPadding(fi.getPadding());
-      fi_response.setPollEvents(fi.getPollEvents());
-      fi_response.setWritepage(fi.getWritepage());
-
-      res = hello_stat(file_ino, &attr);
-      int err = errno;
-
-      response.setIno(file_ino);
-
-      CreateResponse::Attr::Builder attributes = response.initAttr();
-
-      attributes.setStDev(attr.st_dev);
-      attributes.setStIno(attr.st_ino);
-      attributes.setStMode(attr.st_mode);
-      attributes.setStNlink(attr.st_nlink);
-      attributes.setStUid(attr.st_uid);
-      attributes.setStGid(attr.st_gid);
-      attributes.setStRdev(attr.st_rdev);
-      attributes.setStSize(attr.st_size);
-      attributes.setStAtime(attr.st_atime);
-      attributes.setStMtime(attr.st_mtime);
-      attributes.setStCtime(attr.st_ctime);
-      attributes.setStBlksize(attr.st_blksize);
-      attributes.setStBlocks(attr.st_blocks);
-
-      response.setErrno(err);
-      response.setRes(0);
+    // Root
+    if (ino == 1) {
+      path = normalize_path(root, user, suffix);
+    } else if (ino_to_path.find(ino) != ino_to_path.end()) {
+      path = ino_to_path[ino];
+    } else {
+      response.setErrno(ENOENT);
+      response.setRes(-1);
 
       return kj::READY_NOW;
     }
 
-        // Any method which we don't implement will simply throw
-        // an exception by default.
-  };
+    /**
+     * example check access
+     * TODO: Add suffix here
+     */
+    bool access_ok = check_access(root, user, path);
+
+    if (!access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+
+      return kj::READY_NOW;
+    }  // END EXAMPLE
+
+    uint64_t length = 2;
+
+    std::filesystem::directory_iterator iter(
+        path, std::filesystem::directory_options::skip_permission_denied);
+
+    for ([[maybe_unused]] const auto& entry : iter) {
+      length++;
+    }
+
+    ::capnp::List<ReaddirResponse::Entry>::Builder entries = response.initEntries(length);
+
+    entries[0].setName(".");
+    entries[0].setIno(ino);
+    entries[1].setName("..");
+    entries[1].setIno(get_parent_ino(ino, path));
+
+    uint64_t index = 2;
+
+    // TODO: Find out how we can reuse the iterator from previous step
+    iter = std::filesystem::directory_iterator(
+        path, std::filesystem::directory_options::skip_permission_denied);
+
+    for (const auto& entry : iter) {
+      std::string file_path = entry.path();
+      std::string file_name = std::filesystem::path(file_path).filename();
+
+      uint64_t file_ino;
+
+      if (path_to_ino.find(file_path) == path_to_ino.end()) {
+        file_ino = ++current_ino;
+        ino_to_path[file_ino] = file_path;
+        path_to_ino[file_path] = file_ino;
+      } else {
+        file_ino = path_to_ino[file_path];
+      }
+
+      entries[index].setName(file_name);
+      entries[index].setIno(file_ino);
+
+      index++;
+    }
+
+    response.setErrno(0);
+    response.setRes(0);
+
+    // std::cout << "readdir_response sent correctly: " << response_payload << std::endl;
+
+    return kj::READY_NOW;
+  }
+
+  kj::Promise<void> create(CreateContext context) override {
+    auto params = context.getParams();
+    auto req = params.getReq();
+
+    auto results = context.getResults();
+    auto response = results.getRes();
+
+    Create::FuseFileInfo::Reader fi = req.getFi();
+
+    uint64_t parent = req.getParent();
+
+    std::string user_root = normalize_path(root, user, suffix);
+    std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
+    std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
+    std::filesystem::path file_path = parent_path / req.getName();
+
+    // std::cout << "create: open file path: " << file_path.c_str() << std::endl;
+    // std::cout << "create: flags: " << fi.getFlags() << std::endl;
+
+    int res = ::creat(file_path.c_str(), req.getMode());
+
+    if (res == -1) {
+      int err = errno;
+
+      response.setRes(res);
+      response.setErrno(err);
+      return kj::READY_NOW;
+    }
+
+    struct stat attr;
+    memset(&attr, 0, sizeof(attr));
+
+    uint64_t file_ino;
+
+    file_ino = ++current_ino;
+    ino_to_path[file_ino] = file_path;
+    path_to_ino[file_path] = file_ino;
+
+    // e.attr_timeout = 1.0;
+    // e.entry_timeout = 1.0;
+
+    CreateResponse::FuseFileInfo::Builder fi_response = response.initFi();
+
+    fi_response.setCacheReaddir(fi.getCacheReaddir());
+    fi_response.setDirectIo(fi.getDirectIo());
+    fi_response.setFh(res);
+    fi_response.setFlags(fi.getFlags());
+    fi_response.setFlush(fi.getFlush());
+    fi_response.setKeepCache(fi.getKeepCache());
+    fi_response.setLockOwner(fi.getLockOwner());
+    fi_response.setNoflush(fi.getNoflush());
+    fi_response.setNonseekable(fi.getNonseekable());
+    fi_response.setPadding(fi.getPadding());
+    fi_response.setPollEvents(fi.getPollEvents());
+    fi_response.setWritepage(fi.getWritepage());
+
+    res = hello_stat(file_ino, &attr);
+    int err = errno;
+
+    response.setIno(file_ino);
+
+    CreateResponse::Attr::Builder attributes = response.initAttr();
+
+    attributes.setStDev(attr.st_dev);
+    attributes.setStIno(attr.st_ino);
+    attributes.setStMode(attr.st_mode);
+    attributes.setStNlink(attr.st_nlink);
+    attributes.setStUid(attr.st_uid);
+    attributes.setStGid(attr.st_gid);
+    attributes.setStRdev(attr.st_rdev);
+    attributes.setStSize(attr.st_size);
+    attributes.setStAtime(attr.st_atime);
+    attributes.setStMtime(attr.st_mtime);
+    attributes.setStCtime(attr.st_ctime);
+    attributes.setStBlksize(attr.st_blksize);
+    attributes.setStBlocks(attr.st_blocks);
+
+    response.setErrno(err);
+    response.setRes(res);
+
+    return kj::READY_NOW;
+  }
+
+  // Any method which we don't implement will simply throw
+  // an exception by default.
+};
 
 class GhostFSAuthImpl final : public GhostFSAuth::Server {
   std::string root;
@@ -944,115 +1046,6 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         std::string response_payload(bytes.begin(), bytes.end());
 
         webSocket.sendBinary((char)Ops::Auth + response_payload);
-        break;
-      }
-
-      case (char)Ops::Readdir: {
-        const kj::ArrayPtr<const capnp::word> view(
-            reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
-            reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
-
-        capnp::FlatArrayMessageReader data(view);
-        Readdir::Reader readdir = data.getRoot<Readdir>();
-        uint64_t ino = readdir.getIno();
-
-        // std::cout << "readdir: Received UUID: " << readdir.getUuid().cStr() << std::endl;
-
-        // char msg[] = {3, ino};
-        // ws->sendBinary(msg);
-
-        ::capnp::MallocMessageBuilder message;
-        ReaddirResponse::Builder readdir_response = message.initRoot<ReaddirResponse>();
-        readdir_response.setUuid(readdir.getUuid());
-
-        /**
-         * Check if authenticated (example).
-         * On fail we need to return a fuse error.
-         * EACCESS for access denied.
-         */
-        // TODO
-        bool auth = is_authenticated(connectionState->getId());
-
-        if (!auth) {
-          send_message(readdir_response, message, EACCES, webSocket, Ops::Readdir);
-          return;
-        }  // END EXAMPLE
-
-        std::string path;
-
-        // Root
-        if (ino == 1) {
-          path = normalize_path(root, connectionState->getId(), suffix);
-        } else if (ino_to_path.find(ino) != ino_to_path.end()) {
-          path = ino_to_path[ino];
-        } else {
-          std::string response_payload
-              = send_message(readdir_response, message, -1, webSocket, Ops::Readdir);
-
-          // std::cout << "readdir_response sent error: " << response_payload << std::endl;
-
-          return;
-        }
-
-        /**
-         * example check access
-         * TODO: Add suffix here
-         */
-        bool access_ok = check_access(root, connectionState->getId(), path);
-
-        if (!access_ok) {
-          send_message(readdir_response, message, EACCES, webSocket, Ops::Readdir);
-          return;
-        }  // END EXAMPLE
-
-        uint64_t length = 2;
-
-        std::filesystem::directory_iterator iter(
-            path, std::filesystem::directory_options::skip_permission_denied);
-
-        for ([[maybe_unused]] const auto& entry : iter) {
-          length++;
-        }
-
-        ::capnp::List<ReaddirResponse::Entry>::Builder entries
-            = readdir_response.initEntries(length);
-
-        entries[0].setName(".");
-        entries[0].setIno(ino);
-        entries[1].setName("..");
-        entries[1].setIno(get_parent_ino(ino, path));
-
-        uint64_t index = 2;
-
-        // TODO: Find out how we can reuse the iterator from previous step
-        iter = std::filesystem::directory_iterator(
-            path, std::filesystem::directory_options::skip_permission_denied);
-
-        for (const auto& entry : iter) {
-          std::string file_path = entry.path();
-          std::string file_name = std::filesystem::path(file_path).filename();
-
-          uint64_t file_ino;
-
-          if (path_to_ino.find(file_path) == path_to_ino.end()) {
-            file_ino = ++current_ino;
-            ino_to_path[file_ino] = file_path;
-            path_to_ino[file_path] = file_ino;
-          } else {
-            file_ino = path_to_ino[file_path];
-          }
-
-          entries[index].setName(file_name);
-          entries[index].setIno(file_ino);
-
-          index++;
-        }
-
-        std::string response_payload
-            = send_message(readdir_response, message, 0, webSocket, Ops::Readdir);
-
-        // std::cout << "readdir_response sent correctly: " << response_payload << std::endl;
-
         break;
       }
       #ifdef __APPLE__

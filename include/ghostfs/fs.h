@@ -32,7 +32,6 @@ enum class Ops : char {
 
 // Responses
 void process_auth_response(std::string payload, wsclient::WSClient* wsc);
-void process_readdir_response(std::string payload);
 void process_setxattr_response(std::string payload);
 
 uint64_t get_parent_ino(uint64_t ino, std::string path);

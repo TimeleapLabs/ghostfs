@@ -193,42 +193,6 @@ void dirbuf_add(fuse_req_t req, struct dirbuf *b, const char *name, fuse_ino_t i
   fuse_add_direntry(req, b->p + oldsize, b->size - oldsize, name, &stbuf, b->size);
 }
 
-void process_readdir_response(std::string payload) {
-  const kj::ArrayPtr<const capnp::word> view(
-      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
-      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
-
-  capnp::FlatArrayMessageReader data(view);
-  ReaddirResponse::Reader readdir_response = data.getRoot<ReaddirResponse>();
-
-  struct dirbuf b;
-
-  memset(&b, 0, sizeof(b));
-
-  std::string uuid = readdir_response.getUuid();
-
-  // std::cout << "process_readdir_response: Response UUID: " << uuid << std::endl;
-
-  // TODO: FIX type name
-  request request = requests[uuid];
-
-  int res = readdir_response.getRes();
-
-  if (res == -1) {
-    fuse_reply_err(request.req, ENOENT);
-    return;
-  }
-
-  for (ReaddirResponse::Entry::Reader entry : readdir_response.getEntries()) {
-    dirbuf_add(request.req, &b, entry.getName().cStr(), entry.getIno());
-  }
-
-  reply_buf_limited(request.req, b.p, b.size, request.off, request.size);
-  // free(b.p);
-
-  // std::cout << "process_readdir_response: reply_buf_limited correctly executed" << std::endl;
-}
-
 void process_setxattr_response(std::string payload) {
   const kj::ArrayPtr<const capnp::word> view(
       reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
@@ -410,9 +374,12 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
  */
 static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off,
                              struct fuse_file_info *fi) {
+  // printf("Called .readdir\n");
 
-  ::capnp::MallocMessageBuilder message;
-  Readdir::Builder readdir = message.initRoot<Readdir>();
+  auto &waitScope = rpc->getWaitScope();
+  auto request = client->readdirRequest();
+
+  Readdir::Builder readdir = request.getReq();
   Readdir::FuseFileInfo::Builder fuseFileInfo = readdir.initFi();
 
   readdir.setIno(ino);
@@ -426,20 +393,28 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
   // const auto c = m.asChars();
   // std::cout << "Size: " << c.size() << std::endl;
 
-  // printf("Called .readdir\n");
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+  auto response = result.getRes();
 
-  std::string uuid = gen_uuid();
-  requests[uuid] = {.type = Ops::Readdir, .req = req, .size = size, .off = off};
+  struct dirbuf b;
 
-  readdir.setUuid(uuid);
+  memset(&b, 0, sizeof(b));
 
-  // std::cout << "hello_ll_readdir: Request UUID: " << uuid << std::endl;
+  int res = response.getRes();
 
-  const auto data = capnp::messageToFlatArray(message);
-  const auto bytes = data.asBytes();
-  std::string payload(bytes.begin(), bytes.end());
+  if (res == -1) {
+    // std::cout << "READDIR::ENOENT" << std::endl;
+    fuse_reply_err(req, response.getErrno());
+    return;
+  }
 
-  ws->send((char)Ops::Readdir + payload);
+  for (ReaddirResponse::Entry::Reader entry : response.getEntries()) {
+    dirbuf_add(req, &b, entry.getName().cStr(), entry.getIno());
+  }
+
+  reply_buf_limited(req, b.p, b.size, off, size);
+  // free(b.p);
 
   // std::cout << "hello_ll_readdir executed correctly: " << payload << std::endl;
 }
