@@ -38,8 +38,6 @@
 #include <setattr.response.capnp.h>
 #include <setxattr.capnp.h>
 #include <setxattr.response.capnp.h>
-#include <token.capnp.h>
-#include <token.response.capnp.h>
 #include <unlink.capnp.h>
 #include <unlink.response.capnp.h>
 #include <write.capnp.h>
