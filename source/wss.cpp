@@ -1,4 +1,3 @@
-
 #include <errno.h>
 #include <fmt/format.h>
 #include <fuse_lowlevel.h>
@@ -9,7 +8,6 @@
 #include <unistd.h>
 
 // Cap'n'Proto
-
 #include <capnp/ez-rpc.h>
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
