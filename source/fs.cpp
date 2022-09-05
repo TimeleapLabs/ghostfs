@@ -27,7 +27,6 @@
 #include <create.response.capnp.h>
 #include <getattr.capnp.h>
 #include <getattr.response.capnp.h>
-#include <ghostfs/ws.h>
 #include <lookup.capnp.h>
 #include <lookup.response.capnp.h>
 #include <mkdir.capnp.h>
@@ -454,7 +453,6 @@ static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info 
   //  fi.poll_events = fi_response.getPollEvents();
   // fi.writepage = fi_response.getWritepage();
 
-
   fuse_reply_open(req, fi);
 
   // std::cout << "hello_ll_open executed correctly: " << payload << std::endl;
@@ -483,7 +481,7 @@ static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info 
  * }
  */
 static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off,
-                         struct fuse_file_info *fi) {
+                          struct fuse_file_info *fi) {
   // printf("Called .read\n");
 
   auto &waitScope = rpc->getWaitScope();
@@ -1041,21 +1039,9 @@ static const struct fuse_lowlevel_ops hello_ll_oper = {
 };
 // clang-format on
 
-int start_fs(char *executable, char *argmnt, std::vector<std::string> options,
-             wsclient::WSClient *wsc, std::string host, std::string user, std::string token) {
-  ws = wsc;
-
-  while (true) {
-    if (ws->auth_failed) {
-      std::cout << "Authentication failed!" << std::endl;
-      return 1;
-    }
-    if (ws->ready) {
-      break;
-    }
-  }
-
-  capnp::EzRpcClient rpc_client(host, 5923);
+int start_fs(char *executable, char *argmnt, std::vector<std::string> options, std::string host,
+             int port, std::string user, std::string token) {
+  capnp::EzRpcClient rpc_client(host, port);
   rpc = &rpc_client;
 
   auto &waitScope = rpc_client.getWaitScope();
@@ -1068,8 +1054,14 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options,
 
   auto promise = request.send();
   auto result = promise.wait(waitScope);
-  auto ghostfsClient = result.getGhostFs();
+  auto authSuccess = result.getAuthSuccess();
 
+  if (!authSuccess) {
+    std::cout << "Authentication failed!" << std::endl;
+    return 1;
+  }
+
+  auto ghostfsClient = result.getGhostFs();
   client = &ghostfsClient;
 
   int argc = options.size() * 2 + 2;

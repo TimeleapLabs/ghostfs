@@ -130,7 +130,7 @@ struct GhostFSAuth::AuthResults {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(c6f18d208cd0cd46, 0, 1)
+    CAPNP_DECLARE_STRUCT_HEADER(c6f18d208cd0cd46, 1, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -802,6 +802,8 @@ public:
   inline  ::GhostFS::Client getGhostFs() const;
 #endif  // !CAPNP_LITE
 
+  inline bool getAuthSuccess() const;
+
 private:
   ::capnp::_::StructReader _reader;
   template <typename, ::capnp::Kind>
@@ -838,6 +840,9 @@ public:
   inline void adoptGhostFs(::capnp::Orphan< ::GhostFS>&& value);
   inline ::capnp::Orphan< ::GhostFS> disownGhostFs();
 #endif  // !CAPNP_LITE
+
+  inline bool getAuthSuccess();
+  inline void setAuthSuccess(bool value);
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -3595,6 +3600,20 @@ inline ::capnp::Orphan< ::GhostFS> GhostFSAuth::AuthResults::Builder::disownGhos
       ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 #endif  // !CAPNP_LITE
+
+inline bool GhostFSAuth::AuthResults::Reader::getAuthSuccess() const {
+  return _reader.getDataField<bool>(
+      ::capnp::bounded<0>() * ::capnp::ELEMENTS);
+}
+
+inline bool GhostFSAuth::AuthResults::Builder::getAuthSuccess() {
+  return _builder.getDataField<bool>(
+      ::capnp::bounded<0>() * ::capnp::ELEMENTS);
+}
+inline void GhostFSAuth::AuthResults::Builder::setAuthSuccess(bool value) {
+  _builder.setDataField<bool>(
+      ::capnp::bounded<0>() * ::capnp::ELEMENTS, value);
+}
 
 #if !CAPNP_LITE
 inline GhostFS::Client::Client(decltype(nullptr))

@@ -63,21 +63,16 @@ auto main(int argc, char** argv) -> int {
     uint16_t port = result["port"].as<uint16_t>();
     uint16_t auth_port = result["auth-port"].as<uint16_t>();
 
-    wsserver::WSServer wss(port, auth_port, bind, root, suffix);
-    return wss.start();
+    return start_rpc_server(bind, port, auth_port, root, suffix);
 
-    return 0;
   } else if (result["client"].as<bool>()) {
     std::string url = result["url"].as<std::string>();
     std::string host = result["host"].as<std::string>();
+    uint16_t port = result["port"].as<uint16_t>();
     std::string user = result["user"].as<std::string>();
     std::string token = result["token"].as<std::string>();
     std::vector<std::string> options = result["options"].as<std::vector<std::string>>();
 
-    wsclient::WSClient ws(url, user, token);
-
-    return start_fs(argv[0], argv[1], options, &ws, host, user, token);
-
-    // ghostfs::GhostFS ghostfs();
+    return start_fs(argv[0], argv[1], options, host, port, user, token);
   }
 }

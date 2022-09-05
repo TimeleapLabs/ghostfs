@@ -874,9 +874,11 @@ public:
     // TODO: in previous WebSocket implementation userId
     // wasn't equal to user's subdirectory, this needs attention
     bool isValid = authenticate(token, user, user);
+    auto res = context.getResults();
+    
+    res.setAuthSuccess(isValid);
 
     if (isValid) {
-      auto res = context.getResults();
       res.setGhostFs(kj::heap<GhostFSImpl>(user, root, suffix));
     }
 
@@ -884,200 +886,27 @@ public:
   }
 };
 
-using namespace wsserver;
-
-WSServer::WSServer(int _port, int _auth_port, std::string _host, std::string _root,
-                   std::string _suffix)
-    : port(std::move(_port)),
-      auth_port(std::move(_auth_port)),
-      host(std::move(_host)),
-      root(std::move(_root)),
-      suffix(std::move(_suffix)) {}
-
-int WSServer::start() {
+int start_rpc_server(std::string bind, int port, int auth_port, std::string root, std::string suffix) {
   if (root.length() > 0) {
     if (!std::filesystem::is_directory(root)) {
-      // std::cout << "ERROR: directory " << '"' << root << '"' << " does not exist." <<
-      // std::endl;
+      std::cout << "ERROR: directory " << '"' << root << '"' << " does not exist." << std::endl;
       return 1;
     };
   }
-  // Start the server on port
-  ix::WebSocketServer server(port, host);
-  ix::WebSocketServer auth_server(auth_port);
 
-  std::cout << "Starting ws server on " << host << ":" << port << "..." << std::endl;
-  std::cout << "Starting capnp server on "
-            << "0.0.0.0"
-            << ":" << 5923 << "..." << std::endl;
+  std::cout << "Starting capnp server on " << bind << ":" << port << "..." << std::endl;
   std::cout << "Starting the auth server on port " << auth_port << "..." << std::endl;
-
-  // Setup a callback to be fired (in a background thread, watch out for race conditions !)
-  // when a message or an event (open, close, error) is received
-  server.setOnClientMessageCallback(
-      [this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket& webSocket,
-             const ix::WebSocketMessagePtr& msg) { onMessage(connectionState, webSocket, msg); });
-  auth_server.setOnClientMessageCallback(
-      [this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket& webSocket,
-             const ix::WebSocketMessagePtr& msg) {
-        onAuthMessage(connectionState, webSocket, msg);
-      });
-
-  // auto res = server.listen();
-  /*
-   if (!res.first) {
-     // Error handling
-     return 1;
-   } */
-
-  server.listen();
-  auth_server.listen();
-
-  // Per message deflate connection is enabled by default. It can be disabled
-  // which might be helpful when running on low power devices such as a Rasbery Pi
-  server.disablePerMessageDeflate();
-  auth_server.disablePerMessageDeflate();
-
-  // Run the server in the background. Server can be stoped by calling server.stop()
-  server.start();
-  auth_server.start();
 
   /**
    * Capnp RPC server. We need to find out how to pass parameters to the
    * GhostFSImpl class, instead of assigning them globally.
    */
 
-  capnp::EzRpcServer rpc_server(kj::heap<GhostFSAuthImpl>(root, suffix), "0.0.0.0", 5923);
+  capnp::EzRpcServer rpc_server(kj::heap<GhostFSAuthImpl>(root, suffix), bind, port);
   auto& waitScope = rpc_server.getWaitScope();
 
   // Run forever, accepting connections and handling requests.
   kj::NEVER_DONE.wait(waitScope);
 
-  // Block until server.stop() is called.
-  server.wait();
-  auth_server.stop();
-
   return 0;
-}
-
-template <class T> std::string send_message(T& response, ::capnp::MallocMessageBuilder& message,
-                                            int res, int err, ix::WebSocket& webSocket,
-                                            Ops opcode) {
-  response.setRes(res);
-  response.setErrno(err);
-
-  const auto response_data = capnp::messageToFlatArray(message);
-  const auto bytes = response_data.asBytes();
-  std::string response_payload(bytes.begin(), bytes.end());
-
-  webSocket.send((char)opcode + response_payload, true);
-
-  return response_payload;
-}
-
-template <class T> std::string send_message(T& response, ::capnp::MallocMessageBuilder& message,
-                                            int res, ix::WebSocket& webSocket, Ops opcode) {
-  response.setRes(res);
-
-  const auto response_data = capnp::messageToFlatArray(message);
-  const auto bytes = response_data.asBytes();
-  std::string response_payload(bytes.begin(), bytes.end());
-
-  webSocket.sendBinary((char)opcode + response_payload);
-
-  return response_payload;
-}
-
-void WSServer::onAuthMessage([[maybe_unused]] std::shared_ptr<ix::ConnectionState> connectionState,
-                             ix::WebSocket& webSocket, const ix::WebSocketMessagePtr& msg) {
-  if (msg->type == ix::WebSocketMessageType::Message) {
-    const kj::ArrayPtr<const capnp::word> view(
-        reinterpret_cast<const capnp::word*>(&(*std::begin(msg->str))),
-        reinterpret_cast<const capnp::word*>(&(*std::end(msg->str))));
-
-    capnp::FlatArrayMessageReader data(view);
-    TokenRequest::Reader token_request = data.getRoot<TokenRequest>();
-
-    std::string user = token_request.getUser();
-    std::string token = token_request.getToken();
-    int64_t retries = token_request.getRetries();
-
-    std::string added_token = add_token(user, token, retries);
-
-    ::capnp::MallocMessageBuilder message;
-    TokenResponse::Builder token_response = message.initRoot<TokenResponse>();
-
-    token_response.setToken(added_token);
-
-    const auto response_data = capnp::messageToFlatArray(message);
-    const auto bytes = response_data.asBytes();
-    std::string response_payload(bytes.begin(), bytes.end());
-
-    webSocket.sendBinary(response_payload);
-  }
-}
-void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
-                         ix::WebSocket& webSocket, const ix::WebSocketMessagePtr& msg) {
-  // std::cout << "Remote ip: " << connectionState->getRemoteIp() << std::endl;
-
-  if (msg->type == ix::WebSocketMessageType::Open) {
-    // std::cout << "New connection" << std::endl;
-
-    // // A connection state object is available, and has a default id
-    // // You can subclass ConnectionState and pass an alternate factory
-    // // to override it. It is useful if you want to store custom
-    // // attributes per connection (authenticated bool flag, attributes, etc...)
-    // std::cout << "id: " << connectionState->getId() << std::endl;
-
-    // // The uri the client did connect to.
-    // std::cout << "Uri: " << msg->openInfo.uri << std::endl;
-
-    // std::cout << "Headers:" << std::endl;
-    // for (auto it : msg->openInfo.headers) {
-    // std::cout << "\t" << it.first << ": " << it.second << std::endl;
-    // }
-  } else if (msg->type == ix::WebSocketMessageType::Message) {
-    // For an echo server, we just send back to the client whatever was received by the server
-    // All connected clients are available in an std::set. See the broadcast cpp example.
-    // Second parameter tells whether we are sending the message in binary or text mode.
-    // Here we send it in the same mode as it was received.
-    // std::cout << "Received: " << msg->str << std::endl;
-
-    // webSocket.send(msg->str, msg->binary);
-
-    const char command = msg->str[0];
-    std::string payload = msg->str.substr(1);
-
-    switch (command) {
-      case (char)Ops::Auth: {
-        const kj::ArrayPtr<const capnp::word> view(
-            reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
-            reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
-
-        capnp::FlatArrayMessageReader data(view);
-        Auth::Reader auth = data.getRoot<Auth>();
-
-        std::string user = auth.getUser();
-        std::string token = auth.getToken();
-
-        std::cout << "New connection: " << user << std::endl;
-
-        bool is_valid = authenticate(token, user, connectionState->getId());
-
-        ::capnp::MallocMessageBuilder message;
-        AuthResponse::Builder auth_response = message.initRoot<AuthResponse>();
-
-        auth_response.setSuccess(is_valid);
-
-        const auto response_data = capnp::messageToFlatArray(message);
-        const auto bytes = response_data.asBytes();
-        std::string response_payload(bytes.begin(), bytes.end());
-
-        webSocket.sendBinary((char)Ops::Auth + response_payload);
-        break;
-      }
-      default:
-        break;
-    }
-  }
 }

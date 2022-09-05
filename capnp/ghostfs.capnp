@@ -32,7 +32,7 @@ using import "create.capnp".Create;
 using import "create.response.capnp".CreateResponse;
 
 interface GhostFSAuth {
-  auth @0 (user :Text, token :Text) -> (ghostFs: GhostFS);
+  auth @0 (user :Text, token :Text) -> (ghostFs :GhostFS, authSuccess :Bool);
 }
 
 interface GhostFS {
