@@ -37,6 +37,8 @@
 #include "rmdir.response.capnp.h"
 #include "setattr.capnp.h"
 #include "setattr.response.capnp.h"
+#include "setxattr.capnp.h"
+#include "setxattr.response.capnp.h"
 #include "unlink.capnp.h"
 #include "unlink.response.capnp.h"
 #include "write.capnp.h"
@@ -79,6 +81,8 @@ CAPNP_DECLARE_SCHEMA(f7a52d27fca0764a);
 CAPNP_DECLARE_SCHEMA(da8ec8fab761d994);
 CAPNP_DECLARE_SCHEMA(ca831843acf849f7);
 CAPNP_DECLARE_SCHEMA(fd9f5e3214c0b9da);
+CAPNP_DECLARE_SCHEMA(9a6167b3e5a7ae33);
+CAPNP_DECLARE_SCHEMA(acc7602ba05907b4);
 
 }  // namespace schemas
 }  // namespace capnp
@@ -167,6 +171,8 @@ struct GhostFS {
   struct ReleaseResults;
   struct ReaddirParams;
   struct ReaddirResults;
+  struct SetxattrParams;
+  struct SetxattrResults;
   struct CreateParams;
   struct CreateResults;
 
@@ -568,6 +574,36 @@ struct GhostFS::ReaddirResults {
   };
 };
 
+struct GhostFS::SetxattrParams {
+  SetxattrParams() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(ca831843acf849f7, 0, 1)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct GhostFS::SetxattrResults {
+  SetxattrResults() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(fd9f5e3214c0b9da, 0, 1)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
+    #endif  // !CAPNP_LITE
+  };
+};
+
 struct GhostFS::CreateParams {
   CreateParams() = delete;
 
@@ -576,7 +612,7 @@ struct GhostFS::CreateParams {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(ca831843acf849f7, 0, 1)
+    CAPNP_DECLARE_STRUCT_HEADER(9a6167b3e5a7ae33, 0, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -591,7 +627,7 @@ struct GhostFS::CreateResults {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(fd9f5e3214c0b9da, 0, 1)
+    CAPNP_DECLARE_STRUCT_HEADER(acc7602ba05907b4, 0, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -875,6 +911,8 @@ public:
       ::kj::Maybe< ::capnp::MessageSize> sizeHint = nullptr);
   ::capnp::Request< ::GhostFS::ReaddirParams,  ::GhostFS::ReaddirResults> readdirRequest(
       ::kj::Maybe< ::capnp::MessageSize> sizeHint = nullptr);
+  ::capnp::Request< ::GhostFS::SetxattrParams,  ::GhostFS::SetxattrResults> setxattrRequest(
+      ::kj::Maybe< ::capnp::MessageSize> sizeHint = nullptr);
   ::capnp::Request< ::GhostFS::CreateParams,  ::GhostFS::CreateResults> createRequest(
       ::kj::Maybe< ::capnp::MessageSize> sizeHint = nullptr);
 
@@ -945,6 +983,10 @@ protected:
   typedef  ::GhostFS::ReaddirResults ReaddirResults;
   typedef ::capnp::CallContext<ReaddirParams, ReaddirResults> ReaddirContext;
   virtual ::kj::Promise<void> readdir(ReaddirContext context);
+  typedef  ::GhostFS::SetxattrParams SetxattrParams;
+  typedef  ::GhostFS::SetxattrResults SetxattrResults;
+  typedef ::capnp::CallContext<SetxattrParams, SetxattrResults> SetxattrContext;
+  virtual ::kj::Promise<void> setxattr(SetxattrContext context);
   typedef  ::GhostFS::CreateParams CreateParams;
   typedef  ::GhostFS::CreateResults CreateResults;
   typedef ::capnp::CallContext<CreateParams, CreateResults> CreateContext;
@@ -3093,6 +3135,170 @@ private:
 };
 #endif  // !CAPNP_LITE
 
+class GhostFS::SetxattrParams::Reader {
+public:
+  typedef SetxattrParams Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand());
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool hasReq() const;
+  inline  ::Setxattr::Reader getReq() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class GhostFS::SetxattrParams::Builder {
+public:
+  typedef SetxattrParams Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool hasReq();
+  inline  ::Setxattr::Builder getReq();
+  inline void setReq( ::Setxattr::Reader value);
+  inline  ::Setxattr::Builder initReq();
+  inline void adoptReq(::capnp::Orphan< ::Setxattr>&& value);
+  inline ::capnp::Orphan< ::Setxattr> disownReq();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class GhostFS::SetxattrParams::Pipeline {
+public:
+  typedef SetxattrParams Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+  inline  ::Setxattr::Pipeline getReq();
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class GhostFS::SetxattrResults::Reader {
+public:
+  typedef SetxattrResults Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand());
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool hasRes() const;
+  inline  ::SetxattrResponse::Reader getRes() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class GhostFS::SetxattrResults::Builder {
+public:
+  typedef SetxattrResults Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool hasRes();
+  inline  ::SetxattrResponse::Builder getRes();
+  inline void setRes( ::SetxattrResponse::Reader value);
+  inline  ::SetxattrResponse::Builder initRes();
+  inline void adoptRes(::capnp::Orphan< ::SetxattrResponse>&& value);
+  inline ::capnp::Orphan< ::SetxattrResponse> disownRes();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class GhostFS::SetxattrResults::Pipeline {
+public:
+  typedef SetxattrResults Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+  inline  ::SetxattrResponse::Pipeline getRes();
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
 class GhostFS::CreateParams::Reader {
 public:
   typedef CreateParams Reads;
@@ -4425,6 +4631,84 @@ inline void GhostFS::ReaddirResults::Builder::adoptRes(
 }
 inline ::capnp::Orphan< ::ReaddirResponse> GhostFS::ReaddirResults::Builder::disownRes() {
   return ::capnp::_::PointerHelpers< ::ReaddirResponse>::disown(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+
+inline bool GhostFS::SetxattrParams::Reader::hasReq() const {
+  return !_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline bool GhostFS::SetxattrParams::Builder::hasReq() {
+  return !_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline  ::Setxattr::Reader GhostFS::SetxattrParams::Reader::getReq() const {
+  return ::capnp::_::PointerHelpers< ::Setxattr>::get(_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline  ::Setxattr::Builder GhostFS::SetxattrParams::Builder::getReq() {
+  return ::capnp::_::PointerHelpers< ::Setxattr>::get(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+#if !CAPNP_LITE
+inline  ::Setxattr::Pipeline GhostFS::SetxattrParams::Pipeline::getReq() {
+  return  ::Setxattr::Pipeline(_typeless.getPointerField(0));
+}
+#endif  // !CAPNP_LITE
+inline void GhostFS::SetxattrParams::Builder::setReq( ::Setxattr::Reader value) {
+  ::capnp::_::PointerHelpers< ::Setxattr>::set(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), value);
+}
+inline  ::Setxattr::Builder GhostFS::SetxattrParams::Builder::initReq() {
+  return ::capnp::_::PointerHelpers< ::Setxattr>::init(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline void GhostFS::SetxattrParams::Builder::adoptReq(
+    ::capnp::Orphan< ::Setxattr>&& value) {
+  ::capnp::_::PointerHelpers< ::Setxattr>::adopt(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::Setxattr> GhostFS::SetxattrParams::Builder::disownReq() {
+  return ::capnp::_::PointerHelpers< ::Setxattr>::disown(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+
+inline bool GhostFS::SetxattrResults::Reader::hasRes() const {
+  return !_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline bool GhostFS::SetxattrResults::Builder::hasRes() {
+  return !_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline  ::SetxattrResponse::Reader GhostFS::SetxattrResults::Reader::getRes() const {
+  return ::capnp::_::PointerHelpers< ::SetxattrResponse>::get(_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline  ::SetxattrResponse::Builder GhostFS::SetxattrResults::Builder::getRes() {
+  return ::capnp::_::PointerHelpers< ::SetxattrResponse>::get(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+#if !CAPNP_LITE
+inline  ::SetxattrResponse::Pipeline GhostFS::SetxattrResults::Pipeline::getRes() {
+  return  ::SetxattrResponse::Pipeline(_typeless.getPointerField(0));
+}
+#endif  // !CAPNP_LITE
+inline void GhostFS::SetxattrResults::Builder::setRes( ::SetxattrResponse::Reader value) {
+  ::capnp::_::PointerHelpers< ::SetxattrResponse>::set(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), value);
+}
+inline  ::SetxattrResponse::Builder GhostFS::SetxattrResults::Builder::initRes() {
+  return ::capnp::_::PointerHelpers< ::SetxattrResponse>::init(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline void GhostFS::SetxattrResults::Builder::adoptRes(
+    ::capnp::Orphan< ::SetxattrResponse>&& value) {
+  ::capnp::_::PointerHelpers< ::SetxattrResponse>::adopt(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::SetxattrResponse> GhostFS::SetxattrResults::Builder::disownRes() {
+  return ::capnp::_::PointerHelpers< ::SetxattrResponse>::disown(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 

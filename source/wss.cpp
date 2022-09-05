@@ -738,6 +738,34 @@ public:
 
     return kj::READY_NOW;
   }
+  
+  #ifdef __APPLE__
+  kj::Promise<void> setxattr(SetxattrContext context) override {
+    auto params = context.getParams();
+    auto req = params.getReq();
+
+    auto results = context.getResults();
+    auto response = results.getRes();
+
+    uint64_t ino = req.getIno();
+
+    std::string file_path = ino_to_path[ino];
+
+    int res = ::setxattr(file_path.c_str(), req.getName().cStr(), req.getValue().cStr(), (size_t) req.getSize(), req.getPosition(), req.getFlags());
+    int err = errno;
+    response.setRes(res);
+    response.setErrno(err);
+    
+    if (res == -1) {
+      return kj::READY_NOW;
+    }
+
+    response.setIno(ino);
+    return kj::READY_NOW;
+
+    // std::cout << "setxattr_response sent correctly: " << response_payload << std::endl;
+  }
+  #endif
 
   kj::Promise<void> create(CreateContext context) override {
     auto params = context.getParams();
@@ -1048,45 +1076,6 @@ void WSServer::onMessage(std::shared_ptr<ix::ConnectionState> connectionState,
         webSocket.sendBinary((char)Ops::Auth + response_payload);
         break;
       }
-      #ifdef __APPLE__
-      case (char)Ops::Setxattr: {
-        const kj::ArrayPtr<const capnp::word> view(
-        reinterpret_cast<const capnp::word*>(&(*std::begin(payload))),
-        reinterpret_cast<const capnp::word*>(&(*std::end(payload))));
-
-        capnp::FlatArrayMessageReader data(view);
-        Setxattr::Reader _setxattr = data.getRoot<Setxattr>();
-
-        // std::cout << "setxattr: Received UUID: " << _setxattr.getUuid().cStr() << std::endl;
-
-        ::capnp::MallocMessageBuilder message;
-        SetxattrResponse::Builder setxattr_response = message.initRoot<SetxattrResponse>();
-
-        setxattr_response.setUuid(_setxattr.getUuid());
-
-        uint64_t ino = _setxattr.getIno();
-
-        std::string file_path = ino_to_path[ino];
-
-        int res = setxattr(file_path.c_str(), _setxattr.getName().cStr(), _setxattr.getValue().cStr(), (size_t) _setxattr.getSize(), _setxattr.getPosition(), _setxattr.getFlags());
-        if (res == -1) {
-            int err = errno;
-            std::string response_payload = send_message(setxattr_response, message, res, err, webSocket, Ops::Setxattr);
-
-            // std::cout << "setxattr_response sent error: " << response_payload << std::endl;
-            return;
-        }
-
-        setxattr_response.setIno(ino);
-
-        std::string response_payload = send_message(setxattr_response, message, res, webSocket, Ops::Setxattr);
-
-        // std::cout << "setxattr_response sent correctly: " << response_payload << std::endl;
-
-        break;
-      }
-      #endif
-
       default:
         break;
     }

@@ -193,31 +193,6 @@ void dirbuf_add(fuse_req_t req, struct dirbuf *b, const char *name, fuse_ino_t i
   fuse_add_direntry(req, b->p + oldsize, b->size - oldsize, name, &stbuf, b->size);
 }
 
-void process_setxattr_response(std::string payload) {
-  const kj::ArrayPtr<const capnp::word> view(
-      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
-      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
-
-  capnp::FlatArrayMessageReader data(view);
-  SetxattrResponse::Reader setxattr_response = data.getRoot<SetxattrResponse>();
-
-  std::string uuid = setxattr_response.getUuid();
-
-  // std::cout << "process_setxattr_response: Response UUID: " << uuid << std::endl;
-
-  request request = requests[uuid];
-
-  int res = setxattr_response.getRes();
-
-  if (res == -1) {
-    // std::cout << "SETXATTR::ENOENT" << std::endl;
-    fuse_reply_err(request.req, setxattr_response.getErrno());
-    return;
-  }
-
-  // std::cout << "process_setxattr_response: correctly executed" << std::endl;
-}
-
 /**
  * @brief
  *
@@ -792,8 +767,6 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
   e.attr.st_blksize = attributes.getStBlksize();
   e.attr.st_blocks = attributes.getStBlocks();
 
-  // std::cout << "process_create_response: Request: " << request.req << std::endl;
-
   CreateResponse::FuseFileInfo::Reader fi_response = response.getFi();
 
   fi->fh = fi_response.getFh();
@@ -1018,28 +991,29 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
 static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, const char *value,
                               size_t size, int flags, uint32_t position) {
 
-  ::capnp::MallocMessageBuilder message;
-  Setxattr::Builder _setxattr = message.initRoot<Setxattr>();
+  auto &waitScope = rpc->getWaitScope();
+  auto request = client->setxattrRequest();
 
-  _setxattr.setIno(ino);
-  _setxattr.setName(name);
-  _setxattr.setValue(value);
-  _setxattr.setSize(size);
-  _setxattr.setFlags(flags);
-  _setxattr.setPosition(position);
+  Setxattr::Builder setxattr = request.getReq();
 
-  std::string uuid = gen_uuid();
-  requests[uuid] = {.type = Ops::Setxattr, .req = req};
+  setxattr.setIno(ino);
+  setxattr.setName(name);
+  setxattr.setValue(value);
+  setxattr.setSize(size);
+  setxattr.setFlags(flags);
+  setxattr.setPosition(position);
 
-  _setxattr.setUuid(uuid);
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+  auto response = result.getRes();
 
-  // std::cout << "hello_ll_setxattr: Request UUID: " << uuid << std::endl;
+  int res = response.getRes();
 
-  const auto data = capnp::messageToFlatArray(message);
-  const auto bytes = data.asBytes();
-  std::string payload(bytes.begin(), bytes.end());
-
-  ws->send((char)Ops::Setxattr + payload);
+  if (res == -1) {
+    // std::cout << "SETXATTR::ENOENT" << std::endl;
+    fuse_reply_err(req, response.getErrno());
+    return;
+  }
 
   // std::cout << "hello_ll_setxattr executed correctly: " << payload << std::endl;
 }

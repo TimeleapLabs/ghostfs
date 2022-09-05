@@ -61,10 +61,6 @@ void WSClient::onMessage(const ix::WebSocketMessagePtr& msg) {
         process_auth_response(payload, this);
         break;
       }
-      case (char)Ops::Setxattr: {
-        process_setxattr_response(payload);
-        break;
-      }
       default:
         break;
     }

@@ -24,14 +24,10 @@ struct dirbuf {
 void dirbuf_add(fuse_req_t req, struct dirbuf* b, const char* name, fuse_ino_t ino);
 
 enum class Ops : char {
-  Auth = 1,
-  Readdir = 4,
-  Setxattr = 9,
-  Create = 10
+  Auth = 1
 };
 
 // Responses
 void process_auth_response(std::string payload, wsclient::WSClient* wsc);
-void process_setxattr_response(std::string payload);
 
 uint64_t get_parent_ino(uint64_t ino, std::string path);

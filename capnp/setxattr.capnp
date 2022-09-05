@@ -7,5 +7,4 @@ struct Setxattr {
   size      @3  :UInt64;
   flags     @4  :Int32;
   position  @5 :UInt32;
-  uuid      @6  :Text;
 }

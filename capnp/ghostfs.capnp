@@ -26,6 +26,8 @@ using import "release.capnp".Release;
 using import "release.response.capnp".ReleaseResponse;
 using import "readdir.capnp".Readdir;
 using import "readdir.response.capnp".ReaddirResponse;
+using import "setxattr.capnp".Setxattr;
+using import "setxattr.response.capnp".SetxattrResponse;
 using import "create.capnp".Create;
 using import "create.response.capnp".CreateResponse;
 
@@ -34,18 +36,19 @@ interface GhostFSAuth {
 }
 
 interface GhostFS {
-  lookup  @0  (req :Lookup)  -> (res :LookupResponse);
-  getattr @1  (req :Getattr) -> (res :GetattrResponse);
-  setattr @2  (req :Setattr) -> (res :SetattrResponse);
-  mknod   @3  (req :Mknod)   -> (res :MknodResponse);
-  mkdir   @4  (req :Mkdir)   -> (res :MkdirResponse);
-  unlink  @5  (req :Unlink)  -> (res :UnlinkResponse);
-  rmdir   @6  (req :Rmdir)   -> (res :RmdirResponse);
-  rename  @7  (req :Rename)  -> (res :RenameResponse);
-  open    @8  (req :Open)    -> (res :OpenResponse);
-  read    @9  (req :Read)    -> (res :ReadResponse);
-  write   @10 (req :Write)   -> (res :WriteResponse);
-  release @11 (req :Release) -> (res :ReleaseResponse);
-  readdir @12 (req :Readdir) -> (res :ReaddirResponse);
-  create  @13 (req :Create)  -> (res :CreateResponse);
+  lookup   @0  (req :Lookup)   -> (res :LookupResponse);
+  getattr  @1  (req :Getattr)  -> (res :GetattrResponse);
+  setattr  @2  (req :Setattr)  -> (res :SetattrResponse);
+  mknod    @3  (req :Mknod)    -> (res :MknodResponse);
+  mkdir    @4  (req :Mkdir)    -> (res :MkdirResponse);
+  unlink   @5  (req :Unlink)   -> (res :UnlinkResponse);
+  rmdir    @6  (req :Rmdir)    -> (res :RmdirResponse);
+  rename   @7  (req :Rename)   -> (res :RenameResponse);
+  open     @8  (req :Open)     -> (res :OpenResponse);
+  read     @9  (req :Read)     -> (res :ReadResponse);
+  write    @10 (req :Write)    -> (res :WriteResponse);
+  release  @11 (req :Release)  -> (res :ReleaseResponse);
+  readdir  @12 (req :Readdir)  -> (res :ReaddirResponse);
+  setxattr @13 (req :Setxattr) -> (res :SetxattrResponse);
+  create   @14 (req :Create)   -> (res :CreateResponse);
 }
