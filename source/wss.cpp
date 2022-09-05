@@ -6,6 +6,7 @@
 #include <ghostfs/fs.h>
 #include <ghostfs/wss.h>
 #include <sys/xattr.h>
+#include <unistd.h>
 
 // Cap'n'Proto
 
