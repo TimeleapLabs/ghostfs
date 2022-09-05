@@ -20,7 +20,6 @@
 
 // CAPNPROTO
 
-#include <auth.response.capnp.h>
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
 #include <create.capnp.h>
@@ -58,6 +57,7 @@
 #include <filesystem>
 #include <iostream>
 #include <map>
+#include <vector>
 
 // RPC
 
@@ -75,15 +75,6 @@ std::map<std::string, uint64_t> path_to_ino;
 
 uint64_t current_ino = 1;
 
-struct request {
-  char *name;
-  Ops type;
-  fuse_req_t req;
-  fuse_file_info *fi;
-  size_t size;
-  off_t off;
-};
-
 #define min(x, y) ((x) < (y) ? (x) : (y))
 
 static int reply_buf_limited(fuse_req_t req, const char *buf, size_t bufsize, off_t off,
@@ -95,9 +86,6 @@ static int reply_buf_limited(fuse_req_t req, const char *buf, size_t bufsize, of
   }
 }
 
-std::map<std::string, request> requests;
-
-wsclient::WSClient *ws;
 GhostFS::Client *client;
 capnp::EzRpcClient *rpc;
 
@@ -129,8 +117,6 @@ template <class T> void fillFileInfo(T *fuseFileInfo, struct fuse_file_info *fi)
   /* fuseFileInfo->setNoflush(fi->noflush); */
 }
 
-// TODO
-// void process_response(uint8_t msg) {}
 /**
  * Notes: fuse_ino_t is uint64_t
  *        off_t is apparently long int
@@ -166,20 +152,6 @@ int hello_stat(fuse_ino_t ino, struct stat *stbuf) {
   stbuf->st_ino = ino;
 
   return 0;
-}
-
-void process_auth_response(std::string payload, wsclient::WSClient *wsc) {
-  const kj::ArrayPtr<const capnp::word> view(
-      reinterpret_cast<const capnp::word *>(&(*std::begin(payload))),
-      reinterpret_cast<const capnp::word *>(&(*std::end(payload))));
-
-  capnp::FlatArrayMessageReader data(view);
-  AuthResponse::Reader auth_response = data.getRoot<AuthResponse>();
-
-  bool success = auth_response.getSuccess();
-
-  wsc->auth_failed = not success;
-  wsc->ready = success;
 }
 
 void dirbuf_add(fuse_req_t req, struct dirbuf *b, const char *name, fuse_ino_t ino) {

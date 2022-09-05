@@ -1,7 +1,6 @@
 #include <ghostfs/fs.h>
 #include <ghostfs/ghostfs.h>
 #include <ghostfs/version.h>
-#include <ghostfs/ws.h>
 #include <ghostfs/wss.h>
 
 #include <cxxopts.hpp>
@@ -25,7 +24,6 @@ auto main(int argc, char** argv) -> int {
     ("P,auth-port", "Server auth port", cxxopts::value<uint16_t>()->default_value("3445"))
     ("r,root", "Root directory", cxxopts::value<std::string>()->default_value(default_root))
     ("S,suffix", "User data subdirectory suffix", cxxopts::value<std::string>()->default_value(""))
-    ("u,url", "Server connection URL", cxxopts::value<std::string>())
     ("o,options", "Fuse mount options", cxxopts::value<std::vector<std::string>>())
     ("U,user", "Username (GhostFS subdirectory)", cxxopts::value<std::string>())
     ("t,token", "Authentication token", cxxopts::value<std::string>())
@@ -66,7 +64,6 @@ auto main(int argc, char** argv) -> int {
     return start_rpc_server(bind, port, auth_port, root, suffix);
 
   } else if (result["client"].as<bool>()) {
-    std::string url = result["url"].as<std::string>();
     std::string host = result["host"].as<std::string>();
     uint16_t port = result["port"].as<uint16_t>();
     std::string user = result["user"].as<std::string>();

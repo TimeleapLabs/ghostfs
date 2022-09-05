@@ -9,8 +9,6 @@
 
 // Cap'n'Proto
 
-#include <auth.capnp.h>
-#include <auth.response.capnp.h>
 #include <capnp/ez-rpc.h>
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>

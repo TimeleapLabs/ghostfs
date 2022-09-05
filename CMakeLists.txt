@@ -25,12 +25,6 @@ include(cmake/CPM.cmake)
 CPMAddPackage("gh:TheLartians/PackageProject.cmake@1.8.0")
 
 CPMAddPackage(
-  NAME ixwebsocket
-  VERSION 11.3.3
-  GITHUB_REPOSITORY machinezone/IXWebSocket
-)
-
-CPMAddPackage(
   NAME uuid_v4
   VERSION 1.0.0
   GITHUB_REPOSITORY crashoz/uuid_v4
@@ -96,7 +90,6 @@ target_compile_options(${PROJECT_NAME} PUBLIC "-mavx2")
 
 # Link dependencies
 target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt)
-target_link_libraries(${PROJECT_NAME} PUBLIC ixwebsocket)
 target_link_libraries(${PROJECT_NAME} PRIVATE CapnProto::capnp)
 target_link_libraries(${PROJECT_NAME} PRIVATE CapnProto::capnp-rpc)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${FUSE_LIBRARIES})
