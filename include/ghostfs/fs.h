@@ -5,6 +5,7 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 int start_fs(char* executable, char* argmnt, std::vector<std::string> options, std::string host,
              int port, std::string user, std::string token);
