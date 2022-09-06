@@ -74,7 +74,7 @@ auto main(int argc, char** argv) -> int {
 
     return start_fs(argv[0], argv[1], options, host, port, user, token);
   } else if (result["authorize"].as<bool>()) {
-    uint16_t port = result["port"].as<uint16_t>();
+    uint16_t port = result["auth-port"].as<uint16_t>();
     std::string user = result["user"].as<std::string>();
     std::string token = result["token"].as<std::string>();
     int64_t retries = result["retries"].as<int64_t>();
