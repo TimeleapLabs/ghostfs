@@ -504,10 +504,8 @@ uint64_t add_to_write_back_cache(cached_write cache) {
     write_back_cache[cache.fi->fh] = std::vector<cached_write>();
   }
 
-  auto cache_list = write_back_cache[cache.fi->fh];
-  cache_list.insert(cache_list.end(), cache);
-
-  return cache_list.size();
+  write_back_cache[cache.fi->fh].push_back(cache);
+  return write_back_cache[cache.fi->fh].size();
 }
 
 void flush_write_back_cache(uint64_t fh, bool reply) {
@@ -522,15 +520,15 @@ void flush_write_back_cache(uint64_t fh, bool reply) {
 
   capnp::List<Write>::Builder write = request.initReq(cached);
 
-  for (uint64_t i = 0; i < cached; i++) {
-    write[i].setIno(write_back_cache[fh][i].ino);
-    write[i].setOff(write_back_cache[fh][i].off);
-    write[i].setSize(write_back_cache[fh][i].size);
+  uint8_t i = 0;
+  for (auto cache : write_back_cache[fh]) {
+    write[i].setIno(cache.ino);
+    write[i].setOff(cache.off);
+    write[i].setSize(cache.size);
 
-    kj::ArrayPtr<kj::byte> buf_ptr
-        = kj::arrayPtr((kj::byte *)write_back_cache[fh][i].buf, write_back_cache[fh][i].size);
+    kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte *)cache.buf, cache.size);
     capnp::Data::Reader buf_reader(buf_ptr);
-    write[i].setBuf(buf_reader);
+    write[i++].setBuf(buf_reader);
   }
 
   write_back_cache[fh].clear();
@@ -580,7 +578,7 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
 
   uint64_t cached = add_to_write_back_cache({req, ino, buf, size, off, fi});
 
-  if (cached == WRITE_BACK_CACHE_SIZE) {
+  if (cached >= WRITE_BACK_CACHE_SIZE) {
     flush_write_back_cache(fi->fh, true);
   } else {
     fuse_reply_write(req, size);
