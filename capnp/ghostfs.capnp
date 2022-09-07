@@ -61,4 +61,7 @@ interface GhostFS {
   create   @14 (req :Create)   -> (res :CreateResponse);
   flush    @15 (req :Flush)    -> (res :FlushResponse);
   fsync    @16 (req :Fsync)    -> (res :FsyncResponse);
+  
+  # Special methods (non-fuse)
+  bulkWrite @17 (req :List(Write)) -> (res :List(WriteResponse));
 }

@@ -619,6 +619,39 @@ public:
     return kj::READY_NOW;
   }
 
+  kj::Promise<void> bulkWrite(BulkWriteContext context) override {
+    auto params = context.getParams();
+    auto reqs = params.getReq();
+
+    int64_t count = 0;
+    for ([[maybe_unused]] auto req : reqs) {
+      count++;
+    }
+
+    auto results = context.getResults();
+    auto response = results.initRes(count);
+
+    int64_t i = 0;
+    for (auto req : reqs) {
+      Write::FuseFileInfo::Reader fi = req.getFi();
+      capnp::Data::Reader buf_reader = req.getBuf();
+
+      const auto chars = buf_reader.asChars();
+      const char* buf = chars.begin();
+
+      ::lseek(fi.getFh(), req.getOff(), SEEK_SET);
+      size_t written = ::write(fi.getFh(), buf, req.getSize());
+      int err = errno;
+
+      response[i].setRes(0);
+      response[i].setErrno(err);
+      response[i].setIno(req.getIno());
+      response[i++].setWritten(written);
+    }
+
+    return kj::READY_NOW;
+  }
+
   kj::Promise<void> release(ReleaseContext context) override {
     auto params = context.getParams();
     auto req = params.getReq();

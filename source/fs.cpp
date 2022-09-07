@@ -18,6 +18,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <iterator>
+
 // CAPNPROTO
 
 #include <capnp/message.h>
@@ -64,11 +66,18 @@
 #include <capnp/ez-rpc.h>
 #include <ghostfs.capnp.h>
 
-// static const char *hello_str = "Hello World!\n";
-// static const char *hello_name = "hello";
+#define WRITE_BACK_CACHE_SIZE 4
 
-char user_file_str[40];
-char user_file_name[1024];
+struct cached_write {
+  fuse_req_t req;
+  fuse_ino_t ino;
+  const char *buf;
+  size_t size;
+  off_t off;
+  struct fuse_file_info *fi;
+};
+
+std::map<uint64_t, cached_write[WRITE_BACK_CACHE_SIZE]> write_back_cache;
 
 std::map<uint64_t, std::string> ino_to_path;
 std::map<std::string, uint64_t> path_to_ino;
@@ -491,6 +500,44 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
   // std::cout << "hello_ll_read executed correctly: " << payload << std::endl;
 }
 
+void flush_write_back_cache(uint64_t fh, bool reply) {
+  uint64_t cached = std::size(write_back_cache[fh]);
+
+  if (cached == 0) {
+    return;
+  }
+
+  auto &waitScope = rpc->getWaitScope();
+  auto request = client->bulkWriteRequest();
+
+  capnp::List<Write>::Builder write = request.initReq(cached);
+
+  for (uint64_t i = 0; i < cached; i++) {
+    write[i].setIno(write_back_cache[fh][i].ino);
+    write[i].setOff(write_back_cache[fh][i].off);
+    write[i].setSize(write_back_cache[fh][i].size);
+
+    kj::ArrayPtr<kj::byte> buf_ptr
+        = kj::arrayPtr((kj::byte *)write_back_cache[fh][i].buf, write_back_cache[fh][i].size);
+    capnp::Data::Reader buf_reader(buf_ptr);
+    write[i].setBuf(buf_reader);
+  }
+
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+
+  if (reply) {
+    auto response = result.getRes();
+    int res = response[cached - 1].getRes();
+
+    if (res == -1) {
+      fuse_reply_err(write_back_cache[fh][cached - 1].req, response[cached - 1].getErrno());
+    } else {
+      fuse_reply_write(write_back_cache[fh][cached - 1].req, response[cached - 1].getWritten());
+    }
+  }
+}
+
 /**
  * @brief
  *
@@ -518,7 +565,16 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
                            struct fuse_file_info *fi) {
   // printf("Called .write\n");
 
-  auto &waitScope = rpc->getWaitScope();
+  uint64_t cached = std::size(write_back_cache[fi->fh]);
+  write_back_cache[fi->fh][cached] = {req, ino, buf, size, off, fi};
+
+  if (cached == WRITE_BACK_CACHE_SIZE) {
+    flush_write_back_cache(fi->fh, true);
+  } else {
+    fuse_reply_write(req, size);
+  }
+
+  /* auto &waitScope = rpc->getWaitScope();
   auto request = client->writeRequest();
 
   Write::Builder write = request.getReq();
@@ -546,7 +602,7 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
     return;
   }
 
-  fuse_reply_write(req, response.getWritten());
+  fuse_reply_write(req, response.getWritten()); */
 
   // std::cout << "hello_ll_write executed correctly: " << payload << std::endl;
 }
@@ -871,6 +927,8 @@ static void hello_ll_release(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
  * @param mode -> uint64_t
  */
 static void hello_ll_flush(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
+  flush_write_back_cache(fi->fh, false);
+
   auto &waitScope = rpc->getWaitScope();
   auto request = client->flushRequest();
 
@@ -900,6 +958,8 @@ static void hello_ll_flush(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info
  */
 static void hello_ll_fsync(fuse_req_t req, fuse_ino_t ino, int datasync,
                            struct fuse_file_info *fi) {
+  flush_write_back_cache(fi->fh, false);
+
   auto &waitScope = rpc->getWaitScope();
   auto request = client->fsyncRequest();
 
