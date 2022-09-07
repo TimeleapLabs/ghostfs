@@ -531,22 +531,23 @@ void flush_write_back_cache(uint64_t fh, bool reply) {
     write[i++].setBuf(buf_reader);
   }
 
-  write_back_cache[fh].clear();
-  write_back_cache.erase(fh);
-
   auto promise = request.send();
   auto result = promise.wait(waitScope);
 
   if (reply) {
     auto response = result.getRes();
     int res = response[cached - 1].getRes();
+    auto req = write_back_cache[fh][cached - 1].req;
 
     if (res == -1) {
-      fuse_reply_err(write_back_cache[fh][cached - 1].req, response[cached - 1].getErrno());
+      fuse_reply_err(req, response[cached - 1].getErrno());
     } else {
-      fuse_reply_write(write_back_cache[fh][cached - 1].req, response[cached - 1].getWritten());
+      fuse_reply_write(req, response[cached - 1].getWritten());
     }
   }
+
+  write_back_cache[fh].clear();
+  write_back_cache.erase(fh);
 }
 
 /**
@@ -1054,7 +1055,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
