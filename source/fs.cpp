@@ -530,7 +530,8 @@ void flush_write_back_cache(uint64_t fh, bool reply) {
     capnp::Data::Reader buf_reader(buf_ptr);
     write[i++].setBuf(buf_reader);
 
-    free(cache.fi);
+    Write::FuseFileInfo::Builder fuseFileInfo = write[i].initFi();
+    fillFileInfo(&fuseFileInfo, cache.fi);
   }
 
   auto promise = request.send();
@@ -579,11 +580,7 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
                            struct fuse_file_info *fi) {
   // printf("Called .write\n");
 
-  struct fuse_file_info fi_copy;
-  memset(&fi_copy, 0, sizeof(fi_copy));
-  memcpy(&fi_copy, &fi, sizeof(fi_copy));
-
-  uint64_t cached = add_to_write_back_cache({req, ino, buf, size, off, &fi_copy});
+  uint64_t cached = add_to_write_back_cache({req, ino, buf, size, off, fi});
 
   if (cached >= WRITE_BACK_CACHE_SIZE) {
     flush_write_back_cache(fi->fh, true);
@@ -1061,7 +1058,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-// clang-format off
+  // clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
