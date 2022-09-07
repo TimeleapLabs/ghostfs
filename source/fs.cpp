@@ -77,8 +77,7 @@ struct cached_write {
   struct fuse_file_info *fi;
 };
 
-std::map<uint64_t, cached_write[WRITE_BACK_CACHE_SIZE]> write_back_cache;
-
+std::map<uint64_t, std::vector<cached_write>> write_back_cache;
 std::map<uint64_t, std::string> ino_to_path;
 std::map<std::string, uint64_t> path_to_ino;
 
@@ -501,7 +500,7 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
 }
 
 void flush_write_back_cache(uint64_t fh, bool reply) {
-  uint64_t cached = std::size(write_back_cache[fh]);
+  uint64_t cached = write_back_cache[fh].size();
 
   if (cached == 0) {
     return;
@@ -522,6 +521,8 @@ void flush_write_back_cache(uint64_t fh, bool reply) {
     capnp::Data::Reader buf_reader(buf_ptr);
     write[i].setBuf(buf_reader);
   }
+
+  write_back_cache[fh].clear();
 
   auto promise = request.send();
   auto result = promise.wait(waitScope);
@@ -565,7 +566,7 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
                            struct fuse_file_info *fi) {
   // printf("Called .write\n");
 
-  uint64_t cached = std::size(write_back_cache[fi->fh]);
+  uint64_t cached = write_back_cache[fi->fh].size();
   write_back_cache[fi->fh][cached] = {req, ino, buf, size, off, fi};
 
   if (cached == WRITE_BACK_CACHE_SIZE) {
