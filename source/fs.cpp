@@ -504,10 +504,10 @@ uint64_t add_to_write_back_cache(cached_write cache) {
     write_back_cache[cache.fi->fh] = std::vector<cached_write>();
   }
 
-  uint64_t cached = write_back_cache[cache.fi->fh].size();
-  write_back_cache[cache.fi->fh][cached] = cache;
+  auto cache_list = write_back_cache[cache.fi->fh];
+  cache_list.insert(cache_list.end(), cache);
 
-  return cached + 1;
+  return cache_list.size();
 }
 
 void flush_write_back_cache(uint64_t fh, bool reply) {
@@ -1056,7 +1056,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-// clang-format off
+  // clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
