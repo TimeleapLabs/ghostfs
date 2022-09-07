@@ -866,6 +866,65 @@ static void hello_ll_release(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
  * @brief
  *
  * @param req
+ * @param parent -> uint64_t
+ * @param name -> *char
+ * @param mode -> uint64_t
+ */
+static void hello_ll_flush(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
+  auto &waitScope = rpc->getWaitScope();
+  auto request = client->flushRequest();
+
+  Flush::Builder flush = request.getReq();
+  Flush::FuseFileInfo::Builder fuseFileInfo = flush.initFi();
+
+  flush.setIno(ino);
+  fillFileInfo(&fuseFileInfo, fi);
+
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+  auto response = result.getRes();
+
+  int res = response.getRes();
+  int err = response.getErrno();
+
+  fuse_reply_err(req, res == -1 ? err : 0);
+}
+
+/**
+ * @brief
+ *
+ * @param req
+ * @param parent -> uint64_t
+ * @param name -> *char
+ * @param mode -> uint64_t
+ */
+static void hello_ll_fsync(fuse_req_t req, fuse_ino_t ino, int datasync,
+                           struct fuse_file_info *fi) {
+  auto &waitScope = rpc->getWaitScope();
+  auto request = client->fsyncRequest();
+
+  Fsync::Builder fsync = request.getReq();
+  Fsync::FuseFileInfo::Builder fuseFileInfo = fsync.initFi();
+
+  fsync.setIno(ino);
+  fsync.setDatasync(datasync);
+
+  fillFileInfo(&fuseFileInfo, fi);
+
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+  auto response = result.getRes();
+
+  int res = response.getRes();
+  int err = response.getErrno();
+
+  fuse_reply_err(req, res == -1 ? err : 0);
+}
+
+/**
+ * @brief
+ *
+ * @param req
  * @param ino -> uint64_t
  * @param attr -> {
  *    uint16_t      st_dev

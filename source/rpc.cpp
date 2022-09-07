@@ -13,6 +13,10 @@
 #include <capnp/serialize-packed.h>
 #include <create.capnp.h>
 #include <create.response.capnp.h>
+#include <flush.capnp.h>
+#include <flush.response.capnp.h>
+#include <fsync.capnp.h>
+#include <fsync.response.capnp.h>
 #include <getattr.capnp.h>
 #include <getattr.response.capnp.h>
 #include <ghostfs.capnp.h>
@@ -838,6 +842,54 @@ public:
     attributes.setStCtime(attr.st_ctime);
     attributes.setStBlksize(attr.st_blksize);
     attributes.setStBlocks(attr.st_blocks);
+
+    response.setErrno(err);
+    response.setRes(res);
+
+    return kj::READY_NOW;
+  }
+
+  kj::Promise<void> flush(FlushContext context) override {
+    auto params = context.getParams();
+    auto req = params.getReq();
+
+    auto results = context.getResults();
+    auto response = results.getRes();
+
+    Flush::FuseFileInfo::Reader fi = req.getFi();
+
+    int res = ::close(dup(fi.getFh()));
+    int err = errno;
+
+    response.setErrno(err);
+    response.setRes(res);
+
+    return kj::READY_NOW;
+  }
+
+  kj::Promise<void> fsync(FsyncContext context) override {
+    auto params = context.getParams();
+    auto req = params.getReq();
+
+    auto results = context.getResults();
+    auto response = results.getRes();
+
+    Fsync::FuseFileInfo::Reader fi = req.getFi();
+
+    int res;
+
+    #ifndef __APPLE__
+      uint64_t datasync = req.getDatasync();
+      if (datasync) {
+        res = ::fdatasync(fi.getFh());
+      } else
+        res = ::fsync(fi.getFh());
+      }
+    #else
+      res = ::fsync(fi.getFh());
+    #endif
+
+    int err = errno;
 
     response.setErrno(err);
     response.setRes(res);

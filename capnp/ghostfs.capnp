@@ -30,6 +30,10 @@ using import "setxattr.capnp".Setxattr;
 using import "setxattr.response.capnp".SetxattrResponse;
 using import "create.capnp".Create;
 using import "create.response.capnp".CreateResponse;
+using import "flush.capnp".Flush;
+using import "flush.response.capnp".FlushResponse;
+using import "fsync.capnp".Fsync;
+using import "fsync.response.capnp".FsyncResponse;
 
 interface GhostFSAuthServer {
   authorize @0 (user :Text, token :Text, retries :Int64, expires :UInt64) -> (token :Text);
@@ -55,4 +59,6 @@ interface GhostFS {
   readdir  @12 (req :Readdir)  -> (res :ReaddirResponse);
   setxattr @13 (req :Setxattr) -> (res :SetxattrResponse);
   create   @14 (req :Create)   -> (res :CreateResponse);
+  flush    @15 (req :Flush)    -> (res :FlushResponse);
+  fsync    @16 (req :Fsync)    -> (res :FsyncResponse);
 }
