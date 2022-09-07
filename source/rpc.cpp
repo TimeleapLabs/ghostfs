@@ -909,8 +909,9 @@ public:
 
     Fsync::FuseFileInfo::Reader fi = req.getFi();
 
+    int res;
+
     #ifndef __APPLE__
-      int res;
       uint64_t datasync = req.getDatasync();
       if (datasync) {
         res = ::fdatasync(fi.getFh());
@@ -918,7 +919,7 @@ public:
         res = ::fsync(fi.getFh());
       }
     #else
-      int res = ::fsync(fi.getFh());
+      res = ::fsync(fi.getFh());
     #endif
 
     int err = errno;
