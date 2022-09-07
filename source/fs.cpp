@@ -925,7 +925,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-// clang-format off
+  // clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
@@ -1038,37 +1038,44 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options, s
 
   std::cout << "Connected to the GhostFS server." << std::endl;
 
-  int argc = options.size() * 2 + 2;
-  char *argv[2048] = {executable, argmnt};
-
-  int i = 0;
-  for (std::string option : options) {
-    argv[2 + i++] = (char *)"-o";
-    argv[2 + i++] = (char *)option.c_str();
-  }
-
-  struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
-  struct fuse_chan *ch;
-  char *mountpoint;
+  char *argv[2] = {executable, argmnt};
   int err = -1;
+  char *mountpoint;
 
-  if (fuse_parse_cmdline(&args, &mountpoint, NULL, NULL) != -1
-      && (ch = fuse_mount(mountpoint, &args)) != NULL) {
-    struct fuse_session *se;
+  struct fuse_args args = FUSE_ARGS_INIT(2, argv);
+  err = fuse_parse_cmdline(&args, &mountpoint, NULL, NULL);
 
-    se = fuse_lowlevel_new(&args, &hello_ll_oper, sizeof(hello_ll_oper), NULL);
-    if (se != NULL) {
-      if (fuse_set_signal_handlers(se) != -1) {
-        std::cout << "Mounted the GhostFS endpoint." << std::endl;
-        fuse_session_add_chan(se, ch);
-        err = fuse_session_loop(se);
-        fuse_remove_signal_handlers(se);
-        fuse_session_remove_chan(ch);
-      }
-      fuse_session_destroy(se);
-    }
-    fuse_unmount(mountpoint, ch);
+  if (err == -1) {
+    std::cout << "There was an issue parsing fuse options" << std::endl;
+    return err;
   }
+
+  for (std::string option : options) {
+    fuse_opt_add_arg(&args, "-o");
+    fuse_opt_add_arg(&args, option.c_str());
+  }
+
+  struct fuse_chan *ch = fuse_mount(mountpoint, &args);
+
+  if (ch == NULL) {
+    std::cout << "There was an error mounting the fuse endpoint" << std::endl;
+    return -1;
+  }
+
+  struct fuse_session *se = fuse_lowlevel_new(&args, &hello_ll_oper, sizeof(hello_ll_oper), NULL);
+
+  if (se != NULL) {
+    if (fuse_set_signal_handlers(se) != -1) {
+      std::cout << "Mounted the GhostFS endpoint." << std::endl;
+      fuse_session_add_chan(se, ch);
+      err = fuse_session_loop(se);
+      fuse_remove_signal_handlers(se);
+      fuse_session_remove_chan(ch);
+    }
+    fuse_session_destroy(se);
+  }
+
+  fuse_unmount(mountpoint, ch);
   fuse_opt_free_args(&args);
 
   return err ? 1 : 0;
