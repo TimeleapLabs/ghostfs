@@ -639,8 +639,6 @@ public:
       const auto chars = buf_reader.asChars();
       const char* buf = chars.begin();
 
-      std::cout << "BulkWrite: " << fi.getFh() << std::endl;
-
       ::lseek(fi.getFh(), req.getOff(), SEEK_SET);
       size_t written = ::write(fi.getFh(), buf, req.getSize());
       int err = errno;
