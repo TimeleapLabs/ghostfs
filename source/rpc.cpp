@@ -914,7 +914,7 @@ public:
       uint64_t datasync = req.getDatasync();
       if (datasync) {
         res = ::fdatasync(fi.getFh());
-      } else
+      } else {
         res = ::fsync(fi.getFh());
       }
     #else
