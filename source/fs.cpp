@@ -588,7 +588,7 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
 
   if (max_write_back_cache > 0) {
     cached_write cache = {req, ino, (char *)malloc(size), size, off, fi};
-    memcpy(&cache.buf, &buf, size);
+    memcpy(cache.buf, buf, size);
     uint64_t cached = add_to_write_back_cache(cache);
 
     if (cached >= max_write_back_cache) {
@@ -1070,7 +1070,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
