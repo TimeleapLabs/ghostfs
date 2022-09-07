@@ -1121,8 +1121,8 @@ static const struct fuse_lowlevel_ops hello_ll_oper = {
     .open = hello_ll_open,
     .read = hello_ll_read,
     .write = hello_ll_write,
-    .release = hello_ll_release,
     .flush = hello_ll_flush,
+    .release = hello_ll_release,
     .fsync = hello_ll_fsync,
     .readdir = hello_ll_readdir,
     #ifdef __APPLE__
