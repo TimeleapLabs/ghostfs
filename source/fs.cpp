@@ -528,10 +528,12 @@ void flush_write_back_cache(uint64_t fh, bool reply) {
 
     kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte *)cache.buf, cache.size);
     capnp::Data::Reader buf_reader(buf_ptr);
-    write[i++].setBuf(buf_reader);
+    write[i].setBuf(buf_reader);
 
     Write::FuseFileInfo::Builder fuseFileInfo = write[i].initFi();
     fillFileInfo(&fuseFileInfo, cache.fi);
+
+    i++;
   }
 
   auto promise = request.send();
