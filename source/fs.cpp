@@ -984,7 +984,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
@@ -1062,6 +1062,8 @@ static const struct fuse_lowlevel_ops hello_ll_oper = {
     .read = hello_ll_read,
     .write = hello_ll_write,
     .release = hello_ll_release,
+    .flush = hello_ll_flush,
+    .fsync = hello_ll_fsync,
     .readdir = hello_ll_readdir,
     #ifdef __APPLE__
       .setxattr = hello_ll_setxattr,
