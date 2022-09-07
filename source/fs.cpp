@@ -66,12 +66,12 @@
 #include <capnp/ez-rpc.h>
 #include <ghostfs.capnp.h>
 
-#define WRITE_BACK_CACHE_SIZE 8
+uint8_t max_write_back_cache = 8;
 
 struct cached_write {
   fuse_req_t req;
   fuse_ino_t ino;
-  const char *buf;
+  char *buf;
   size_t size;
   off_t off;
   struct fuse_file_info *fi;
@@ -551,6 +551,10 @@ void flush_write_back_cache(uint64_t fh, bool reply) {
     }
   }
 
+  for (auto cache : write_back_cache[fh]) {
+    free(cache.buf);
+  }
+
   write_back_cache[fh].clear();
   write_back_cache.erase(fh);
 }
@@ -582,15 +586,21 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
                            struct fuse_file_info *fi) {
   // printf("Called .write\n");
 
-  uint64_t cached = add_to_write_back_cache({req, ino, buf, size, off, fi});
+  if (max_write_back_cache > 0) {
+    cached_write cache = {req, ino, (char *)malloc(size), size, off, fi};
+    memcpy(&cache.buf, &buf, size);
+    uint64_t cached = add_to_write_back_cache(cache);
 
-  if (cached >= WRITE_BACK_CACHE_SIZE) {
-    flush_write_back_cache(fi->fh, true);
-  } else {
-    fuse_reply_write(req, size);
+    if (cached >= max_write_back_cache) {
+      flush_write_back_cache(fi->fh, true);
+    } else {
+      fuse_reply_write(req, size);
+    }
+
+    return;
   }
 
-  /* auto &waitScope = rpc->getWaitScope();
+  auto &waitScope = rpc->getWaitScope();
   auto request = client->writeRequest();
 
   Write::Builder write = request.getReq();
@@ -618,7 +628,7 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
     return;
   }
 
-  fuse_reply_write(req, response.getWritten()); */
+  fuse_reply_write(req, response.getWritten());
 
   // std::cout << "hello_ll_write executed correctly: " << payload << std::endl;
 }
@@ -1060,7 +1070,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-// clang-format off
+  // clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
@@ -1149,7 +1159,9 @@ static const struct fuse_lowlevel_ops hello_ll_oper = {
 // clang-format on
 
 int start_fs(char *executable, char *argmnt, std::vector<std::string> options, std::string host,
-             int port, std::string user, std::string token) {
+             int port, std::string user, std::string token, uint8_t cache_size) {
+  max_write_back_cache = cache_size;
+
   capnp::EzRpcClient rpc_client(host, port);
   rpc = &rpc_client;
 

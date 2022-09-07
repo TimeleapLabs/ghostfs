@@ -8,7 +8,7 @@
 #include <vector>
 
 int start_fs(char* executable, char* argmnt, std::vector<std::string> options, std::string host,
-             int port, std::string user, std::string token);
+             int port, std::string user, std::string token, uint8_t cache_size);
 
 int hello_stat(fuse_ino_t ino, struct stat* stbuf);
 
