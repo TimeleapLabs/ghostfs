@@ -451,15 +451,12 @@ static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info 
 
 bool reply_from_cache(fuse_req_t req, uint64_t fh, size_t size, off_t off) {
   if (read_ahead_cache.find(fh) == read_ahead_cache.end()) {
-    std::cout << "Not found in cache: " << fh << std::endl;
     return false;
   }
 
   cached_read cache = read_ahead_cache[fh];
 
   if ((cache.off > off) || (cache.off + cache.size < off + size)) {
-    std::cout << "Read " << fh << " of size " << size << " with offest " << off
-              << " not in cache of size" << cache.size << " with offset " << cache.off << std::endl;
     return false;
   }
 
@@ -502,8 +499,6 @@ void read_ahead(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off, struct f
 
   fuse_reply_buf(req, buf, size);
 
-  std::cout << "Read ahead " << res << " instead of " << size << std::endl;
-
   if (res > size) {
     if (read_ahead_cache.find(fi->fh) != read_ahead_cache.end()) {
       free(read_ahead_cache[fi->fh].buf);
@@ -512,8 +507,6 @@ void read_ahead(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off, struct f
     cached_read cache = {ino, (char *)malloc(res), res, off, fi};
     memcpy(cache.buf, buf, res);
     read_ahead_cache[fi->fh] = cache;
-
-    std::cout << "Cached " << fi->fh << " with size " << res << " and offset " << off << std::endl;
   }
 }
 
@@ -547,7 +540,6 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
     bool is_cached = reply_from_cache(req, fi->fh, size, off);
 
     if (!is_cached) {
-      std::cout << "Reading ahead " << fi->fh << std::endl;
       read_ahead(req, ino, size, off, fi);
     }
 

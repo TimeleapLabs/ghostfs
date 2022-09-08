@@ -3,6 +3,6 @@
 struct ReadResponse {
   ino    @0 :UInt64;
   buf    @1 :Data;
-  res    @2 :Int8;
+  res    @2 :Int64;
   errno  @3 :Int8;
 }

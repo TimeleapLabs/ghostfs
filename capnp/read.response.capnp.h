@@ -30,7 +30,7 @@ struct ReadResponse {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(99ad65448e087865, 2, 1)
+    CAPNP_DECLARE_STRUCT_HEADER(99ad65448e087865, 3, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -61,7 +61,7 @@ public:
   inline bool hasBuf() const;
   inline  ::capnp::Data::Reader getBuf() const;
 
-  inline  ::int8_t getRes() const;
+  inline  ::int64_t getRes() const;
 
   inline  ::int8_t getErrno() const;
 
@@ -103,8 +103,8 @@ public:
   inline void adoptBuf(::capnp::Orphan< ::capnp::Data>&& value);
   inline ::capnp::Orphan< ::capnp::Data> disownBuf();
 
-  inline  ::int8_t getRes();
-  inline void setRes( ::int8_t value);
+  inline  ::int64_t getRes();
+  inline void setRes( ::int64_t value);
 
   inline  ::int8_t getErrno();
   inline void setErrno( ::int8_t value);
@@ -185,32 +185,32 @@ inline ::capnp::Orphan< ::capnp::Data> ReadResponse::Builder::disownBuf() {
       ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 
-inline  ::int8_t ReadResponse::Reader::getRes() const {
-  return _reader.getDataField< ::int8_t>(
-      ::capnp::bounded<8>() * ::capnp::ELEMENTS);
+inline  ::int64_t ReadResponse::Reader::getRes() const {
+  return _reader.getDataField< ::int64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
 }
 
-inline  ::int8_t ReadResponse::Builder::getRes() {
-  return _builder.getDataField< ::int8_t>(
-      ::capnp::bounded<8>() * ::capnp::ELEMENTS);
+inline  ::int64_t ReadResponse::Builder::getRes() {
+  return _builder.getDataField< ::int64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
 }
-inline void ReadResponse::Builder::setRes( ::int8_t value) {
-  _builder.setDataField< ::int8_t>(
-      ::capnp::bounded<8>() * ::capnp::ELEMENTS, value);
+inline void ReadResponse::Builder::setRes( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS, value);
 }
 
 inline  ::int8_t ReadResponse::Reader::getErrno() const {
   return _reader.getDataField< ::int8_t>(
-      ::capnp::bounded<9>() * ::capnp::ELEMENTS);
+      ::capnp::bounded<16>() * ::capnp::ELEMENTS);
 }
 
 inline  ::int8_t ReadResponse::Builder::getErrno() {
   return _builder.getDataField< ::int8_t>(
-      ::capnp::bounded<9>() * ::capnp::ELEMENTS);
+      ::capnp::bounded<16>() * ::capnp::ELEMENTS);
 }
 inline void ReadResponse::Builder::setErrno( ::int8_t value) {
   _builder.setDataField< ::int8_t>(
-      ::capnp::bounded<9>() * ::capnp::ELEMENTS, value);
+      ::capnp::bounded<16>() * ::capnp::ELEMENTS, value);
 }
 
 
