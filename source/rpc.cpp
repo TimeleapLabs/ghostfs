@@ -598,6 +598,8 @@ public:
     auto req = params.getReq();
     uint64_t count = params.getCount();
 
+    std::cout << "Read ahead count " << count << std::endl;
+
     auto results = context.getResults();
     auto response = results.getRes();
 
@@ -611,12 +613,16 @@ public:
     size_t size = req.getSize() * count;
     off_t off = req.getOff();
 
+    std::cout << "Read ahead size " << size << std::endl;
+
     char buf[size];
 
     Read::FuseFileInfo::Reader fi = req.getFi();
 
     ::lseek(fi.getFh(), off, SEEK_SET);
     uint64_t res = ::read(fi.getFh(), &buf, size);
+
+    std::cout << "Read ahead res " << res << std::endl;
 
     int err = errno;
 
