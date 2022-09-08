@@ -500,7 +500,9 @@ void read_ahead(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off, struct f
 
   // reply_buf_limited(request.req, buf, chars.size(), request.off, request.size);
 
-  fuse_reply_buf(req, buf, min(size, res));
+  fuse_reply_buf(req, buf, size);
+
+  std::cout << "Read ahead " << res << " instead of " << size << std::endl;
 
   if (res > size) {
     if (read_ahead_cache.find(fi->fh) != read_ahead_cache.end()) {
@@ -545,6 +547,7 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
     bool is_cached = reply_from_cache(req, fi->fh, size, off);
 
     if (!is_cached) {
+      std::cout << "Reading ahead " << fi->fh << std::endl;
       read_ahead(req, ino, size, off, fi);
     }
 
