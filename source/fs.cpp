@@ -499,12 +499,12 @@ void read_ahead(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off, struct f
 
   fuse_reply_buf(req, buf, size);
 
-  if (res > size) {
+  if (static_cast<size_t>(res) > size) {
     if (read_ahead_cache.find(fi->fh) != read_ahead_cache.end()) {
       free(read_ahead_cache[fi->fh].buf);
     }
 
-    cached_read cache = {ino, (char *)malloc(res), res, off, fi};
+    cached_read cache = {ino, (char *)malloc(res), static_cast<size_t>(res), off, fi};
     memcpy(cache.buf, buf, res);
     read_ahead_cache[fi->fh] = cache;
   }
