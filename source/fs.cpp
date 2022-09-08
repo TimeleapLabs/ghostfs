@@ -499,7 +499,7 @@ void read_ahead(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off, struct f
 
   fuse_reply_buf(req, buf, size);
 
-  cached_read cache = {ino, (char *)malloc(res), size, off, fi};
+  cached_read cache = {ino, (char *)malloc(res), res, off, fi};
   memcpy(cache.buf, buf, res);
   read_ahead_cache[fi->fh] = cache;
 }
@@ -1150,7 +1150,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-// clang-format off
+  // clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
