@@ -67,6 +67,7 @@
 #include <ghostfs.capnp.h>
 
 uint8_t max_write_back_cache = 8;
+uint8_t max_read_ahead_cache = 8;
 
 struct cached_write {
   fuse_req_t req;
@@ -77,7 +78,17 @@ struct cached_write {
   struct fuse_file_info *fi;
 };
 
+struct cached_read {
+  fuse_ino_t ino;
+  char *buf;
+  size_t size;
+  off_t off;
+  struct fuse_file_info *fi;
+};
+
 std::map<uint64_t, std::vector<cached_write>> write_back_cache;
+std::map<uint64_t, cached_read> read_ahead_cache;
+
 std::map<uint64_t, std::string> ino_to_path;
 std::map<std::string, uint64_t> path_to_ino;
 
@@ -438,6 +449,61 @@ static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info 
   // std::cout << "hello_ll_open executed correctly: " << payload << std::endl;
 }
 
+bool reply_from_cache(fuse_req_t req, uint64_t fh, size_t size, off_t off) {
+  if (read_ahead_cache.find(fh) == read_ahead_cache.end()) {
+    return false;
+  }
+
+  cached_read cache = read_ahead_cache[fh];
+
+  if ((cache.off > off) || (cache.off + cache.size < off + size)) {
+    return false;
+  }
+
+  fuse_reply_buf(req, cache.buf + (off - cache.off), size);
+  return true;
+}
+
+void read_ahead(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off, struct fuse_file_info *fi) {
+  auto &waitScope = rpc->getWaitScope();
+  auto request = client->readAheadRequest();
+
+  Read::Builder read = request.getReq();
+  Read::FuseFileInfo::Builder fuseFileInfo = read.initFi();
+
+  request.setCount(max_read_ahead_cache);
+
+  read.setIno(ino);
+  read.setSize(size);
+  read.setOff(off);
+
+  fillFileInfo(&fuseFileInfo, fi);
+
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+  auto response = result.getRes();
+
+  int res = response.getRes();
+
+  if (res == -1) {
+    // std::cout << "READ::ENOENT" << std::endl;
+    fuse_reply_err(req, response.getErrno());
+    return;
+  }
+
+  capnp::Data::Reader buf_reader = response.getBuf();
+  const auto chars = buf_reader.asChars();
+  const char *buf = chars.begin();
+
+  // reply_buf_limited(request.req, buf, chars.size(), request.off, request.size);
+
+  fuse_reply_buf(req, buf, size);
+
+  cached_read cache = {ino, (char *)malloc(res), size, off, fi};
+  memcpy(cache.buf, buf, res);
+  read_ahead_cache[fi->fh] = cache;
+}
+
 /**
  * @brief
  *
@@ -463,6 +529,16 @@ static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info 
 static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off,
                           struct fuse_file_info *fi) {
   // printf("Called .read\n");
+
+  if (max_read_ahead_cache > 0) {
+    bool is_cached = reply_from_cache(req, fi->fh, size, off);
+
+    if (!is_cached) {
+      read_ahead(req, ino, size, off, fi);
+    }
+
+    return;
+  }
 
   auto &waitScope = rpc->getWaitScope();
   auto request = client->readRequest();
@@ -509,6 +585,10 @@ uint64_t add_to_write_back_cache(cached_write cache) {
 }
 
 void flush_write_back_cache(uint64_t fh, bool reply) {
+  if (write_back_cache.find(fh) == write_back_cache.end()) {
+    return;
+  }
+
   uint64_t cached = write_back_cache[fh].size();
 
   if (cached == 0) {
@@ -1159,8 +1239,10 @@ static const struct fuse_lowlevel_ops hello_ll_oper = {
 // clang-format on
 
 int start_fs(char *executable, char *argmnt, std::vector<std::string> options, std::string host,
-             int port, std::string user, std::string token, uint8_t cache_size) {
-  max_write_back_cache = cache_size;
+             int port, std::string user, std::string token, uint8_t write_back_cache_size,
+             uint8_t read_ahead_cache_size) {
+  max_write_back_cache = write_back_cache_size;
+  max_read_ahead_cache = read_ahead_cache_size;
 
   capnp::EzRpcClient rpc_client(host, port);
   rpc = &rpc_client;

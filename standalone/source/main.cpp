@@ -28,7 +28,8 @@ auto main(int argc, char** argv) -> int {
     ("U,user", "Username (GhostFS subdirectory)", cxxopts::value<std::string>())
     ("t,token", "Authentication token", cxxopts::value<std::string>()->default_value(""))
     ("R,retries", "Authentication token retries", cxxopts::value<int64_t>()->default_value("-1"))
-    ("w,write-back-cache", "Write back cache size", cxxopts::value<uint8_t>()->default_value("8"))
+    ("w,write-back", "Write back cache size", cxxopts::value<uint8_t>()->default_value("8"))
+    ("C,read-ahead", "Read ahead cache size", cxxopts::value<uint8_t>()->default_value("8"))
     ("A,authorize", "Run in authorizer mode")
     ("s,server", "Run in server mode")
     ("c,client", "Run in client mode");
@@ -72,9 +73,10 @@ auto main(int argc, char** argv) -> int {
     std::string user = result["user"].as<std::string>();
     std::string token = result["token"].as<std::string>();
     std::vector<std::string> options = result["options"].as<std::vector<std::string>>();
-    int64_t cache = result["write-back-cache"].as<uint8_t>();
+    int64_t write_back = result["write-back"].as<uint8_t>();
+    int64_t read_ahead = result["read-ahead"].as<uint8_t>();
 
-    return start_fs(argv[0], argv[1], options, host, port, user, token, cache);
+    return start_fs(argv[0], argv[1], options, host, port, user, token, write_back, read_ahead);
   } else if (result["authorize"].as<bool>()) {
     uint16_t port = result["auth-port"].as<uint16_t>();
     std::string user = result["user"].as<std::string>();

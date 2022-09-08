@@ -63,5 +63,6 @@ interface GhostFS {
   fsync    @16 (req :Fsync)    -> (res :FsyncResponse);
   
   # Special methods (non-fuse)
-  bulkWrite @17 (req :List(Write)) -> (res :List(WriteResponse));
+  bulkWrite @17 (req :List(Write))         -> (res :List(WriteResponse));
+  readAhead @18 (req :Read, count :UInt64) -> (res :ReadResponse);
 }

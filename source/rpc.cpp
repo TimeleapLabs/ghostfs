@@ -579,7 +579,7 @@ public:
     Read::FuseFileInfo::Reader fi = req.getFi();
 
     ::lseek(fi.getFh(), off, SEEK_SET);
-    ::read(fi.getFh(), &buf, size);
+    uint64_t res = ::read(fi.getFh(), &buf, size);
 
     int err = errno;
 
@@ -588,7 +588,44 @@ public:
 
     response.setBuf(buf_reader);
     response.setErrno(err);
-    response.setRes(0);
+    response.setRes(res);
+
+    return kj::READY_NOW;
+  }
+
+  kj::Promise<void> readAhead(ReadAheadContext context) override {
+    auto params = context.getParams();
+    auto req = params.getReq();
+    uint64_t count = params.getCount();
+
+    auto results = context.getResults();
+    auto response = results.getRes();
+
+    if (ino_to_path.find(req.getIno()) == ino_to_path.end()) {
+      // File is unknown
+      response.setRes(-1);
+      response.setErrno(ENOENT);
+      return kj::READY_NOW;
+    }
+
+    size_t size = req.getSize() * count;
+    off_t off = req.getOff();
+
+    char buf[size];
+
+    Read::FuseFileInfo::Reader fi = req.getFi();
+
+    ::lseek(fi.getFh(), off, SEEK_SET);
+    uint64_t res = ::read(fi.getFh(), &buf, size);
+
+    int err = errno;
+
+    kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte*)buf, size);
+    capnp::Data::Reader buf_reader(buf_ptr);
+
+    response.setBuf(buf_reader);
+    response.setErrno(err);
+    response.setRes(res);
 
     return kj::READY_NOW;
   }
