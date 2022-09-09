@@ -21,12 +21,13 @@ if(APPLE)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-stack_size,0x4000000")
 else()
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-stack-size,0x4000000")
+endif()
 
-  # ---- Create standalone executable ----
-  file(GLOB sources CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp)
+# ---- Create standalone executable ----
+file(GLOB sources CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp)
 
-  add_executable(${PROJECT_NAME} ${sources})
+add_executable(${PROJECT_NAME} ${sources})
 
-  set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17 OUTPUT_NAME "GhostFS")
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17 OUTPUT_NAME "GhostFS")
 
-  target_link_libraries(${PROJECT_NAME} GhostFS::GhostFS cxxopts)
+target_link_libraries(${PROJECT_NAME} GhostFS::GhostFS cxxopts)
