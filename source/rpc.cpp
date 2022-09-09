@@ -50,6 +50,10 @@
 #include <filesystem>
 #include <iostream>
 
+struct free_delete {
+  void operator()(void* x) { free(x); }
+};
+
 class GhostFSImpl final : public GhostFS::Server {
   std::string user;
   std::string root;
@@ -574,15 +578,15 @@ public:
     size_t size = req.getSize();
     off_t off = req.getOff();
 
-    auto buf = kj::heapArray<char>(size);
+    std::unique_ptr<char, free_delete> buf((char*)malloc(size));
     Read::FuseFileInfo::Reader fi = req.getFi();
 
     ::lseek(fi.getFh(), off, SEEK_SET);
-    uint64_t res = ::read(fi.getFh(), buf.begin(), size);
+    uint64_t res = ::read(fi.getFh(), buf.get(), size);
 
     int err = errno;
 
-    kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte*)buf.begin(), size);
+    kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte*)buf.get(), size);
     capnp::Data::Reader buf_reader(buf_ptr);
 
     response.setBuf(buf_reader);
