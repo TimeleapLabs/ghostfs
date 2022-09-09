@@ -466,15 +466,13 @@ bool reply_from_cache(fuse_req_t req, uint64_t fh, size_t size, off_t off) {
 
 void read_ahead(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off, struct fuse_file_info *fi) {
   auto &waitScope = rpc->getWaitScope();
-  auto request = client->readAheadRequest();
+  auto request = client->readRequest();
 
   Read::Builder read = request.getReq();
   Read::FuseFileInfo::Builder fuseFileInfo = read.initFi();
 
-  request.setCount(max_read_ahead_cache);
-
   read.setIno(ino);
-  read.setSize(size);
+  read.setSize(size * max_read_ahead_cache);
   read.setOff(off);
 
   fillFileInfo(&fuseFileInfo, fi);
@@ -1156,7 +1154,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
