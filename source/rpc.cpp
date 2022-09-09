@@ -83,7 +83,7 @@ public:
 
     uint64_t ino;
 
-    if (path_to_ino.find(file_path) == path_to_ino.end()) {
+    if (not path_to_ino.contains(file_path)) {
       ino = ++current_ino;
       ino_to_path[ino] = file_path;
       path_to_ino[file_path] = ino;
@@ -190,7 +190,7 @@ public:
 
     int err = 0;
 
-    if (ino_to_path.find(ino) == ino_to_path.end()) {
+    if (not ino_to_path.contains(ino)) {
       // Parent is unknown
       err = errno;
       response.setErrno(err);
@@ -516,7 +516,7 @@ public:
     auto results = context.getResults();
     auto response = results.getRes();
 
-    if (ino_to_path.find(req.getIno()) == ino_to_path.end()) {
+    if (not ino_to_path.contains(req.getIno())) {
       // File is unknown
       response.setRes(-1);
       response.setErrno(ENOENT);
@@ -564,7 +564,7 @@ public:
     auto results = context.getResults();
     auto response = results.getRes();
 
-    if (ino_to_path.find(req.getIno()) == ino_to_path.end()) {
+    if (not ino_to_path.contains(req.getIno())) {
       // File is unknown
       response.setRes(-1);
       response.setErrno(ENOENT);
@@ -698,7 +698,7 @@ public:
     // Root
     if (ino == 1) {
       path = normalize_path(root, user, suffix);
-    } else if (ino_to_path.find(ino) != ino_to_path.end()) {
+    } else if (ino_to_path.contains(ino)) {
       path = ino_to_path[ino];
     } else {
       response.setErrno(ENOENT);
@@ -748,7 +748,7 @@ public:
 
       uint64_t file_ino;
 
-      if (path_to_ino.find(file_path) == path_to_ino.end()) {
+      if (not path_to_ino.contains(file_path)) {
         file_ino = ++current_ino;
         ino_to_path[file_ino] = file_path;
         path_to_ino[file_path] = file_ino;

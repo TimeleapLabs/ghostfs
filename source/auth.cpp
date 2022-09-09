@@ -21,7 +21,7 @@ std::map<std::string, struct User> users;
 std::map<std::string, struct Token> tokens;
 
 bool is_authenticated(std::string user_id) {
-  if (users.find(user_id) == users.end()) {
+  if (not users.contains(user_id)) {
     return false;
   }
 
@@ -45,12 +45,12 @@ bool authenticate(std::string token, std::string sub_directory, std::string user
    * Add a dummy token
    * TODO: remove this
    */
-  if (tokens.find("hipuser") == tokens.end()) {
+  if (not tokens.contains("hipuser")) {
     // -1 for unlimited retries, for test purposes
     add_token("hipuser", "dummy", -1);
   }
 
-  if (tokens.find(sub_directory) == tokens.end()) {
+  if (not tokens.contains(sub_directory)) {
     return false;
   }
 

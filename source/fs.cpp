@@ -162,7 +162,7 @@ int hello_stat(fuse_ino_t ino, struct stat *stbuf) {
     return 0;
   }
 
-  if (ino_to_path.find(ino) == ino_to_path.end()) {
+  if (not ino_to_path.contains(ino)) {
     // File is unknown
     return -1;
   }
@@ -450,13 +450,20 @@ static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info 
 }
 
 bool reply_from_cache(fuse_req_t req, uint64_t fh, size_t size, off_t off) {
-  if (read_ahead_cache.find(fh) == read_ahead_cache.end()) {
+  if (not read_ahead_cache.contains(fh)) {
     return false;
   }
 
   cached_read cache = read_ahead_cache[fh];
 
-  if ((cache.off > off) || (cache.off + cache.size < off + size)) {
+  if (cache.off > off) {
+    return false;
+  }
+
+  uint64_t cache_end = cache.off + cache.size;
+  uint64_t read_end = off + size;
+
+  if (read_end > cache_end) {
     return false;
   }
 
@@ -498,7 +505,7 @@ void read_ahead(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off, struct f
   fuse_reply_buf(req, buf, min(size, static_cast<size_t>(res)));
 
   if (static_cast<size_t>(res) > size) {
-    if (read_ahead_cache.find(fi->fh) != read_ahead_cache.end()) {
+    if (read_ahead_cache.contains(fi->fh)) {
       free(read_ahead_cache[fi->fh].buf);
     }
 
@@ -535,11 +542,11 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
   // printf("Called .read\n");
 
   if (max_read_ahead_cache > 0) {
-    // bool is_cached = reply_from_cache(req, fi->fh, size, off);
+    bool is_cached = reply_from_cache(req, fi->fh, size, off);
 
-    // if (!is_cached) {
-    read_ahead(req, ino, size, off, fi);
-    //}
+    if (!is_cached) {
+      read_ahead(req, ino, size, off, fi);
+    }
 
     return;
   }
@@ -580,7 +587,7 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
 }
 
 uint64_t add_to_write_back_cache(cached_write cache) {
-  if (write_back_cache.find(cache.fi->fh) == write_back_cache.end()) {
+  if (not write_back_cache.contains(cache.fi->fh)) {
     write_back_cache[cache.fi->fh] = std::vector<cached_write>();
   }
 
@@ -589,7 +596,7 @@ uint64_t add_to_write_back_cache(cached_write cache) {
 }
 
 void flush_write_back_cache(uint64_t fh, bool reply) {
-  if (write_back_cache.find(fh) == write_back_cache.end()) {
+  if (not write_back_cache.contains(fh)) {
     return;
   }
 
@@ -1154,7 +1161,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
