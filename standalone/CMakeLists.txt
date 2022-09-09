@@ -16,13 +16,6 @@ CPMAddPackage(
 
 CPMAddPackage(NAME GhostFS SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/..)
 
-# ---- Increase stack size ----
-if(APPLE)
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-stack_size,0x4000000")
-else()
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-stack-size,0x4000000")
-endif()
-
 # ---- Create standalone executable ----
 file(GLOB sources CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp)
 

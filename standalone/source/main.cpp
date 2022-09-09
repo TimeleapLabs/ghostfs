@@ -2,6 +2,7 @@
 #include <ghostfs/ghostfs.h>
 #include <ghostfs/rpc.h>
 #include <ghostfs/version.h>
+#include <sys/resource.h>
 
 #include <cxxopts.hpp>
 #include <filesystem>
@@ -58,6 +59,18 @@ auto main(int argc, char** argv) -> int {
   }
 
   if (result["server"].as<bool>()) {
+    // Increse stack size
+
+    const rlim_t min_stack_size = 64 * 1024 * 1024;
+    struct rlimit rl;
+
+    if (getrlimit(RLIMIT_STACK, &rl) == 0) {
+      if (rl.rlim_cur < min_stack_size) {
+        rl.rlim_cur = min_stack_size;
+        setrlimit(RLIMIT_STACK, &rl);
+      }
+    }
+
     std::string root = result["root"].as<std::string>();
     std::string bind = result["bind"].as<std::string>();
     std::string suffix = result["suffix"].as<std::string>();
