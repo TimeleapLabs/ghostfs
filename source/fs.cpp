@@ -495,7 +495,7 @@ void read_ahead(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off, struct f
 
   // reply_buf_limited(request.req, buf, chars.size(), request.off, request.size);
 
-  fuse_reply_buf(req, buf, size);
+  fuse_reply_buf(req, buf, min(size, static_cast<size_t>(res)));
 
   if (static_cast<size_t>(res) > size) {
     if (read_ahead_cache.find(fi->fh) != read_ahead_cache.end()) {
@@ -574,7 +574,7 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
 
   // reply_buf_limited(request.req, buf, chars.size(), request.off, request.size);
 
-  fuse_reply_buf(req, buf, chars.size());
+  fuse_reply_buf(req, buf, res);
 
   // std::cout << "hello_ll_read executed correctly: " << payload << std::endl;
 }
