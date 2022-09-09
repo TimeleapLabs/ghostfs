@@ -20,7 +20,7 @@ CPMAddPackage(NAME GhostFS SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/..)
 if(APPLE)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-stack_size,0x4000000")
 else()
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-stack-size,0x4000000")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-z,stack-size=0x4000000")
 endif()
 
 # ---- Create standalone executable ----
