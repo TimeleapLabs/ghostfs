@@ -535,11 +535,11 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
   // printf("Called .read\n");
 
   if (max_read_ahead_cache > 0) {
-    bool is_cached = reply_from_cache(req, fi->fh, size, off);
+    // bool is_cached = reply_from_cache(req, fi->fh, size, off);
 
-    if (!is_cached) {
-      read_ahead(req, ino, size, off, fi);
-    }
+    // if (!is_cached) {
+    read_ahead(req, ino, size, off, fi);
+    //}
 
     return;
   }
@@ -1154,7 +1154,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-// clang-format off
+  // clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
