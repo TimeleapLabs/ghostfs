@@ -20,6 +20,7 @@
 #include <kj/async-io.h>
 #include <kj/async.h>
 #include <kj/compat/tls.h>
+#include <kj/debug.h>
 
 // Cap'n'Proto methods
 #include <create.capnp.h>
@@ -1131,6 +1132,8 @@ int start_rpc_server(std::string bind, int port, int auth_port, std::string root
       return 1;
     };
   }
+
+  kj::_::Debug::setLogLevel(kj::_::Debug::Severity::ERROR);
 
   std::string key = key_file.length() ? read_file(key_file) : "";
   std::string cert = cert_file.length() ? read_file(cert_file) : "";
