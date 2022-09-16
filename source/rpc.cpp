@@ -69,10 +69,18 @@ public:
     uint64_t parent = req.getParent();
     std::string name = req.getName();
 
-    std::string user_root = normalize_path(root, user, suffix);
-    std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
-    std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
-    std::filesystem::path file_path = parent_path / std::filesystem::path(name);
+    std::map<std::string, std::string>* mounts = get_user_mounts(user);
+    bool is_mount = parent == 1 && mounts->contains(name);
+    std::filesystem::path file_path;
+
+    if (is_mount) {
+      std::string file_path = std::filesystem::path(root) / (*mounts)[name];
+    } else {
+      std::string user_root = normalize_path(root, user, suffix);
+      std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
+      std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
+      file_path = parent_path / std::filesystem::path(name);
+    }
 
     if (!std::filesystem::exists(file_path)) {
       int err = errno;
