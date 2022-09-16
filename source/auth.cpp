@@ -8,8 +8,8 @@
 #include <string>
 
 struct User {
-  bool authenticated;
   std::string sub_directory;
+  std::map<std::string, std::string> soft_mounts;
 };
 
 struct Token {
@@ -20,14 +20,6 @@ struct Token {
 std::map<std::string, struct User> users;
 std::map<std::string, struct Token> tokens;
 
-bool is_authenticated(std::string user_id) {
-  if (not users.contains(user_id)) {
-    return false;
-  }
-
-  return users[user_id].authenticated;
-}
-
 std::string random_token() {
   std::string uuid = gen_uuid();
   std::replace(uuid.begin(), uuid.end(), '-', uuid[3]);
@@ -36,11 +28,33 @@ std::string random_token() {
 
 std::string add_token(std::string user, std::string token, int64_t retries) {
   std::string token_to_add = token.length() ? token : random_token();
+
   tokens[user] = {.token = token_to_add, .usable = retries};
+
+  if (not users.contains(user)) {
+    users[user] = {.sub_directory = user};
+  }
+
   return token_to_add;
 }
 
-bool authenticate(std::string token, std::string sub_directory, std::string user_id) {
+void soft_mount(std::string user, std::string src, std::string dest) {
+  if (users.contains(user)) {
+    users[user].soft_mounts[dest] = src;
+  }
+}
+
+void soft_unmount(std::string user, std::string dest) {
+  if (users.contains(user) and users[user].soft_mounts.contains(dest)) {
+    users[user].soft_mounts.erase(dest);
+  }
+}
+
+std::map<std::string, std::string>* get_user_mounts(std::string user) {
+  return &users[user].soft_mounts;
+}
+
+bool authenticate(std::string token, std::string user) {
   /**
    * Add a dummy token
    * TODO: remove this
@@ -50,11 +64,11 @@ bool authenticate(std::string token, std::string sub_directory, std::string user
     add_token("hipuser", "dummy", -1);
   }
 
-  if (not tokens.contains(sub_directory)) {
+  if (not tokens.contains(user)) {
     return false;
   }
 
-  struct Token *t = &tokens[sub_directory];
+  struct Token* t = &tokens[user];
 
   if (t->token != token) {
     return false;
@@ -65,9 +79,6 @@ bool authenticate(std::string token, std::string sub_directory, std::string user
   } else if (t->usable > 0) {  // pass -1 to allow infinite use
     t->usable--;
   }
-
-  struct User user = {.authenticated = true, .sub_directory = sub_directory};
-  users[user_id] = user;
 
   return true;
 }

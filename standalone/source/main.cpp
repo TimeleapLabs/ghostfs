@@ -90,6 +90,7 @@ auto main(int argc, char** argv) -> int {
     int64_t read_ahead = result["read-ahead"].as<uint8_t>();
 
     return start_fs(argv[0], argv[1], options, host, port, user, token, write_back, read_ahead);
+
   } else if (result["authorize"].as<bool>()) {
     uint16_t port = result["auth-port"].as<uint16_t>();
     std::string user = result["user"].as<std::string>();
@@ -97,5 +98,20 @@ auto main(int argc, char** argv) -> int {
     int64_t retries = result["retries"].as<int64_t>();
 
     return rpc_add_token(port, user, token, retries);
+
+  } else if (result["mount"].as<bool>()) {
+    uint16_t port = result["auth-port"].as<uint16_t>();
+    std::string user = result["user"].as<std::string>();
+    std::string source = result["source"].as<std::string>();
+    std::string destination = result["destination"].as<std::string>();
+
+    return rpc_mount(port, user, source, destination);
+
+  } else if (result["unmount"].as<bool>()) {
+    uint16_t port = result["auth-port"].as<uint16_t>();
+    std::string user = result["user"].as<std::string>();
+    std::string destination = result["destination"].as<std::string>();
+
+    return rpc_unmount(port, user, destination);
   }
 }

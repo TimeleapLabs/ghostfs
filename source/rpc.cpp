@@ -677,22 +677,6 @@ public:
     auto response = results.getRes();
 
     uint64_t ino = req.getIno();
-
-    /**
-     * Check if authenticated (example).
-     * On fail we need to return a fuse error.
-     * EACCESS for access denied.
-     */
-    // TODO
-    bool auth = is_authenticated(user);
-
-    if (!auth) {
-      response.setErrno(EACCES);
-      response.setRes(-1);
-
-      return kj::READY_NOW;
-    }  // END EXAMPLE
-
     std::string path;
 
     // Root
@@ -729,6 +713,12 @@ public:
       length++;
     }
 
+    if (ino == 1) {
+      for([[maybe_unused]] auto const& mount: *get_user_mounts(user)){
+        length++;
+      }
+    }
+
     ::capnp::List<ReaddirResponse::Entry>::Builder entries = response.initEntries(length);
 
     entries[0].setName(".");
@@ -760,6 +750,29 @@ public:
       entries[index].setIno(file_ino);
 
       index++;
+    }
+
+    if (ino == 1) {
+      for([[maybe_unused]] auto const& mount: *get_user_mounts(user)){
+        std::string source = mount.first;
+        std::string destination = mount.second;
+        std::string file_path = std::filesystem::path(root) / source;
+
+        uint64_t file_ino;
+
+        if (not path_to_ino.contains(file_path)) {
+          file_ino = ++current_ino;
+          ino_to_path[file_ino] = file_path;
+          path_to_ino[file_path] = file_ino;
+        } else {
+          file_ino = path_to_ino[file_path];
+        }
+
+        entries[index].setName(destination);
+        entries[index].setIno(file_ino);
+
+        index++;
+      }
     }
 
     response.setErrno(0);
@@ -954,6 +967,43 @@ class GhostFSAuthServerImpl final : public GhostFSAuthServer::Server {
       
       return kj::READY_NOW;
     }
+
+    kj::Promise<void> mount(MountContext context) override {
+      auto params = context.getParams();
+
+      auto userPtr = params.getUser();
+      std::string user(userPtr.begin(), userPtr.end());
+
+      auto sourcePtr = params.getSource();
+      std::string source(sourcePtr.begin(), sourcePtr.end());
+
+      auto destinationPtr = params.getDestination();
+      std::string destination(destinationPtr.begin(), destinationPtr.end());
+
+      soft_mount(user, source, destination);
+
+      auto res = context.getResults();
+      res.setSuccess(true);
+      
+      return kj::READY_NOW;
+    }
+
+    kj::Promise<void> unmount(UnmountContext context) override {
+      auto params = context.getParams();
+
+      auto userPtr = params.getUser();
+      std::string user(userPtr.begin(), userPtr.end());
+
+      auto destinationPtr = params.getDestination();
+      std::string destination(destinationPtr.begin(), destinationPtr.end());
+
+      soft_unmount(user, destination);
+
+      auto res = context.getResults();
+      res.setSuccess(true);
+      
+      return kj::READY_NOW;
+    }
 };
 
 int rpc_add_token(uint16_t port, std::string user, std::string token, int64_t retries) {
@@ -978,6 +1028,41 @@ int rpc_add_token(uint16_t port, std::string user, std::string token, int64_t re
   return 0;
 }
 
+int rpc_mount(uint16_t port, std::string user, std::string source, std::string destination) {
+  capnp::EzRpcClient rpc("127.0.0.1", port);
+
+  auto& waitScope = rpc.getWaitScope();
+  GhostFSAuthServer::Client authClient = rpc.getMain<GhostFSAuthServer>();
+
+  auto request = authClient.mountRequest();
+
+  request.setUser(user);
+  request.setSource(source);
+  request.setDestination(destination);
+
+  auto promise = request.send();
+  [[maybe_unused]] auto result = promise.wait(waitScope);
+
+  return 0;
+}
+
+int rpc_unmount(uint16_t port, std::string user, std::string destination) {
+  capnp::EzRpcClient rpc("127.0.0.1", port);
+
+  auto& waitScope = rpc.getWaitScope();
+  GhostFSAuthServer::Client authClient = rpc.getMain<GhostFSAuthServer>();
+
+  auto request = authClient.unmountRequest();
+
+  request.setUser(user);
+  request.setDestination(destination);
+
+  auto promise = request.send();
+  [[maybe_unused]] auto result = promise.wait(waitScope);
+
+  return 0;
+}
+
 class GhostFSAuthImpl final : public GhostFSAuth::Server {
   std::string root;
   std::string suffix;
@@ -997,7 +1082,7 @@ public:
 
     // TODO: in previous WebSocket implementation userId
     // wasn't equal to user's subdirectory, this needs attention
-    bool isValid = authenticate(token, user, user);
+    bool isValid = authenticate(token, user);
     auto res = context.getResults();
     
     res.setAuthSuccess(isValid);

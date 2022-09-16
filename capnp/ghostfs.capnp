@@ -37,10 +37,12 @@ using import "fsync.response.capnp".FsyncResponse;
 
 interface GhostFSAuthServer {
   authorize @0 (user :Text, token :Text, retries :Int64, expires :UInt64) -> (token :Text);
+  mount     @1 (user :Text, source :Text, destination :Text) -> (success :Bool);
+  unmount   @2 (user :Text, destination :Text) -> (success :Bool);
 }
 
 interface GhostFSAuth {
-  auth @0 (user :Text, token :Text) -> (ghostFs :GhostFS, authSuccess :Bool);
+  auth    @0 (user :Text, token :Text) -> (ghostFs :GhostFS, authSuccess :Bool);
 }
 
 interface GhostFS {
