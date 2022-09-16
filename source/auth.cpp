@@ -55,15 +55,6 @@ std::map<std::string, std::string>* get_user_mounts(std::string user) {
 }
 
 bool authenticate(std::string token, std::string user) {
-  /**
-   * Add a dummy token
-   * TODO: remove this
-   */
-  if (not tokens.contains("hipuser")) {
-    // -1 for unlimited retries, for test purposes
-    add_token("hipuser", "dummy", -1);
-  }
-
   if (not tokens.contains(user)) {
     return false;
   }
