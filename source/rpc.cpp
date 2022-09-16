@@ -1164,7 +1164,7 @@ int start_rpc_server(std::string bind, int port, int auth_port, std::string root
 
     kj::TlsContext tlsContext(kj::mv(options));
 
-	  auto network = tlsContext.wrapNetwork(ioContext.provider->getNetwork());
+    auto network = tlsContext.wrapNetwork(ioContext.provider->getNetwork());
     auto address = network->parseAddress(bind, port).wait(ioContext.waitScope);
     auto listener = address->listen();
     auto listen_promise = server.listen(*listener);
