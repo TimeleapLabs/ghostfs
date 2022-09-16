@@ -1123,7 +1123,6 @@ std::string read_file(const std::string& path) {
     return std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 }
 
-
 int start_rpc_server(std::string bind, int port, int auth_port, std::string root,
                      std::string suffix, std::string key_file, std::string cert_file) {
   if (root.length() > 0) {
@@ -1140,8 +1139,7 @@ int start_rpc_server(std::string bind, int port, int auth_port, std::string root
   std::cout << "Starting GhostFS auth server on port " << auth_port << "..." << std::endl;
 
   /**
-   * Capnp RPC server. We need to find out how to pass parameters to the
-   * GhostFSImpl class, instead of assigning them globally.
+   * Capnp RPC server. 
    */
 
   auto ioContext = kj::setupAsyncIo();

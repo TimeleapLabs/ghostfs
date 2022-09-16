@@ -93,11 +93,13 @@ auto main(int argc, char** argv) -> int {
     uint16_t port = result["port"].as<uint16_t>();
     std::string user = result["user"].as<std::string>();
     std::string token = result["token"].as<std::string>();
+    std::string cert = result["cert"].as<std::string>();
     std::vector<std::string> options = result["options"].as<std::vector<std::string>>();
     int64_t write_back = result["write-back"].as<uint8_t>();
     int64_t read_ahead = result["read-ahead"].as<uint8_t>();
 
-    return start_fs(argv[0], argv[1], options, host, port, user, token, write_back, read_ahead);
+    return start_fs(argv[0], argv[1], options, host, port, user, token, write_back, read_ahead,
+                    cert);
 
   } else if (result["authorize"].as<bool>()) {
     uint16_t port = result["auth-port"].as<uint16_t>();

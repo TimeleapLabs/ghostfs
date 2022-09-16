@@ -18,16 +18,31 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <filesystem>
+#include <fstream>
+#include <iostream>
 #include <iterator>
+#include <map>
+#include <sstream>
+#include <vector>
+
+// Cap'n'Proto
+#include <capnp/ez-rpc.h>
+#include <capnp/message.h>
+#include <capnp/rpc-twoparty.h>
+#include <capnp/serialize-packed.h>
+#include <kj/async-io.h>
+#include <kj/async.h>
+#include <kj/compat/tls.h>
 
 // CAPNPROTO
 
-#include <capnp/message.h>
 #include <capnp/serialize-packed.h>
 #include <create.capnp.h>
 #include <create.response.capnp.h>
 #include <getattr.capnp.h>
 #include <getattr.response.capnp.h>
+#include <ghostfs.capnp.h>
 #include <lookup.capnp.h>
 #include <lookup.response.capnp.h>
 #include <mkdir.capnp.h>
@@ -55,16 +70,6 @@
 #include <unlink.response.capnp.h>
 #include <write.capnp.h>
 #include <write.response.capnp.h>
-
-#include <filesystem>
-#include <iostream>
-#include <map>
-#include <vector>
-
-// RPC
-
-#include <capnp/ez-rpc.h>
-#include <ghostfs.capnp.h>
 
 uint8_t max_write_back_cache = 8;
 uint8_t max_read_ahead_cache = 8;
@@ -106,7 +111,7 @@ static int reply_buf_limited(fuse_req_t req, const char *buf, size_t bufsize, of
 }
 
 GhostFS::Client *client;
-capnp::EzRpcClient *rpc;
+kj::AsyncIoContext *context;
 
 uint64_t get_parent_ino(uint64_t ino, std::string path) {
   if (ino == 1) {
@@ -204,7 +209,7 @@ void dirbuf_add(fuse_req_t req, struct dirbuf *b, const char *name, fuse_ino_t i
  * }
  */
 static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
-  auto &waitScope = rpc->getWaitScope();
+  auto &waitScope = context->waitScope;
   auto request = client->getattrRequest();
 
   Getattr::Builder getattr = request.getReq();
@@ -261,7 +266,7 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
 static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name) {
   // printf("Called .lookup\n");
 
-  auto &waitScope = rpc->getWaitScope();
+  auto &waitScope = context->waitScope;
   auto request = client->lookupRequest();
 
   Lookup::Builder lookup = request.getReq();
@@ -341,7 +346,7 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
                              struct fuse_file_info *fi) {
   // printf("Called .readdir\n");
 
-  auto &waitScope = rpc->getWaitScope();
+  auto &waitScope = context->waitScope;
   auto request = client->readdirRequest();
 
   Readdir::Builder readdir = request.getReq();
@@ -407,7 +412,7 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
 static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
   // printf("Called .open\n");
 
-  auto &waitScope = rpc->getWaitScope();
+  auto &waitScope = context->waitScope;
   auto request = client->openRequest();
 
   Open::Builder open = request.getReq();
@@ -472,7 +477,7 @@ bool reply_from_cache(fuse_req_t req, uint64_t fh, size_t size, off_t off) {
 }
 
 void read_ahead(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off, struct fuse_file_info *fi) {
-  auto &waitScope = rpc->getWaitScope();
+  auto &waitScope = context->waitScope;
   auto request = client->readRequest();
 
   Read::Builder read = request.getReq();
@@ -551,7 +556,7 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
     return;
   }
 
-  auto &waitScope = rpc->getWaitScope();
+  auto &waitScope = context->waitScope;
   auto request = client->readRequest();
 
   Read::Builder read = request.getReq();
@@ -606,7 +611,7 @@ void flush_write_back_cache(uint64_t fh, bool reply) {
     return;
   }
 
-  auto &waitScope = rpc->getWaitScope();
+  auto &waitScope = context->waitScope;
   auto request = client->bulkWriteRequest();
 
   capnp::List<Write>::Builder write = request.initReq(cached);
@@ -691,7 +696,7 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
     return;
   }
 
-  auto &waitScope = rpc->getWaitScope();
+  auto &waitScope = context->waitScope;
   auto request = client->writeRequest();
 
   Write::Builder write = request.getReq();
@@ -727,7 +732,7 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
 static void hello_ll_unlink(fuse_req_t req, fuse_ino_t parent, const char *name) {
   // printf("Called .unlink\n");
 
-  auto &waitScope = rpc->getWaitScope();
+  auto &waitScope = context->waitScope;
   auto request = client->unlinkRequest();
 
   Unlink::Builder unlink = request.getReq();
@@ -750,7 +755,7 @@ static void hello_ll_unlink(fuse_req_t req, fuse_ino_t parent, const char *name)
 static void hello_ll_rmdir(fuse_req_t req, fuse_ino_t parent, const char *name) {
   // printf("Called .rmdir\n");
 
-  auto &waitScope = rpc->getWaitScope();
+  auto &waitScope = context->waitScope;
   auto request = client->rmdirRequest();
 
   Rmdir::Builder rmdir = request.getReq();
@@ -783,7 +788,7 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
                            dev_t rdev) {
   // printf("Called .mknod\n");
 
-  auto &waitScope = rpc->getWaitScope();
+  auto &waitScope = context->waitScope;
   auto request = client->mknodRequest();
 
   Mknod::Builder mknod = request.getReq();
@@ -859,7 +864,7 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
                             struct fuse_file_info *fi) {
   // printf("Called .create\n");
 
-  auto &waitScope = rpc->getWaitScope();
+  auto &waitScope = context->waitScope;
   auto request = client->createRequest();
 
   Create::Builder create = request.getReq();
@@ -930,7 +935,7 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
 static void hello_ll_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode) {
   // printf("Called .mkdir\n");
 
-  auto &waitScope = rpc->getWaitScope();
+  auto &waitScope = context->waitScope;
   auto request = client->mkdirRequest();
 
   Mkdir::Builder mkdir = request.getReq();
@@ -983,7 +988,7 @@ static void hello_ll_rename(fuse_req_t req, fuse_ino_t parent, const char *name,
                             fuse_ino_t newparent, const char *newname) {
   // printf("Called .rename\n");
 
-  auto &waitScope = rpc->getWaitScope();
+  auto &waitScope = context->waitScope;
   auto request = client->renameRequest();
 
   Rename::Builder rename = request.getReq();
@@ -1014,7 +1019,7 @@ static void hello_ll_rename(fuse_req_t req, fuse_ino_t parent, const char *name,
  * @param mode -> uint64_t
  */
 static void hello_ll_release(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
-  auto &waitScope = rpc->getWaitScope();
+  auto &waitScope = context->waitScope;
   auto request = client->releaseRequest();
 
   Release::Builder release = request.getReq();
@@ -1046,7 +1051,7 @@ static void hello_ll_release(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
 static void hello_ll_flush(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
   flush_write_back_cache(fi->fh, false);
 
-  auto &waitScope = rpc->getWaitScope();
+  auto &waitScope = context->waitScope;
   auto request = client->flushRequest();
 
   Flush::Builder flush = request.getReq();
@@ -1077,7 +1082,7 @@ static void hello_ll_fsync(fuse_req_t req, fuse_ino_t ino, int datasync,
                            struct fuse_file_info *fi) {
   flush_write_back_cache(fi->fh, false);
 
-  auto &waitScope = rpc->getWaitScope();
+  auto &waitScope = context->waitScope;
   auto request = client->fsyncRequest();
 
   Fsync::Builder fsync = request.getReq();
@@ -1136,7 +1141,7 @@ static void hello_ll_fsync(fuse_req_t req, fuse_ino_t ino, int datasync,
  */
 static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, int to_set,
                              struct fuse_file_info *fi) {
-  auto &waitScope = rpc->getWaitScope();
+  auto &waitScope = context->waitScope;
   auto request = client->setattrRequest();
 
   Setattr::Builder setattr = request.getReq();
@@ -1197,7 +1202,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
 static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, const char *value,
                               size_t size, int flags, uint32_t position) {
 
-  auto &waitScope = rpc->getWaitScope();
+  auto &waitScope = context->waitScope;
   auto request = client->setxattrRequest();
 
   Setxattr::Builder setxattr = request.getReq();
@@ -1249,36 +1254,78 @@ static const struct fuse_lowlevel_ops hello_ll_oper = {
 };
 // clang-format on
 
+std::string read_file(const std::string &path);
+
 int start_fs(char *executable, char *argmnt, std::vector<std::string> options, std::string host,
              int port, std::string user, std::string token, uint8_t write_back_cache_size,
-             uint8_t read_ahead_cache_size) {
+             uint8_t read_ahead_cache_size, std::string cert_file) {
   max_write_back_cache = write_back_cache_size;
   max_read_ahead_cache = read_ahead_cache_size;
 
-  capnp::EzRpcClient rpc_client(host, port);
-  rpc = &rpc_client;
+  std::string cert = cert_file.length() ? read_file(cert_file) : "";
 
-  auto &waitScope = rpc_client.getWaitScope();
-  GhostFSAuth::Client authClient = rpc_client.getMain<GhostFSAuth>();
+  auto ioContext = kj::setupAsyncIo();
+  context = &ioContext;
 
-  auto request = authClient.authRequest();
+  if (cert_file.length()) {
+    kj::TlsContext::Options options;
+    kj::TlsCertificate caCert(cert);
+    options.trustedCertificates = kj::arrayPtr(&caCert, 1);
 
-  request.setUser(user);
-  request.setToken(token);
+    kj::TlsContext tls(kj::mv(options));
+    auto network = tls.wrapNetwork(ioContext.provider->getNetwork());
+    auto address = network->parseAddress(host, port).wait(ioContext.waitScope);
+    auto connection = address->connect().wait(ioContext.waitScope);
 
-  auto promise = request.send();
-  auto result = promise.wait(waitScope);
-  auto authSuccess = result.getAuthSuccess();
+    capnp::TwoPartyClient two_party(*connection);
 
-  if (!authSuccess) {
-    std::cout << "Authentication failed!" << std::endl;
-    return 1;
+    auto authClient = two_party.bootstrap().castAs<GhostFSAuth>();
+    auto request = authClient.authRequest();
+
+    request.setUser(user);
+    request.setToken(token);
+
+    auto promise = request.send();
+    auto result = promise.wait(ioContext.waitScope);
+    auto authSuccess = result.getAuthSuccess();
+
+    if (!authSuccess) {
+      std::cout << "Authentication failed!" << std::endl;
+      return 1;
+    }
+
+    auto ghostfsClient = result.getGhostFs();
+    client = &ghostfsClient;
+
+    std::cout << "Connected to the GhostFS server." << std::endl;
+
+  } else {
+    auto address
+        = ioContext.provider->getNetwork().parseAddress(host, port).wait(ioContext.waitScope);
+    auto connection = address->connect().wait(ioContext.waitScope);
+
+    capnp::TwoPartyClient two_party(*connection);
+
+    auto authClient = two_party.bootstrap().castAs<GhostFSAuth>();
+    auto request = authClient.authRequest();
+
+    request.setUser(user);
+    request.setToken(token);
+
+    auto promise = request.send();
+    auto result = promise.wait(ioContext.waitScope);
+    auto authSuccess = result.getAuthSuccess();
+
+    if (!authSuccess) {
+      std::cout << "Authentication failed!" << std::endl;
+      return 1;
+    }
+
+    auto ghostfsClient = result.getGhostFs();
+    client = &ghostfsClient;
+
+    std::cout << "Connected to the GhostFS server." << std::endl;
   }
-
-  auto ghostfsClient = result.getGhostFs();
-  client = &ghostfsClient;
-
-  std::cout << "Connected to the GhostFS server." << std::endl;
 
   char *argv[2] = {executable, argmnt};
   int err = -1;
