@@ -75,6 +75,7 @@ public:
 
     if (is_mount) {
       std::string file_path = std::filesystem::path(root) / (*mounts)[name];
+      std::cout << "Soft mount " << name << " at " << file_path << std::endl;
     } else {
       std::string user_root = normalize_path(root, user, suffix);
       std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
