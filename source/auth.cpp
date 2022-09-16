@@ -81,7 +81,23 @@ bool check_access(std::string root, std::string user_id, std::string path) {
   auto const path_can = std::filesystem::canonical(path);
 
   auto itr = std::search(path_can.begin(), path_can.end(), root_can.begin(), root_can.end());
-  return itr == path_can.begin();
+
+  if (itr == path_can.begin()) {
+    return true;
+  };
+
+  for ([[maybe_unused]] auto const& mount : *get_user_mounts(user_id)) {
+    std::string source = mount.second;
+    auto const source_can = std::filesystem::canonical(path);
+
+    auto itr = std::search(path_can.begin(), path_can.end(), source_can.begin(), source_can.end());
+
+    if (itr == path_can.begin()) {
+      return true;
+    };
+  }
+
+  return false;
 }
 
 std::filesystem::path normalize_path(std::string root, std::string user_id) {

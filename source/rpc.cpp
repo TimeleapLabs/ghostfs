@@ -722,7 +722,7 @@ public:
     }
 
     if (ino == 1) {
-      for([[maybe_unused]] auto const& mount: *get_user_mounts(user)){
+      for([[maybe_unused]] auto const& mount: *get_user_mounts(user)) {
         length++;
       }
     }
@@ -761,7 +761,7 @@ public:
     }
 
     if (ino == 1) {
-      for([[maybe_unused]] auto const& mount: *get_user_mounts(user)){
+      for([[maybe_unused]] auto const& mount: *get_user_mounts(user)) {
         std::string destination = mount.first;
         std::string source = mount.second;
         std::string file_path = std::filesystem::path(root) / source;
