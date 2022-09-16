@@ -25,13 +25,17 @@ auto main(int argc, char** argv) -> int {
     ("P,auth-port", "Server auth port", cxxopts::value<uint16_t>()->default_value("3445"))
     ("r,root", "Root directory", cxxopts::value<std::string>()->default_value(default_root))
     ("S,suffix", "User data subdirectory suffix", cxxopts::value<std::string>()->default_value(""))
+    ("F,source", "Soft mount source directory", cxxopts::value<std::string>()->default_value(""))
+    ("d,destination", "Soft mount destination directory", cxxopts::value<std::string>()->default_value(""))
     ("o,options", "Fuse mount options", cxxopts::value<std::vector<std::string>>())
-    ("U,user", "Username (GhostFS subdirectory)", cxxopts::value<std::string>())
+    ("u,user", "Username (GhostFS subdirectory)", cxxopts::value<std::string>())
     ("t,token", "Authentication token", cxxopts::value<std::string>()->default_value(""))
     ("R,retries", "Authentication token retries", cxxopts::value<int64_t>()->default_value("-1"))
     ("w,write-back", "Write back cache size", cxxopts::value<uint8_t>()->default_value("8"))
     ("C,read-ahead", "Read ahead cache size", cxxopts::value<uint8_t>()->default_value("8"))
     ("A,authorize", "Run in authorizer mode")
+    ("m,mount", "Soft mount a directory")
+    ("U,unmount", "Soft unmount a directory")
     ("s,server", "Run in server mode")
     ("c,client", "Run in client mode");
 
