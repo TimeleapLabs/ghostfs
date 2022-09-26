@@ -830,7 +830,12 @@ public:
 
     uint64_t ino = req.getIno();
 
-    if (!ino_to_path.contains(ino)) {
+    if (ino == 1) {
+      response.setRes(0);      
+      return kj::READY_NOW;
+    }
+
+    if (!ino_to_path.contains(ino) {
       response.setRes(-1);
       response.setErrno(ENOENT);
       
