@@ -146,7 +146,7 @@ public:
 
     memset(&attr, 0, sizeof(attr));
 
-    int res = hello_stat(req.getIno(), &attr);
+    int res = hello_stat(req.getIno(), req.getFi().getFh(), &attr);
     int err = errno;
 
     GetattrResponse::Attr::Builder attributes = response.initAttr();
@@ -707,7 +707,7 @@ public:
      */
     bool access_ok = check_access(root, user, path);
 
-    if (!access_ok) {
+    if (not access_ok) {
       response.setErrno(EACCES);
       response.setRes(-1);
 
@@ -835,7 +835,7 @@ public:
       return kj::READY_NOW;
     }
 
-    if (!ino_to_path.contains(ino)) {
+    if (not ino_to_path.contains(ino)) {
       response.setRes(-1);
       response.setErrno(ENOENT);
       
@@ -1210,7 +1210,7 @@ public:
 
 int start_rpc_server(std::string bind, int port, int auth_port, std::string root, std::string suffix) {
   if (root.length() > 0) {
-    if (!std::filesystem::is_directory(root)) {
+    if (not std::filesystem::is_directory(root)) {
       std::cout << "ERROR: directory " << '"' << root << '"' << " does not exist." << std::endl;
       return 1;
     };

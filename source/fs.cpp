@@ -155,6 +155,16 @@ template <class T> void fillFileInfo(T *fuseFileInfo, struct fuse_file_info *fi)
  *        Apparently Solaris devs knew how to write non-cryptic code
  */
 
+int hello_stat(fuse_ino_t ino, int64_t fh, struct stat *stbuf) {
+  if (fh == 0 || ino == 1) {
+    return hello_stat(ino, stbuf);
+  }
+
+  int res = fstat(fh, stbuf);
+  stbuf->st_ino = ino;
+  return res;
+}
+
 int hello_stat(fuse_ino_t ino, struct stat *stbuf) {
   if (ino == 1) {
     // This is the fs root
@@ -169,10 +179,10 @@ int hello_stat(fuse_ino_t ino, struct stat *stbuf) {
     return -1;
   }
 
-  stat(ino_to_path[ino].c_str(), stbuf);
+  int res = stat(ino_to_path[ino].c_str(), stbuf);
   stbuf->st_ino = ino;
 
-  return 0;
+  return res;
 }
 
 void dirbuf_add(fuse_req_t req, struct dirbuf *b, const char *name, fuse_ino_t ino) {
