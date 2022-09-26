@@ -149,6 +149,9 @@ public:
     int res = hello_stat(req.getIno(), req.getFi().getFh(), &attr);
     int err = errno;
 
+    std::cout << "gettattr: file_path" << ino_to_path[req.getIno()].c_str() << " res " << res
+              << " err " << err << std::endl;
+
     GetattrResponse::Attr::Builder attributes = response.initAttr();
 
     attributes.setStDev(attr.st_dev);
@@ -537,6 +540,8 @@ public:
 
     Open::FuseFileInfo::Reader fi = req.getFi();
 
+    std::cout << "open: file_path" << ino_to_path[req.getIno()].c_str() << std::endl;
+
     int64_t fh = ::open(ino_to_path[req.getIno()].c_str(), fi.getFlags());
     int err = errno;
     response.setErrno(err);
@@ -869,7 +874,7 @@ public:
     std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
     std::filesystem::path file_path = parent_path / req.getName();
 
-    // std::cout << "create: open file path: " << file_path.c_str() << std::endl;
+    std::cout << "create: open file path: " << file_path.c_str() << std::endl;
     // std::cout << "create: flags: " << fi.getFlags() << std::endl;
 
     int res = ::creat(file_path.c_str(), req.getMode());
