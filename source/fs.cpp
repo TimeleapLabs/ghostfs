@@ -592,8 +592,6 @@ uint64_t add_to_write_back_cache(cached_write cache) {
   }
 
   write_back_cache[cache.fi->fh].push_back(cache);
-  read_ahead_cache.erase(cache.fi->fh);
-
   return write_back_cache[cache.fi->fh].size();
 }
 
@@ -678,6 +676,10 @@ void flush_write_back_cache(uint64_t fh, bool reply) {
 static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size_t size, off_t off,
                            struct fuse_file_info *fi) {
   // printf("Called .write\n");
+
+  if (max_read_ahead_cache > 0) {
+    read_ahead_cache.erase(fi->fh);
+  }
 
   if (max_write_back_cache > 0) {
     cached_write cache = {req, ino, (char *)malloc(size), size, off, fi};
@@ -1163,7 +1165,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-// clang-format off
+  // clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
