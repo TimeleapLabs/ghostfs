@@ -50,6 +50,12 @@ void soft_unmount(std::string user, std::string dest) {
   }
 }
 
+void soft_unmount(std::string user) {
+  if (users.contains(user)) {
+    users[user].soft_mounts.clear();
+  }
+}
+
 std::map<std::string, std::string>* get_user_mounts(std::string user) {
   return &users[user].soft_mounts;
 }

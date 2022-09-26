@@ -1025,6 +1025,25 @@ class GhostFSAuthServerImpl final : public GhostFSAuthServer::Server {
       return kj::READY_NOW;
     }
 
+    kj::Promise<void> mounts(MountsContext context) override {
+      auto params = context.getParams();
+
+      auto userPtr = params.getUser();
+      std::string user(userPtr.begin(), userPtr.end());
+
+      std::map<std::string, std::string>* user_mounts = get_user_mounts(user);
+
+      auto res = context.getResults();
+      auto mounts = res.initMounts(user_mounts->size());
+
+      int64_t i = 0;
+      for ([[maybe_unused]] auto const& [dest, source] : *user_mounts) {
+        mounts.set(i++, dest);
+      }
+      
+      return kj::READY_NOW;
+    }
+
     kj::Promise<void> unmount(UnmountContext context) override {
       auto params = context.getParams();
 
@@ -1035,6 +1054,20 @@ class GhostFSAuthServerImpl final : public GhostFSAuthServer::Server {
       std::string destination(destinationPtr.begin(), destinationPtr.end());
 
       soft_unmount(user, destination);
+
+      auto res = context.getResults();
+      res.setSuccess(true);
+      
+      return kj::READY_NOW;
+    }
+
+    kj::Promise<void> unmountAll(UnmountAllContext context) override {
+      auto params = context.getParams();
+
+      auto userPtr = params.getUser();
+      std::string user(userPtr.begin(), userPtr.end());
+
+      soft_unmount(user);
 
       auto res = context.getResults();
       res.setSuccess(true);
@@ -1083,6 +1116,28 @@ int rpc_mount(uint16_t port, std::string user, std::string source, std::string d
   return 0;
 }
 
+int rpc_print_mounts(uint16_t port, std::string user) {
+  capnp::EzRpcClient rpc("127.0.0.1", port);
+
+  auto& waitScope = rpc.getWaitScope();
+  GhostFSAuthServer::Client authClient = rpc.getMain<GhostFSAuthServer>();
+
+  auto request = authClient.mountsRequest();
+
+  request.setUser(user);
+
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+
+  capnp::List<capnp::Text>::Reader mounts = result.getMounts();
+
+  for (std::string mount : mounts) {
+    std::cout << mount << std::endl;
+  }
+
+  return 0;
+}
+
 int rpc_unmount(uint16_t port, std::string user, std::string destination) {
   capnp::EzRpcClient rpc("127.0.0.1", port);
 
@@ -1093,6 +1148,21 @@ int rpc_unmount(uint16_t port, std::string user, std::string destination) {
 
   request.setUser(user);
   request.setDestination(destination);
+
+  auto promise = request.send();
+  [[maybe_unused]] auto result = promise.wait(waitScope);
+
+  return 0;
+}
+
+int rpc_unmount_all(uint16_t port, std::string user) {
+  capnp::EzRpcClient rpc("127.0.0.1", port);
+
+  auto& waitScope = rpc.getWaitScope();
+  GhostFSAuthServer::Client authClient = rpc.getMain<GhostFSAuthServer>();
+
+  auto request = authClient.unmountAllRequest();
+  request.setUser(user);
 
   auto promise = request.send();
   [[maybe_unused]] auto result = promise.wait(waitScope);
