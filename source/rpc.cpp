@@ -835,7 +835,7 @@ public:
       return kj::READY_NOW;
     }
 
-    if (!ino_to_path.contains(ino) {
+    if (!ino_to_path.contains(ino)) {
       response.setRes(-1);
       response.setErrno(ENOENT);
       
