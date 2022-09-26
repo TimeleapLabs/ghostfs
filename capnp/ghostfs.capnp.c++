@@ -609,7 +609,7 @@ const ::capnp::_::RawSchema s_c6f18d208cd0cd46 = {
   1, 2, i_c6f18d208cd0cd46, nullptr, nullptr, { &s_c6f18d208cd0cd46, nullptr, nullptr, 0, 0, nullptr }
 };
 #endif  // !CAPNP_LITE
-static const ::capnp::_::AlignedData<201> b_9fc6d7895c294dc9 = {
+static const ::capnp::_::AlignedData<211> b_9fc6d7895c294dc9 = {
   {   0,   0,   0,   0,   5,   0,   6,   0,
     201,  77,  41,  92, 137, 215, 198, 159,
      20,   0,   0,   0,   3,   0,   0,   0,
@@ -619,159 +619,167 @@ static const ::capnp::_::AlignedData<201> b_9fc6d7895c294dc9 = {
      21,   0,   0,   0, 226,   0,   0,   0,
      33,   0,   0,   0,   7,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
-     29,   0,   0,   0, 135,   4,   0,   0,
-    245,   2,   0,   0,   7,   0,   0,   0,
+     29,   0,   0,   0, 199,   4,   0,   0,
+     29,   3,   0,   0,   7,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
      99,  97, 112, 110, 112,  47, 103, 104,
     111, 115, 116, 102, 115,  46,  99,  97,
     112, 110, 112,  58,  71, 104, 111, 115,
     116,  70,  83,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   1,   0,   1,   0,
-     72,   0,   0,   0,   3,   0,   5,   0,
+     76,   0,   0,   0,   3,   0,   5,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
      59, 190,  42,  29,  65, 111, 131, 176,
     233, 109,  45, 163, 132,  22,  80, 168,
-     49,   2,   0,   0,  58,   0,   0,   0,
+     81,   2,   0,   0,  58,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
-     37,   2,   0,   0,   7,   0,   0,   0,
+     69,   2,   0,   0,   7,   0,   0,   0,
       1,   0,   0,   0,   0,   0,   0,   0,
      54,  67, 132,  84,  15, 254,  32, 187,
     217, 176,  59, 205,  40,  91, 243, 132,
-     25,   2,   0,   0,  66,   0,   0,   0,
+     57,   2,   0,   0,  66,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
-     13,   2,   0,   0,   7,   0,   0,   0,
+     45,   2,   0,   0,   7,   0,   0,   0,
       2,   0,   0,   0,   0,   0,   0,   0,
     127, 230, 115, 117, 215, 142,  85, 255,
     133,  86,  41, 154, 145,  11, 227, 227,
-      1,   2,   0,   0,  66,   0,   0,   0,
+     33,   2,   0,   0,  66,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
-    245,   1,   0,   0,   7,   0,   0,   0,
+     21,   2,   0,   0,   7,   0,   0,   0,
       3,   0,   0,   0,   0,   0,   0,   0,
      61,  92, 234, 207,  95, 102,  54, 234,
     245, 152,  45, 230,  40,  14, 236, 219,
-    233,   1,   0,   0,  50,   0,   0,   0,
+      9,   2,   0,   0,  50,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
-    221,   1,   0,   0,   7,   0,   0,   0,
+    253,   1,   0,   0,   7,   0,   0,   0,
       4,   0,   0,   0,   0,   0,   0,   0,
     204,  46, 203, 253, 252, 133,   7, 208,
      99, 193, 162,  74, 155, 244, 125, 231,
-    209,   1,   0,   0,  50,   0,   0,   0,
+    241,   1,   0,   0,  50,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
-    197,   1,   0,   0,   7,   0,   0,   0,
+    229,   1,   0,   0,   7,   0,   0,   0,
       5,   0,   0,   0,   0,   0,   0,   0,
      72,  49, 149, 238,  54, 206,  26, 149,
      34,  31, 173, 253,  49, 187,  31, 227,
-    185,   1,   0,   0,  58,   0,   0,   0,
+    217,   1,   0,   0,  58,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
-    173,   1,   0,   0,   7,   0,   0,   0,
+    205,   1,   0,   0,   7,   0,   0,   0,
       6,   0,   0,   0,   0,   0,   0,   0,
     109, 179, 114,  37, 122, 176, 224, 205,
     111,  81, 180, 155,  59, 233,   9, 192,
-    161,   1,   0,   0,  50,   0,   0,   0,
+    193,   1,   0,   0,  50,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
-    149,   1,   0,   0,   7,   0,   0,   0,
+    181,   1,   0,   0,   7,   0,   0,   0,
       7,   0,   0,   0,   0,   0,   0,   0,
      43, 248, 226, 219, 222, 233, 244, 237,
      18,  70,   7, 126, 240, 161, 143, 222,
-    137,   1,   0,   0,  58,   0,   0,   0,
+    169,   1,   0,   0,  58,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
-    125,   1,   0,   0,   7,   0,   0,   0,
+    157,   1,   0,   0,   7,   0,   0,   0,
       8,   0,   0,   0,   0,   0,   0,   0,
      15,  32,  87,  92, 134, 159, 144, 234,
     128, 234, 151, 126,  87, 105, 151, 164,
-    113,   1,   0,   0,  42,   0,   0,   0,
+    145,   1,   0,   0,  42,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
-    101,   1,   0,   0,   7,   0,   0,   0,
+    133,   1,   0,   0,   7,   0,   0,   0,
       9,   0,   0,   0,   0,   0,   0,   0,
     126, 212, 180, 124,  89, 111, 223, 232,
     239, 135,  39, 143, 232,  90,  70, 180,
-     89,   1,   0,   0,  42,   0,   0,   0,
+    121,   1,   0,   0,  42,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
-     77,   1,   0,   0,   7,   0,   0,   0,
+    109,   1,   0,   0,   7,   0,   0,   0,
      10,   0,   0,   0,   0,   0,   0,   0,
     230, 140, 243, 169,  70,  84, 176, 135,
      83, 132, 231,  68, 174,  52,  29, 218,
-     65,   1,   0,   0,  50,   0,   0,   0,
+     97,   1,   0,   0,  50,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
-     53,   1,   0,   0,   7,   0,   0,   0,
+     85,   1,   0,   0,   7,   0,   0,   0,
      11,   0,   0,   0,   0,   0,   0,   0,
      27, 209,  44,  20,  67, 158,  60, 149,
     134, 163,  25, 206,  95, 183, 181, 241,
-     41,   1,   0,   0,  66,   0,   0,   0,
+     73,   1,   0,   0,  66,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
-     29,   1,   0,   0,   7,   0,   0,   0,
+     61,   1,   0,   0,   7,   0,   0,   0,
      12,   0,   0,   0,   0,   0,   0,   0,
      74, 118, 160, 252,  39,  45, 165, 247,
     148, 217,  97, 183, 250, 200, 142, 218,
-     17,   1,   0,   0,  66,   0,   0,   0,
+     49,   1,   0,   0,  66,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
-      5,   1,   0,   0,   7,   0,   0,   0,
+     37,   1,   0,   0,   7,   0,   0,   0,
      13,   0,   0,   0,   0,   0,   0,   0,
     247,  73, 248, 172,  67,  24, 131, 202,
     218, 185, 192,  20,  50,  94, 159, 253,
-    249,   0,   0,   0,  74,   0,   0,   0,
+     25,   1,   0,   0,  74,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
-    241,   0,   0,   0,   7,   0,   0,   0,
+     17,   1,   0,   0,   7,   0,   0,   0,
      14,   0,   0,   0,   0,   0,   0,   0,
      51, 174, 167, 229, 179, 103,  97, 154,
     180,   7,  89, 160,  43,  96, 199, 172,
-    229,   0,   0,   0,  58,   0,   0,   0,
+      5,   1,   0,   0,  58,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
-    217,   0,   0,   0,   7,   0,   0,   0,
+    249,   0,   0,   0,   7,   0,   0,   0,
      15,   0,   0,   0,   0,   0,   0,   0,
      21, 111,  49,   0,   1, 222, 189, 186,
     103, 233,   4, 176,  66, 192, 219, 237,
-    205,   0,   0,   0,  50,   0,   0,   0,
+    237,   0,   0,   0,  58,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
-    193,   0,   0,   0,   7,   0,   0,   0,
+    225,   0,   0,   0,   7,   0,   0,   0,
      16,   0,   0,   0,   0,   0,   0,   0,
     127, 236, 131, 220,   9,  77, 221, 244,
     230,  30,  86, 224, 177,  51, 243, 244,
-    181,   0,   0,   0,  50,   0,   0,   0,
+    213,   0,   0,   0,  50,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
-    169,   0,   0,   0,   7,   0,   0,   0,
+    201,   0,   0,   0,   7,   0,   0,   0,
      17,   0,   0,   0,   0,   0,   0,   0,
     247,  43,  25, 132,  68, 239, 135, 141,
     196,  69, 163, 188,  37,  23, 165, 197,
-    157,   0,   0,   0,  82,   0,   0,   0,
+    189,   0,   0,   0,  50,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
-    149,   0,   0,   0,   7,   0,   0,   0,
+    177,   0,   0,   0,   7,   0,   0,   0,
+     18,   0,   0,   0,   0,   0,   0,   0,
+    246, 107, 113, 223, 100, 156,   2, 225,
+      8, 131, 143, 195, 161,  44,  95, 211,
+    165,   0,   0,   0,  82,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+    157,   0,   0,   0,   7,   0,   0,   0,
     108, 111, 111, 107, 117, 112,   0,   0,
       0,   0,   0,   0,   0,   0,   1,   0,
     103, 101, 116,  97, 116, 116, 114,   0,
@@ -800,6 +808,8 @@ static const ::capnp::_::AlignedData<201> b_9fc6d7895c294dc9 = {
       0,   0,   0,   0,   0,   0,   1,   0,
     115, 101, 116, 120,  97, 116, 116, 114,
       0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   1,   0,
+     97,  99,  99, 101, 115, 115,   0,   0,
       0,   0,   0,   0,   0,   0,   1,   0,
      99, 114, 101,  97, 116, 101,   0,   0,
       0,   0,   0,   0,   0,   0,   1,   0,
@@ -833,10 +843,12 @@ static const ::capnp::_::RawSchema* const d_9fc6d7895c294dc9[] = {
   &s_ca831843acf849f7,
   &s_cde0b07a2572b36d,
   &s_d00785fcfdcb2ecc,
+  &s_d35f2ca1c38f8308,
   &s_da1d34ae44e78453,
   &s_da8ec8fab761d994,
   &s_dbec0e28e62d98f5,
   &s_de8fa1f07e074612,
+  &s_e1029c64df716bf6,
   &s_e31fbb31fdad1f22,
   &s_e3e30b919a295685,
   &s_e77df49b4aa2c163,
@@ -852,10 +864,10 @@ static const ::capnp::_::RawSchema* const d_9fc6d7895c294dc9[] = {
   &s_fd9f5e3214c0b9da,
   &s_ff558ed77573e67f,
 };
-static const uint16_t m_9fc6d7895c294dc9[] = {17, 14, 15, 16, 1, 0, 4, 3, 8, 9, 12, 11, 7, 6, 2, 13, 5, 10};
+static const uint16_t m_9fc6d7895c294dc9[] = {14, 18, 15, 16, 17, 1, 0, 4, 3, 8, 9, 12, 11, 7, 6, 2, 13, 5, 10};
 const ::capnp::_::RawSchema s_9fc6d7895c294dc9 = {
-  0x9fc6d7895c294dc9, b_9fc6d7895c294dc9.words, 201, d_9fc6d7895c294dc9, m_9fc6d7895c294dc9,
-  36, 18, nullptr, nullptr, nullptr, { &s_9fc6d7895c294dc9, nullptr, nullptr, 0, 0, nullptr }
+  0x9fc6d7895c294dc9, b_9fc6d7895c294dc9.words, 211, d_9fc6d7895c294dc9, m_9fc6d7895c294dc9,
+  38, 19, nullptr, nullptr, nullptr, { &s_9fc6d7895c294dc9, nullptr, nullptr, 0, 0, nullptr }
 };
 #endif  // !CAPNP_LITE
 static const ::capnp::_::AlignedData<34> b_b0836f411d2abe3b = {
@@ -2216,6 +2228,102 @@ static const ::capnp::_::AlignedData<34> b_9a6167b3e5a7ae33 = {
      99,  97, 112, 110, 112,  47, 103, 104,
     111, 115, 116, 102, 115,  46,  99,  97,
     112, 110, 112,  58,  71, 104, 111, 115,
+    116,  70,  83,  46,  97,  99,  99, 101,
+    115, 115,  36,  80,  97, 114,  97, 109,
+    115,   0,   0,   0,   0,   0,   0,   0,
+      4,   0,   0,   0,   3,   0,   4,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   1,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+     13,   0,   0,   0,  34,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+      8,   0,   0,   0,   3,   0,   1,   0,
+     20,   0,   0,   0,   2,   0,   1,   0,
+    114, 101, 113,   0,   0,   0,   0,   0,
+     16,   0,   0,   0,   0,   0,   0,   0,
+     76,  22,  84,  66,  50,  58, 117, 193,
+      0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+     16,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0, }
+};
+::capnp::word const* const bp_9a6167b3e5a7ae33 = b_9a6167b3e5a7ae33.words;
+#if !CAPNP_LITE
+static const ::capnp::_::RawSchema* const d_9a6167b3e5a7ae33[] = {
+  &s_c1753a324254164c,
+};
+static const uint16_t m_9a6167b3e5a7ae33[] = {0};
+static const uint16_t i_9a6167b3e5a7ae33[] = {0};
+const ::capnp::_::RawSchema s_9a6167b3e5a7ae33 = {
+  0x9a6167b3e5a7ae33, b_9a6167b3e5a7ae33.words, 34, d_9a6167b3e5a7ae33, m_9a6167b3e5a7ae33,
+  1, 1, i_9a6167b3e5a7ae33, nullptr, nullptr, { &s_9a6167b3e5a7ae33, nullptr, nullptr, 0, 0, nullptr }
+};
+#endif  // !CAPNP_LITE
+static const ::capnp::_::AlignedData<34> b_acc7602ba05907b4 = {
+  {   0,   0,   0,   0,   5,   0,   6,   0,
+    180,   7,  89, 160,  43,  96, 199, 172,
+     28,   0,   0,   0,   1,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+      1,   0,   7,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+     21,   0,   0,   0,  90,   1,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+     33,   0,   0,   0,  63,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+     99,  97, 112, 110, 112,  47, 103, 104,
+    111, 115, 116, 102, 115,  46,  99,  97,
+    112, 110, 112,  58,  71, 104, 111, 115,
+    116,  70,  83,  46,  97,  99,  99, 101,
+    115, 115,  36,  82, 101, 115, 117, 108,
+    116, 115,   0,   0,   0,   0,   0,   0,
+      4,   0,   0,   0,   3,   0,   4,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   1,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+     13,   0,   0,   0,  34,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+      8,   0,   0,   0,   3,   0,   1,   0,
+     20,   0,   0,   0,   2,   0,   1,   0,
+    114, 101, 115,   0,   0,   0,   0,   0,
+     16,   0,   0,   0,   0,   0,   0,   0,
+     72, 143, 182, 153,  12, 115,  40, 144,
+      0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+     16,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0, }
+};
+::capnp::word const* const bp_acc7602ba05907b4 = b_acc7602ba05907b4.words;
+#if !CAPNP_LITE
+static const ::capnp::_::RawSchema* const d_acc7602ba05907b4[] = {
+  &s_9028730c99b68f48,
+};
+static const uint16_t m_acc7602ba05907b4[] = {0};
+static const uint16_t i_acc7602ba05907b4[] = {0};
+const ::capnp::_::RawSchema s_acc7602ba05907b4 = {
+  0xacc7602ba05907b4, b_acc7602ba05907b4.words, 34, d_acc7602ba05907b4, m_acc7602ba05907b4,
+  1, 1, i_acc7602ba05907b4, nullptr, nullptr, { &s_acc7602ba05907b4, nullptr, nullptr, 0, 0, nullptr }
+};
+#endif  // !CAPNP_LITE
+static const ::capnp::_::AlignedData<34> b_babdde0100316f15 = {
+  {   0,   0,   0,   0,   5,   0,   6,   0,
+     21, 111,  49,   0,   1, 222, 189, 186,
+     28,   0,   0,   0,   1,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+      1,   0,   7,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+     21,   0,   0,   0,  82,   1,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+     33,   0,   0,   0,  63,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0,
+     99,  97, 112, 110, 112,  47, 103, 104,
+    111, 115, 116, 102, 115,  46,  99,  97,
+    112, 110, 112,  58,  71, 104, 111, 115,
     116,  70,  83,  46,  99, 114, 101,  97,
     116, 101,  36,  80,  97, 114,  97, 109,
     115,   0,   0,   0,   0,   0,   0,   0,
@@ -2236,21 +2344,21 @@ static const ::capnp::_::AlignedData<34> b_9a6167b3e5a7ae33 = {
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0, }
 };
-::capnp::word const* const bp_9a6167b3e5a7ae33 = b_9a6167b3e5a7ae33.words;
+::capnp::word const* const bp_babdde0100316f15 = b_babdde0100316f15.words;
 #if !CAPNP_LITE
-static const ::capnp::_::RawSchema* const d_9a6167b3e5a7ae33[] = {
+static const ::capnp::_::RawSchema* const d_babdde0100316f15[] = {
   &s_dcca0c7561caa35b,
 };
-static const uint16_t m_9a6167b3e5a7ae33[] = {0};
-static const uint16_t i_9a6167b3e5a7ae33[] = {0};
-const ::capnp::_::RawSchema s_9a6167b3e5a7ae33 = {
-  0x9a6167b3e5a7ae33, b_9a6167b3e5a7ae33.words, 34, d_9a6167b3e5a7ae33, m_9a6167b3e5a7ae33,
-  1, 1, i_9a6167b3e5a7ae33, nullptr, nullptr, { &s_9a6167b3e5a7ae33, nullptr, nullptr, 0, 0, nullptr }
+static const uint16_t m_babdde0100316f15[] = {0};
+static const uint16_t i_babdde0100316f15[] = {0};
+const ::capnp::_::RawSchema s_babdde0100316f15 = {
+  0xbabdde0100316f15, b_babdde0100316f15.words, 34, d_babdde0100316f15, m_babdde0100316f15,
+  1, 1, i_babdde0100316f15, nullptr, nullptr, { &s_babdde0100316f15, nullptr, nullptr, 0, 0, nullptr }
 };
 #endif  // !CAPNP_LITE
-static const ::capnp::_::AlignedData<34> b_acc7602ba05907b4 = {
+static const ::capnp::_::AlignedData<34> b_eddbc042b004e967 = {
   {   0,   0,   0,   0,   5,   0,   6,   0,
-    180,   7,  89, 160,  43,  96, 199, 172,
+    103, 233,   4, 176,  66, 192, 219, 237,
      28,   0,   0,   0,   1,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       1,   0,   7,   0,   0,   0,   0,   0,
@@ -2284,21 +2392,21 @@ static const ::capnp::_::AlignedData<34> b_acc7602ba05907b4 = {
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0, }
 };
-::capnp::word const* const bp_acc7602ba05907b4 = b_acc7602ba05907b4.words;
+::capnp::word const* const bp_eddbc042b004e967 = b_eddbc042b004e967.words;
 #if !CAPNP_LITE
-static const ::capnp::_::RawSchema* const d_acc7602ba05907b4[] = {
+static const ::capnp::_::RawSchema* const d_eddbc042b004e967[] = {
   &s_82ccc8c4cceb633f,
 };
-static const uint16_t m_acc7602ba05907b4[] = {0};
-static const uint16_t i_acc7602ba05907b4[] = {0};
-const ::capnp::_::RawSchema s_acc7602ba05907b4 = {
-  0xacc7602ba05907b4, b_acc7602ba05907b4.words, 34, d_acc7602ba05907b4, m_acc7602ba05907b4,
-  1, 1, i_acc7602ba05907b4, nullptr, nullptr, { &s_acc7602ba05907b4, nullptr, nullptr, 0, 0, nullptr }
+static const uint16_t m_eddbc042b004e967[] = {0};
+static const uint16_t i_eddbc042b004e967[] = {0};
+const ::capnp::_::RawSchema s_eddbc042b004e967 = {
+  0xeddbc042b004e967, b_eddbc042b004e967.words, 34, d_eddbc042b004e967, m_eddbc042b004e967,
+  1, 1, i_eddbc042b004e967, nullptr, nullptr, { &s_eddbc042b004e967, nullptr, nullptr, 0, 0, nullptr }
 };
 #endif  // !CAPNP_LITE
-static const ::capnp::_::AlignedData<34> b_babdde0100316f15 = {
+static const ::capnp::_::AlignedData<34> b_f4dd4d09dc83ec7f = {
   {   0,   0,   0,   0,   5,   0,   6,   0,
-     21, 111,  49,   0,   1, 222, 189, 186,
+    127, 236, 131, 220,   9,  77, 221, 244,
      28,   0,   0,   0,   1,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       1,   0,   7,   0,   0,   0,   0,   0,
@@ -2332,21 +2440,21 @@ static const ::capnp::_::AlignedData<34> b_babdde0100316f15 = {
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0, }
 };
-::capnp::word const* const bp_babdde0100316f15 = b_babdde0100316f15.words;
+::capnp::word const* const bp_f4dd4d09dc83ec7f = b_f4dd4d09dc83ec7f.words;
 #if !CAPNP_LITE
-static const ::capnp::_::RawSchema* const d_babdde0100316f15[] = {
+static const ::capnp::_::RawSchema* const d_f4dd4d09dc83ec7f[] = {
   &s_e865402356d62998,
 };
-static const uint16_t m_babdde0100316f15[] = {0};
-static const uint16_t i_babdde0100316f15[] = {0};
-const ::capnp::_::RawSchema s_babdde0100316f15 = {
-  0xbabdde0100316f15, b_babdde0100316f15.words, 34, d_babdde0100316f15, m_babdde0100316f15,
-  1, 1, i_babdde0100316f15, nullptr, nullptr, { &s_babdde0100316f15, nullptr, nullptr, 0, 0, nullptr }
+static const uint16_t m_f4dd4d09dc83ec7f[] = {0};
+static const uint16_t i_f4dd4d09dc83ec7f[] = {0};
+const ::capnp::_::RawSchema s_f4dd4d09dc83ec7f = {
+  0xf4dd4d09dc83ec7f, b_f4dd4d09dc83ec7f.words, 34, d_f4dd4d09dc83ec7f, m_f4dd4d09dc83ec7f,
+  1, 1, i_f4dd4d09dc83ec7f, nullptr, nullptr, { &s_f4dd4d09dc83ec7f, nullptr, nullptr, 0, 0, nullptr }
 };
 #endif  // !CAPNP_LITE
-static const ::capnp::_::AlignedData<34> b_eddbc042b004e967 = {
+static const ::capnp::_::AlignedData<34> b_f4f333b1e0561ee6 = {
   {   0,   0,   0,   0,   5,   0,   6,   0,
-    103, 233,   4, 176,  66, 192, 219, 237,
+    230,  30,  86, 224, 177,  51, 243, 244,
      28,   0,   0,   0,   1,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       1,   0,   7,   0,   0,   0,   0,   0,
@@ -2380,21 +2488,21 @@ static const ::capnp::_::AlignedData<34> b_eddbc042b004e967 = {
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0, }
 };
-::capnp::word const* const bp_eddbc042b004e967 = b_eddbc042b004e967.words;
+::capnp::word const* const bp_f4f333b1e0561ee6 = b_f4f333b1e0561ee6.words;
 #if !CAPNP_LITE
-static const ::capnp::_::RawSchema* const d_eddbc042b004e967[] = {
+static const ::capnp::_::RawSchema* const d_f4f333b1e0561ee6[] = {
   &s_adb22d53fd152bc2,
 };
-static const uint16_t m_eddbc042b004e967[] = {0};
-static const uint16_t i_eddbc042b004e967[] = {0};
-const ::capnp::_::RawSchema s_eddbc042b004e967 = {
-  0xeddbc042b004e967, b_eddbc042b004e967.words, 34, d_eddbc042b004e967, m_eddbc042b004e967,
-  1, 1, i_eddbc042b004e967, nullptr, nullptr, { &s_eddbc042b004e967, nullptr, nullptr, 0, 0, nullptr }
+static const uint16_t m_f4f333b1e0561ee6[] = {0};
+static const uint16_t i_f4f333b1e0561ee6[] = {0};
+const ::capnp::_::RawSchema s_f4f333b1e0561ee6 = {
+  0xf4f333b1e0561ee6, b_f4f333b1e0561ee6.words, 34, d_f4f333b1e0561ee6, m_f4f333b1e0561ee6,
+  1, 1, i_f4f333b1e0561ee6, nullptr, nullptr, { &s_f4f333b1e0561ee6, nullptr, nullptr, 0, 0, nullptr }
 };
 #endif  // !CAPNP_LITE
-static const ::capnp::_::AlignedData<34> b_f4dd4d09dc83ec7f = {
+static const ::capnp::_::AlignedData<34> b_8d87ef4484192bf7 = {
   {   0,   0,   0,   0,   5,   0,   6,   0,
-    127, 236, 131, 220,   9,  77, 221, 244,
+    247,  43,  25, 132,  68, 239, 135, 141,
      28,   0,   0,   0,   1,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       1,   0,   7,   0,   0,   0,   0,   0,
@@ -2428,21 +2536,21 @@ static const ::capnp::_::AlignedData<34> b_f4dd4d09dc83ec7f = {
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0, }
 };
-::capnp::word const* const bp_f4dd4d09dc83ec7f = b_f4dd4d09dc83ec7f.words;
+::capnp::word const* const bp_8d87ef4484192bf7 = b_8d87ef4484192bf7.words;
 #if !CAPNP_LITE
-static const ::capnp::_::RawSchema* const d_f4dd4d09dc83ec7f[] = {
+static const ::capnp::_::RawSchema* const d_8d87ef4484192bf7[] = {
   &s_d47485e7d7bea16b,
 };
-static const uint16_t m_f4dd4d09dc83ec7f[] = {0};
-static const uint16_t i_f4dd4d09dc83ec7f[] = {0};
-const ::capnp::_::RawSchema s_f4dd4d09dc83ec7f = {
-  0xf4dd4d09dc83ec7f, b_f4dd4d09dc83ec7f.words, 34, d_f4dd4d09dc83ec7f, m_f4dd4d09dc83ec7f,
-  1, 1, i_f4dd4d09dc83ec7f, nullptr, nullptr, { &s_f4dd4d09dc83ec7f, nullptr, nullptr, 0, 0, nullptr }
+static const uint16_t m_8d87ef4484192bf7[] = {0};
+static const uint16_t i_8d87ef4484192bf7[] = {0};
+const ::capnp::_::RawSchema s_8d87ef4484192bf7 = {
+  0x8d87ef4484192bf7, b_8d87ef4484192bf7.words, 34, d_8d87ef4484192bf7, m_8d87ef4484192bf7,
+  1, 1, i_8d87ef4484192bf7, nullptr, nullptr, { &s_8d87ef4484192bf7, nullptr, nullptr, 0, 0, nullptr }
 };
 #endif  // !CAPNP_LITE
-static const ::capnp::_::AlignedData<34> b_f4f333b1e0561ee6 = {
+static const ::capnp::_::AlignedData<34> b_c5a51725bca345c4 = {
   {   0,   0,   0,   0,   5,   0,   6,   0,
-    230,  30,  86, 224, 177,  51, 243, 244,
+    196,  69, 163, 188,  37,  23, 165, 197,
      28,   0,   0,   0,   1,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       1,   0,   7,   0,   0,   0,   0,   0,
@@ -2476,21 +2584,21 @@ static const ::capnp::_::AlignedData<34> b_f4f333b1e0561ee6 = {
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0, }
 };
-::capnp::word const* const bp_f4f333b1e0561ee6 = b_f4f333b1e0561ee6.words;
+::capnp::word const* const bp_c5a51725bca345c4 = b_c5a51725bca345c4.words;
 #if !CAPNP_LITE
-static const ::capnp::_::RawSchema* const d_f4f333b1e0561ee6[] = {
+static const ::capnp::_::RawSchema* const d_c5a51725bca345c4[] = {
   &s_c764ee431ba60d82,
 };
-static const uint16_t m_f4f333b1e0561ee6[] = {0};
-static const uint16_t i_f4f333b1e0561ee6[] = {0};
-const ::capnp::_::RawSchema s_f4f333b1e0561ee6 = {
-  0xf4f333b1e0561ee6, b_f4f333b1e0561ee6.words, 34, d_f4f333b1e0561ee6, m_f4f333b1e0561ee6,
-  1, 1, i_f4f333b1e0561ee6, nullptr, nullptr, { &s_f4f333b1e0561ee6, nullptr, nullptr, 0, 0, nullptr }
+static const uint16_t m_c5a51725bca345c4[] = {0};
+static const uint16_t i_c5a51725bca345c4[] = {0};
+const ::capnp::_::RawSchema s_c5a51725bca345c4 = {
+  0xc5a51725bca345c4, b_c5a51725bca345c4.words, 34, d_c5a51725bca345c4, m_c5a51725bca345c4,
+  1, 1, i_c5a51725bca345c4, nullptr, nullptr, { &s_c5a51725bca345c4, nullptr, nullptr, 0, 0, nullptr }
 };
 #endif  // !CAPNP_LITE
-static const ::capnp::_::AlignedData<38> b_8d87ef4484192bf7 = {
+static const ::capnp::_::AlignedData<38> b_e1029c64df716bf6 = {
   {   0,   0,   0,   0,   5,   0,   6,   0,
-    247,  43,  25, 132,  68, 239, 135, 141,
+    246, 107, 113, 223, 100, 156,   2, 225,
      28,   0,   0,   0,   1,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       1,   0,   7,   0,   0,   0,   0,   0,
@@ -2528,21 +2636,21 @@ static const ::capnp::_::AlignedData<38> b_8d87ef4484192bf7 = {
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0, }
 };
-::capnp::word const* const bp_8d87ef4484192bf7 = b_8d87ef4484192bf7.words;
+::capnp::word const* const bp_e1029c64df716bf6 = b_e1029c64df716bf6.words;
 #if !CAPNP_LITE
-static const ::capnp::_::RawSchema* const d_8d87ef4484192bf7[] = {
+static const ::capnp::_::RawSchema* const d_e1029c64df716bf6[] = {
   &s_931883f8920c7515,
 };
-static const uint16_t m_8d87ef4484192bf7[] = {0};
-static const uint16_t i_8d87ef4484192bf7[] = {0};
-const ::capnp::_::RawSchema s_8d87ef4484192bf7 = {
-  0x8d87ef4484192bf7, b_8d87ef4484192bf7.words, 38, d_8d87ef4484192bf7, m_8d87ef4484192bf7,
-  1, 1, i_8d87ef4484192bf7, nullptr, nullptr, { &s_8d87ef4484192bf7, nullptr, nullptr, 0, 0, nullptr }
+static const uint16_t m_e1029c64df716bf6[] = {0};
+static const uint16_t i_e1029c64df716bf6[] = {0};
+const ::capnp::_::RawSchema s_e1029c64df716bf6 = {
+  0xe1029c64df716bf6, b_e1029c64df716bf6.words, 38, d_e1029c64df716bf6, m_e1029c64df716bf6,
+  1, 1, i_e1029c64df716bf6, nullptr, nullptr, { &s_e1029c64df716bf6, nullptr, nullptr, 0, 0, nullptr }
 };
 #endif  // !CAPNP_LITE
-static const ::capnp::_::AlignedData<38> b_c5a51725bca345c4 = {
+static const ::capnp::_::AlignedData<38> b_d35f2ca1c38f8308 = {
   {   0,   0,   0,   0,   5,   0,   6,   0,
-    196,  69, 163, 188,  37,  23, 165, 197,
+      8, 131, 143, 195, 161,  44,  95, 211,
      28,   0,   0,   0,   1,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
       1,   0,   7,   0,   0,   0,   0,   0,
@@ -2580,16 +2688,16 @@ static const ::capnp::_::AlignedData<38> b_c5a51725bca345c4 = {
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0, }
 };
-::capnp::word const* const bp_c5a51725bca345c4 = b_c5a51725bca345c4.words;
+::capnp::word const* const bp_d35f2ca1c38f8308 = b_d35f2ca1c38f8308.words;
 #if !CAPNP_LITE
-static const ::capnp::_::RawSchema* const d_c5a51725bca345c4[] = {
+static const ::capnp::_::RawSchema* const d_d35f2ca1c38f8308[] = {
   &s_ec7909fa6de45624,
 };
-static const uint16_t m_c5a51725bca345c4[] = {0};
-static const uint16_t i_c5a51725bca345c4[] = {0};
-const ::capnp::_::RawSchema s_c5a51725bca345c4 = {
-  0xc5a51725bca345c4, b_c5a51725bca345c4.words, 38, d_c5a51725bca345c4, m_c5a51725bca345c4,
-  1, 1, i_c5a51725bca345c4, nullptr, nullptr, { &s_c5a51725bca345c4, nullptr, nullptr, 0, 0, nullptr }
+static const uint16_t m_d35f2ca1c38f8308[] = {0};
+static const uint16_t i_d35f2ca1c38f8308[] = {0};
+const ::capnp::_::RawSchema s_d35f2ca1c38f8308 = {
+  0xd35f2ca1c38f8308, b_d35f2ca1c38f8308.words, 38, d_d35f2ca1c38f8308, m_d35f2ca1c38f8308,
+  1, 1, i_d35f2ca1c38f8308, nullptr, nullptr, { &s_d35f2ca1c38f8308, nullptr, nullptr, 0, 0, nullptr }
 };
 #endif  // !CAPNP_LITE
 }  // namespace schemas
@@ -2927,45 +3035,55 @@ GhostFS::Client::setxattrRequest(::kj::Maybe< ::capnp::MessageSize> sizeHint) {
       "capnp/ghostfs.capnp:GhostFS", "setxattr",
       0x9fc6d7895c294dc9ull, 13);
 }
+::capnp::Request< ::GhostFS::AccessParams,  ::GhostFS::AccessResults>
+GhostFS::Client::accessRequest(::kj::Maybe< ::capnp::MessageSize> sizeHint) {
+  return newCall< ::GhostFS::AccessParams,  ::GhostFS::AccessResults>(
+      0x9fc6d7895c294dc9ull, 14, sizeHint);
+}
+::kj::Promise<void> GhostFS::Server::access(AccessContext) {
+  return ::capnp::Capability::Server::internalUnimplemented(
+      "capnp/ghostfs.capnp:GhostFS", "access",
+      0x9fc6d7895c294dc9ull, 14);
+}
 ::capnp::Request< ::GhostFS::CreateParams,  ::GhostFS::CreateResults>
 GhostFS::Client::createRequest(::kj::Maybe< ::capnp::MessageSize> sizeHint) {
   return newCall< ::GhostFS::CreateParams,  ::GhostFS::CreateResults>(
-      0x9fc6d7895c294dc9ull, 14, sizeHint);
+      0x9fc6d7895c294dc9ull, 15, sizeHint);
 }
 ::kj::Promise<void> GhostFS::Server::create(CreateContext) {
   return ::capnp::Capability::Server::internalUnimplemented(
       "capnp/ghostfs.capnp:GhostFS", "create",
-      0x9fc6d7895c294dc9ull, 14);
+      0x9fc6d7895c294dc9ull, 15);
 }
 ::capnp::Request< ::GhostFS::FlushParams,  ::GhostFS::FlushResults>
 GhostFS::Client::flushRequest(::kj::Maybe< ::capnp::MessageSize> sizeHint) {
   return newCall< ::GhostFS::FlushParams,  ::GhostFS::FlushResults>(
-      0x9fc6d7895c294dc9ull, 15, sizeHint);
+      0x9fc6d7895c294dc9ull, 16, sizeHint);
 }
 ::kj::Promise<void> GhostFS::Server::flush(FlushContext) {
   return ::capnp::Capability::Server::internalUnimplemented(
       "capnp/ghostfs.capnp:GhostFS", "flush",
-      0x9fc6d7895c294dc9ull, 15);
+      0x9fc6d7895c294dc9ull, 16);
 }
 ::capnp::Request< ::GhostFS::FsyncParams,  ::GhostFS::FsyncResults>
 GhostFS::Client::fsyncRequest(::kj::Maybe< ::capnp::MessageSize> sizeHint) {
   return newCall< ::GhostFS::FsyncParams,  ::GhostFS::FsyncResults>(
-      0x9fc6d7895c294dc9ull, 16, sizeHint);
+      0x9fc6d7895c294dc9ull, 17, sizeHint);
 }
 ::kj::Promise<void> GhostFS::Server::fsync(FsyncContext) {
   return ::capnp::Capability::Server::internalUnimplemented(
       "capnp/ghostfs.capnp:GhostFS", "fsync",
-      0x9fc6d7895c294dc9ull, 16);
+      0x9fc6d7895c294dc9ull, 17);
 }
 ::capnp::Request< ::GhostFS::BulkWriteParams,  ::GhostFS::BulkWriteResults>
 GhostFS::Client::bulkWriteRequest(::kj::Maybe< ::capnp::MessageSize> sizeHint) {
   return newCall< ::GhostFS::BulkWriteParams,  ::GhostFS::BulkWriteResults>(
-      0x9fc6d7895c294dc9ull, 17, sizeHint);
+      0x9fc6d7895c294dc9ull, 18, sizeHint);
 }
 ::kj::Promise<void> GhostFS::Server::bulkWrite(BulkWriteContext) {
   return ::capnp::Capability::Server::internalUnimplemented(
       "capnp/ghostfs.capnp:GhostFS", "bulkWrite",
-      0x9fc6d7895c294dc9ull, 17);
+      0x9fc6d7895c294dc9ull, 18);
 }
 ::capnp::Capability::Server::DispatchCallResult GhostFS::Server::dispatchCall(
     uint64_t interfaceId, uint16_t methodId,
@@ -3067,23 +3185,29 @@ GhostFS::Client::bulkWriteRequest(::kj::Maybe< ::capnp::MessageSize> sizeHint) {
       };
     case 14:
       return {
+        access(::capnp::Capability::Server::internalGetTypedContext<
+             ::GhostFS::AccessParams,  ::GhostFS::AccessResults>(context)),
+        false
+      };
+    case 15:
+      return {
         create(::capnp::Capability::Server::internalGetTypedContext<
              ::GhostFS::CreateParams,  ::GhostFS::CreateResults>(context)),
         false
       };
-    case 15:
+    case 16:
       return {
         flush(::capnp::Capability::Server::internalGetTypedContext<
              ::GhostFS::FlushParams,  ::GhostFS::FlushResults>(context)),
         false
       };
-    case 16:
+    case 17:
       return {
         fsync(::capnp::Capability::Server::internalGetTypedContext<
              ::GhostFS::FsyncParams,  ::GhostFS::FsyncResults>(context)),
         false
       };
-    case 17:
+    case 18:
       return {
         bulkWrite(::capnp::Capability::Server::internalGetTypedContext<
              ::GhostFS::BulkWriteParams,  ::GhostFS::BulkWriteResults>(context)),
@@ -3326,6 +3450,22 @@ constexpr uint16_t GhostFS::SetxattrResults::_capnpPrivate::pointerCount;
 #if !CAPNP_LITE
 constexpr ::capnp::Kind GhostFS::SetxattrResults::_capnpPrivate::kind;
 constexpr ::capnp::_::RawSchema const* GhostFS::SetxattrResults::_capnpPrivate::schema;
+#endif  // !CAPNP_LITE
+
+// GhostFS::AccessParams
+constexpr uint16_t GhostFS::AccessParams::_capnpPrivate::dataWordSize;
+constexpr uint16_t GhostFS::AccessParams::_capnpPrivate::pointerCount;
+#if !CAPNP_LITE
+constexpr ::capnp::Kind GhostFS::AccessParams::_capnpPrivate::kind;
+constexpr ::capnp::_::RawSchema const* GhostFS::AccessParams::_capnpPrivate::schema;
+#endif  // !CAPNP_LITE
+
+// GhostFS::AccessResults
+constexpr uint16_t GhostFS::AccessResults::_capnpPrivate::dataWordSize;
+constexpr uint16_t GhostFS::AccessResults::_capnpPrivate::pointerCount;
+#if !CAPNP_LITE
+constexpr ::capnp::Kind GhostFS::AccessResults::_capnpPrivate::kind;
+constexpr ::capnp::_::RawSchema const* GhostFS::AccessResults::_capnpPrivate::schema;
 #endif  // !CAPNP_LITE
 
 // GhostFS::CreateParams
