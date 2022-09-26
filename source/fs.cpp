@@ -863,6 +863,8 @@ static void hello_ll_access(fuse_req_t req, fuse_ino_t ino, int mask) {
 
   if (res == -1) {
     fuse_reply_err(req, response.getErrno());
+  } else {
+    fuse_reply_err(req, 0);
   }
 }
 
