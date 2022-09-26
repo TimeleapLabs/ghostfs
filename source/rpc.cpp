@@ -8,6 +8,8 @@
 #include <unistd.h>
 
 // Cap'n'Proto
+#include <access.capnp.h>
+#include <access.response.capnp.h>
 #include <capnp/ez-rpc.h>
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
@@ -818,6 +820,33 @@ public:
     // std::cout << "setxattr_response sent correctly: " << response_payload << std::endl;
   }
   #endif
+
+  kj::Promise<void> access(AccessContext context) override {
+    auto params = context.getParams();
+    auto req = params.getReq();
+
+    auto results = context.getResults();
+    auto response = results.getRes();
+
+    uint64_t ino = req.getIno();
+
+    if (!ino_to_path.contains(ino)) {
+      response.setRes(-1);
+      response.setErrno(ENOENT);
+      
+      return kj::READY_NOW;
+    }
+
+    std::string file_path = ino_to_path[ino];
+
+    int res = ::access(file_path.c_str(), req.getMask());
+    int err = errno;
+
+    response.setRes(res);
+    response.setErrno(err);
+    
+    return kj::READY_NOW;
+  }
 
   kj::Promise<void> create(CreateContext context) override {
     auto params = context.getParams();

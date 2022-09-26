@@ -22,6 +22,8 @@
 
 // CAPNPROTO
 
+#include <access.capnp.h>
+#include <access.response.capnp.h>
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
 #include <create.capnp.h>
@@ -841,6 +843,33 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
  * @brief
  *
  * @param req
+ * @param ino -> uint64_t
+ * @param mask -> int
+ */
+static void hello_ll_access(fuse_req_t req, fuse_ino_t ino, int mask) {
+  auto &waitScope = rpc->getWaitScope();
+  auto request = client->accessRequest();
+
+  Access::Builder access = request.getReq();
+
+  access.setIno(ino);
+  access.setMask(mask);
+
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+  auto response = result.getRes();
+
+  int res = response.getRes();
+
+  if (res == -1) {
+    fuse_reply_err(req, response.getErrno());
+  }
+}
+
+/**
+ * @brief
+ *
+ * @param req
  * @param parent -> uint64_t
  * @param name -> *char
  * @param mode -> uint64_t
@@ -1165,7 +1194,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
@@ -1249,6 +1278,7 @@ static const struct fuse_lowlevel_ops hello_ll_oper = {
     #ifdef __APPLE__
       .setxattr = hello_ll_setxattr,
     #endif
+    .access = hello_ll_access,
     .create = hello_ll_create,
 };
 // clang-format on

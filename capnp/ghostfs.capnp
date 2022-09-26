@@ -28,6 +28,8 @@ using import "readdir.capnp".Readdir;
 using import "readdir.response.capnp".ReaddirResponse;
 using import "setxattr.capnp".Setxattr;
 using import "setxattr.response.capnp".SetxattrResponse;
+using import "access.capnp".Access;
+using import "access.response.capnp".AccessResponse;
 using import "create.capnp".Create;
 using import "create.response.capnp".CreateResponse;
 using import "flush.capnp".Flush;
@@ -60,10 +62,11 @@ interface GhostFS {
   release  @11 (req :Release)  -> (res :ReleaseResponse);
   readdir  @12 (req :Readdir)  -> (res :ReaddirResponse);
   setxattr @13 (req :Setxattr) -> (res :SetxattrResponse);
-  create   @14 (req :Create)   -> (res :CreateResponse);
-  flush    @15 (req :Flush)    -> (res :FlushResponse);
-  fsync    @16 (req :Fsync)    -> (res :FsyncResponse);
+  access   @14 (req :Access)   -> (res :AccessResponse);
+  create   @15 (req :Create)   -> (res :CreateResponse);
+  flush    @16 (req :Flush)    -> (res :FlushResponse);
+  fsync    @17 (req :Fsync)    -> (res :FsyncResponse);
   
   # Special methods (non-fuse)
-  bulkWrite @17 (req :List(Write))         -> (res :List(WriteResponse));
+  bulkWrite @18 (req :List(Write))         -> (res :List(WriteResponse));
 }
