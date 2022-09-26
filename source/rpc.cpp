@@ -511,10 +511,25 @@ public:
     int res = ::rename(file_path.c_str(), newfile_path.c_str());
     int err = errno;
 
+    // fix ino to path
     int64_t ino = path_to_ino[file_path];
     ino_to_path[ino] = newfile_path;
     path_to_ino[newfile_path] = ino;
     path_to_ino.erase(file_path);
+
+    // fix ino to path recursively if we rename a directory
+    if (std::filesystem::is_directory(newfile_path)) {
+      for(const auto& entry: std::filesystem::recursive_directory_iterator(newfile_path)) {
+        std::filesystem::path new_name = entry.path();
+        std::filesystem::path relative = std::filesystem::relative(new_name, newfile_path);
+        std::filesystem::path old_name = file_path / relative;
+        
+        int64_t ino = path_to_ino[old_name];
+        ino_to_path[ino] = new_name;
+        path_to_ino[new_name] = ino;
+        path_to_ino.erase(old_name);
+      }
+    }
 
     response.setErrno(err);
     response.setRes(res);
