@@ -592,7 +592,7 @@ public:
 
     int err = errno;
 
-    kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte*)buf, size);
+    kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte*)buf, res);
     capnp::Data::Reader buf_reader(buf_ptr);
 
     response.setBuf(buf_reader);
