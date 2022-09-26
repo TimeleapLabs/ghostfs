@@ -592,6 +592,8 @@ uint64_t add_to_write_back_cache(cached_write cache) {
   }
 
   write_back_cache[cache.fi->fh].push_back(cache);
+  read_ahead_cache.erase(cache.fi->fh);
+
   return write_back_cache[cache.fi->fh].size();
 }
 
@@ -1161,7 +1163,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
