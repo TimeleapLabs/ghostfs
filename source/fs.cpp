@@ -116,14 +116,17 @@ static int reply_buf_limited(fuse_req_t req, const char *buf, size_t bufsize, of
 
 class GhostfsRpcClient {
 public:
-  kj::Own<capnp::TwoPartyClient> two_party;
+  kj::Own<capnp::TwoPartyClient> twoParty;
   kj::Own<kj::AsyncIoStream> connection;
 
+  kj::AsyncIoContext *context;
   GhostFS::Client *client;
   kj::WaitScope *waitScope;
 
   int connect(std::string host, int port, std::string cert, std::string user, std::string token) {
     auto ioContext = kj::setupAsyncIo();
+
+    context = &ioContext;
     waitScope = &ioContext.waitScope;
 
     if (cert.length()) {
@@ -136,16 +139,16 @@ public:
       auto address = network->parseAddress(host, port).wait(*waitScope);
 
       connection = address->connect().wait(*waitScope);
-      two_party = kj::heap<capnp::TwoPartyClient>(*connection);
+      twoParty = kj::heap<capnp::TwoPartyClient>(*connection);
 
     } else {
       auto address = ioContext.provider->getNetwork().parseAddress(host, port).wait(*waitScope);
 
       connection = address->connect().wait(*waitScope);
-      two_party = kj::heap<capnp::TwoPartyClient>(*connection);
+      twoParty = kj::heap<capnp::TwoPartyClient>(*connection);
     }
 
-    auto authClient = two_party->bootstrap().castAs<GhostFSAuth>();
+    auto authClient = twoParty->bootstrap().castAs<GhostFSAuth>();
     auto request = authClient.authRequest();
 
     request.setUser(user);
@@ -1263,7 +1266,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
