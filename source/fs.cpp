@@ -37,6 +37,9 @@
 
 // CAPNPROTO
 
+#include <access.capnp.h>
+#include <access.response.capnp.h>
+#include <capnp/message.h>
 #include <capnp/serialize-packed.h>
 #include <create.capnp.h>
 #include <create.response.capnp.h>
@@ -105,6 +108,7 @@ static int reply_buf_limited(fuse_req_t req, const char *buf, size_t bufsize, of
                              size_t maxsize) {
   if (off < (int64_t)bufsize) {
     return fuse_reply_buf(req, buf + off, min(bufsize - off, maxsize));
+
   } else {
     return fuse_reply_buf(req, NULL, 0);
   }
@@ -158,6 +162,16 @@ template <class T> void fillFileInfo(T *fuseFileInfo, struct fuse_file_info *fi)
  *        Apparently Solaris devs knew how to write non-cryptic code
  */
 
+int hello_stat(fuse_ino_t ino, int64_t fh, struct stat *stbuf) {
+  if (fh == 0 || ino == 1) {
+    return hello_stat(ino, stbuf);
+  }
+
+  int res = fstat(fh, stbuf);
+  stbuf->st_ino = ino;
+  return res;
+}
+
 int hello_stat(fuse_ino_t ino, struct stat *stbuf) {
   if (ino == 1) {
     // This is the fs root
@@ -172,10 +186,10 @@ int hello_stat(fuse_ino_t ino, struct stat *stbuf) {
     return -1;
   }
 
-  stat(ino_to_path[ino].c_str(), stbuf);
+  int res = stat(ino_to_path[ino].c_str(), stbuf);
   stbuf->st_ino = ino;
 
-  return 0;
+  return res;
 }
 
 void dirbuf_add(fuse_req_t req, struct dirbuf *b, const char *name, fuse_ino_t ino) {
@@ -682,6 +696,10 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
                            struct fuse_file_info *fi) {
   // printf("Called .write\n");
 
+  if (max_read_ahead_cache > 0) {
+    read_ahead_cache.erase(fi->fh);
+  }
+
   if (max_write_back_cache > 0) {
     cached_write cache = {req, ino, (char *)malloc(size), size, off, fi};
     memcpy(cache.buf, buf, size);
@@ -836,6 +854,35 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
   fuse_reply_entry(req, &e);
 
   // std::cout << "hello_ll_mknod executed correctly: " << payload << std::endl;
+}
+
+/**
+ * @brief
+ *
+ * @param req
+ * @param ino -> uint64_t
+ * @param mask -> int
+ */
+static void hello_ll_access(fuse_req_t req, fuse_ino_t ino, int mask) {
+  auto &waitScope = rpc->getWaitScope();
+  auto request = client->accessRequest();
+
+  Access::Builder access = request.getReq();
+
+  access.setIno(ino);
+  access.setMask(mask);
+
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+  auto response = result.getRes();
+
+  int res = response.getRes();
+
+  if (res == -1) {
+    fuse_reply_err(req, response.getErrno());
+  } else {
+    fuse_reply_err(req, 0);
+  }
 }
 
 /**
@@ -1250,6 +1297,7 @@ static const struct fuse_lowlevel_ops hello_ll_oper = {
     #ifdef __APPLE__
       .setxattr = hello_ll_setxattr,
     #endif
+    .access = hello_ll_access,
     .create = hello_ll_create,
 };
 // clang-format on

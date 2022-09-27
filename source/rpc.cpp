@@ -13,6 +13,8 @@
 #include <sstream>
 
 // Cap'n'Proto
+#include <access.capnp.h>
+#include <access.response.capnp.h>
 #include <capnp/ez-rpc.h>
 #include <capnp/message.h>
 #include <capnp/rpc-twoparty.h>
@@ -156,7 +158,7 @@ public:
 
     memset(&attr, 0, sizeof(attr));
 
-    int res = hello_stat(req.getIno(), &attr);
+    int res = hello_stat(req.getIno(), req.getFi().getFh(), &attr);
     int err = errno;
 
     GetattrResponse::Attr::Builder attributes = response.initAttr();
@@ -521,6 +523,26 @@ public:
     int res = ::rename(file_path.c_str(), newfile_path.c_str());
     int err = errno;
 
+    // fix ino to path
+    int64_t ino = path_to_ino[file_path];
+    ino_to_path[ino] = newfile_path;
+    path_to_ino[newfile_path] = ino;
+    path_to_ino.erase(file_path);
+
+    // fix ino to path recursively if we rename a directory
+    if (std::filesystem::is_directory(newfile_path)) {
+      for(const auto& entry: std::filesystem::recursive_directory_iterator(newfile_path)) {
+        std::filesystem::path new_name = entry.path();
+        std::filesystem::path relative = std::filesystem::relative(new_name, newfile_path);
+        std::filesystem::path old_name = file_path / relative;
+        
+        int64_t ino = path_to_ino[old_name];
+        ino_to_path[ino] = new_name;
+        path_to_ino[new_name] = ino;
+        path_to_ino.erase(old_name);
+      }
+    }
+
     response.setErrno(err);
     response.setRes(res);
 
@@ -602,7 +624,7 @@ public:
 
     int err = errno;
 
-    kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte*)buf, size);
+    kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte*)buf, res);
     capnp::Data::Reader buf_reader(buf_ptr);
 
     response.setBuf(buf_reader);
@@ -717,7 +739,7 @@ public:
      */
     bool access_ok = check_access(root, user, path);
 
-    if (!access_ok) {
+    if (not access_ok) {
       response.setErrno(EACCES);
       response.setRes(-1);
 
@@ -830,6 +852,38 @@ public:
     // std::cout << "setxattr_response sent correctly: " << response_payload << std::endl;
   }
   #endif
+
+  kj::Promise<void> access(AccessContext context) override {
+    auto params = context.getParams();
+    auto req = params.getReq();
+
+    auto results = context.getResults();
+    auto response = results.getRes();
+
+    uint64_t ino = req.getIno();
+
+    if (ino == 1) {
+      response.setRes(0);      
+      return kj::READY_NOW;
+    }
+
+    if (not ino_to_path.contains(ino)) {
+      response.setRes(-1);
+      response.setErrno(ENOENT);
+      
+      return kj::READY_NOW;
+    }
+
+    std::string file_path = ino_to_path[ino];
+
+    int res = ::access(file_path.c_str(), req.getMask());
+    int err = errno;
+
+    response.setRes(res);
+    response.setErrno(err);
+    
+    return kj::READY_NOW;
+  }
 
   kj::Promise<void> create(CreateContext context) override {
     auto params = context.getParams();
@@ -1008,6 +1062,25 @@ class GhostFSAuthServerImpl final : public GhostFSAuthServer::Server {
       return kj::READY_NOW;
     }
 
+    kj::Promise<void> mounts(MountsContext context) override {
+      auto params = context.getParams();
+
+      auto userPtr = params.getUser();
+      std::string user(userPtr.begin(), userPtr.end());
+
+      std::map<std::string, std::string>* user_mounts = get_user_mounts(user);
+
+      auto res = context.getResults();
+      auto mounts = res.initMounts(user_mounts->size());
+
+      int64_t i = 0;
+      for ([[maybe_unused]] auto const& [dest, source] : *user_mounts) {
+        mounts.set(i++, dest);
+      }
+      
+      return kj::READY_NOW;
+    }
+
     kj::Promise<void> unmount(UnmountContext context) override {
       auto params = context.getParams();
 
@@ -1018,6 +1091,20 @@ class GhostFSAuthServerImpl final : public GhostFSAuthServer::Server {
       std::string destination(destinationPtr.begin(), destinationPtr.end());
 
       soft_unmount(user, destination);
+
+      auto res = context.getResults();
+      res.setSuccess(true);
+      
+      return kj::READY_NOW;
+    }
+
+    kj::Promise<void> unmountAll(UnmountAllContext context) override {
+      auto params = context.getParams();
+
+      auto userPtr = params.getUser();
+      std::string user(userPtr.begin(), userPtr.end());
+
+      soft_unmount(user);
 
       auto res = context.getResults();
       res.setSuccess(true);
@@ -1066,6 +1153,28 @@ int rpc_mount(uint16_t port, std::string user, std::string source, std::string d
   return 0;
 }
 
+int rpc_print_mounts(uint16_t port, std::string user) {
+  capnp::EzRpcClient rpc("127.0.0.1", port);
+
+  auto& waitScope = rpc.getWaitScope();
+  GhostFSAuthServer::Client authClient = rpc.getMain<GhostFSAuthServer>();
+
+  auto request = authClient.mountsRequest();
+
+  request.setUser(user);
+
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+
+  capnp::List<capnp::Text>::Reader mounts = result.getMounts();
+
+  for (std::string mount : mounts) {
+    std::cout << mount << std::endl;
+  }
+
+  return 0;
+}
+
 int rpc_unmount(uint16_t port, std::string user, std::string destination) {
   capnp::EzRpcClient rpc("127.0.0.1", port);
 
@@ -1076,6 +1185,21 @@ int rpc_unmount(uint16_t port, std::string user, std::string destination) {
 
   request.setUser(user);
   request.setDestination(destination);
+
+  auto promise = request.send();
+  [[maybe_unused]] auto result = promise.wait(waitScope);
+
+  return 0;
+}
+
+int rpc_unmount_all(uint16_t port, std::string user) {
+  capnp::EzRpcClient rpc("127.0.0.1", port);
+
+  auto& waitScope = rpc.getWaitScope();
+  GhostFSAuthServer::Client authClient = rpc.getMain<GhostFSAuthServer>();
+
+  auto request = authClient.unmountAllRequest();
+  request.setUser(user);
 
   auto promise = request.send();
   [[maybe_unused]] auto result = promise.wait(waitScope);
@@ -1127,7 +1251,7 @@ std::string read_file(const std::string& path) {
 int start_rpc_server(std::string bind, int port, int auth_port, std::string root,
                      std::string suffix, std::string key_file, std::string cert_file) {
   if (root.length() > 0) {
-    if (!std::filesystem::is_directory(root)) {
+    if (not std::filesystem::is_directory(root)) {
       std::cout << "ERROR: directory " << '"' << root << '"' << " does not exist." << std::endl;
       return 1;
     };

@@ -13,4 +13,5 @@ std::filesystem::path normalize_path(std::string root, std::string user_id);
 
 void soft_mount(std::string user, std::string src, std::string dest);
 void soft_unmount(std::string user, std::string dest);
+void soft_unmount(std::string user);
 std::map<std::string, std::string>* get_user_mounts(std::string user);

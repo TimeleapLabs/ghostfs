@@ -28,6 +28,8 @@ using import "readdir.capnp".Readdir;
 using import "readdir.response.capnp".ReaddirResponse;
 using import "setxattr.capnp".Setxattr;
 using import "setxattr.response.capnp".SetxattrResponse;
+using import "access.capnp".Access;
+using import "access.response.capnp".AccessResponse;
 using import "create.capnp".Create;
 using import "create.response.capnp".CreateResponse;
 using import "flush.capnp".Flush;
@@ -36,9 +38,11 @@ using import "fsync.capnp".Fsync;
 using import "fsync.response.capnp".FsyncResponse;
 
 interface GhostFSAuthServer {
-  authorize @0 (user :Text, token :Text, retries :Int64, expires :UInt64) -> (token :Text);
-  mount     @1 (user :Text, source :Text, destination :Text) -> (success :Bool);
-  unmount   @2 (user :Text, destination :Text) -> (success :Bool);
+  authorize   @0 (user :Text, token :Text, retries :Int64, expires :UInt64) -> (token :Text);
+  mount       @1 (user :Text, source :Text, destination :Text) -> (success :Bool);
+  mounts      @2 (user :Text) -> (mounts :List(Text));
+  unmount     @3 (user :Text, destination :Text) -> (success :Bool);
+  unmountAll  @4 (user :Text) -> (success :Bool);
 }
 
 interface GhostFSAuth {
@@ -60,10 +64,11 @@ interface GhostFS {
   release  @11 (req :Release)  -> (res :ReleaseResponse);
   readdir  @12 (req :Readdir)  -> (res :ReaddirResponse);
   setxattr @13 (req :Setxattr) -> (res :SetxattrResponse);
-  create   @14 (req :Create)   -> (res :CreateResponse);
-  flush    @15 (req :Flush)    -> (res :FlushResponse);
-  fsync    @16 (req :Fsync)    -> (res :FsyncResponse);
+  access   @14 (req :Access)   -> (res :AccessResponse);
+  create   @15 (req :Create)   -> (res :CreateResponse);
+  flush    @16 (req :Flush)    -> (res :FlushResponse);
+  fsync    @17 (req :Fsync)    -> (res :FsyncResponse);
   
   # Special methods (non-fuse)
-  bulkWrite @17 (req :List(Write))         -> (res :List(WriteResponse));
+  bulkWrite @18 (req :List(Write))         -> (res :List(WriteResponse));
 }

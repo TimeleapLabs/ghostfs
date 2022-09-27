@@ -37,6 +37,7 @@ auto main(int argc, char** argv) -> int {
     ("T,cert", "TLS cert", cxxopts::value<std::string>()->default_value(""))
     ("A,authorize", "Run in authorizer mode")
     ("m,mount", "Soft mount a directory")
+    ("M,mounts", "Get all soft mounts for user")
     ("U,unmount", "Soft unmount a directory")
     ("s,server", "Run in server mode")
     ("c,client", "Run in client mode");
@@ -117,11 +118,18 @@ auto main(int argc, char** argv) -> int {
 
     return rpc_mount(port, user, source, destination);
 
+  } else if (result["mounts"].as<bool>()) {
+    uint16_t port = result["auth-port"].as<uint16_t>();
+    std::string user = result["user"].as<std::string>();
+
+    return rpc_print_mounts(port, user);
+
   } else if (result["unmount"].as<bool>()) {
     uint16_t port = result["auth-port"].as<uint16_t>();
     std::string user = result["user"].as<std::string>();
     std::string destination = result["destination"].as<std::string>();
 
-    return rpc_unmount(port, user, destination);
+    return destination.length() ? rpc_unmount(port, user, destination)
+                                : rpc_unmount_all(port, user);
   }
 }
