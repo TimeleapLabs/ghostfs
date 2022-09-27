@@ -864,7 +864,7 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
  * @param mask -> int
  */
 static void hello_ll_access(fuse_req_t req, fuse_ino_t ino, int mask) {
-  auto &waitScope = rpc->getWaitScope();
+  auto &waitScope = context->waitScope;
   auto request = client->accessRequest();
 
   Access::Builder access = request.getReq();
@@ -1213,7 +1213,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
