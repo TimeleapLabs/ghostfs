@@ -158,6 +158,7 @@ public:
   GhostFS::Client *client;
 
   int connect(std::string host, int port, std::string cert, std::string user, std::string token) {
+    ioContext = RpcContext::getThreadLocal();
     auto &waitScope = ioContext->getWaitScope();
 
     if (cert.length()) {
