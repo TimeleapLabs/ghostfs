@@ -27,13 +27,13 @@
 #include <vector>
 
 // Cap'n'Proto
-#include <capnp/ez-rpc.h>
 #include <capnp/message.h>
 #include <capnp/rpc-twoparty.h>
 #include <capnp/serialize-packed.h>
 #include <kj/async-io.h>
 #include <kj/async.h>
 #include <kj/compat/tls.h>
+#include <kj/threadlocal.h>
 
 // CAPNPROTO
 
@@ -114,20 +114,51 @@ static int reply_buf_limited(fuse_req_t req, const char *buf, size_t bufsize, of
   }
 }
 
+class RpcContext;
+
+KJ_THREADLOCAL_PTR(RpcContext) threadContext = nullptr;
+
+class RpcContext : public kj::Refcounted {
+public:
+  RpcContext() : ioContext(kj::setupAsyncIo()) { threadContext = this; }
+
+  ~RpcContext() noexcept(false) {
+    KJ_REQUIRE(threadContext == this,
+               "RpcContext destroyed from different thread than it was created.") {
+      return;
+    }
+    threadContext = nullptr;
+  }
+
+  kj::WaitScope &getWaitScope() { return ioContext.waitScope; }
+
+  kj::AsyncIoProvider &getIoProvider() { return *ioContext.provider; }
+
+  kj::LowLevelAsyncIoProvider &getLowLevelIoProvider() { return *ioContext.lowLevelProvider; }
+
+  static kj::Own<RpcContext> getThreadLocal() {
+    RpcContext *existing = threadContext;
+    if (existing != nullptr) {
+      return kj::addRef(*existing);
+    } else {
+      return kj::refcounted<RpcContext>();
+    }
+  }
+
+private:
+  kj::AsyncIoContext ioContext;
+};
+
 class GhostfsRpcClient {
 public:
   kj::Own<capnp::TwoPartyClient> twoParty;
   kj::Own<kj::AsyncIoStream> connection;
+  kj::Own<RpcContext> ioContext;
 
-  kj::AsyncIoContext *context;
   GhostFS::Client *client;
-  kj::WaitScope *waitScope;
 
   int connect(std::string host, int port, std::string cert, std::string user, std::string token) {
-    auto ioContext = kj::setupAsyncIo();
-
-    context = &ioContext;
-    waitScope = &ioContext.waitScope;
+    auto &waitScope = ioContext->getWaitScope();
 
     if (cert.length()) {
       kj::TlsContext::Options options;
@@ -135,16 +166,16 @@ public:
       options.trustedCertificates = kj::arrayPtr(&caCert, 1);
 
       kj::TlsContext tls(kj::mv(options));
-      auto network = tls.wrapNetwork(ioContext.provider->getNetwork());
-      auto address = network->parseAddress(host, port).wait(*waitScope);
+      auto network = tls.wrapNetwork(ioContext->getIoProvider().getNetwork());
+      auto address = network->parseAddress(host, port).wait(waitScope);
 
-      connection = address->connect().wait(*waitScope);
+      connection = address->connect().wait(waitScope);
       twoParty = kj::heap<capnp::TwoPartyClient>(*connection);
-
     } else {
-      auto address = ioContext.provider->getNetwork().parseAddress(host, port).wait(*waitScope);
+      auto address
+          = ioContext->getIoProvider().getNetwork().parseAddress(host, port).wait(waitScope);
 
-      connection = address->connect().wait(*waitScope);
+      connection = address->connect().wait(waitScope);
       twoParty = kj::heap<capnp::TwoPartyClient>(*connection);
     }
 
@@ -155,7 +186,7 @@ public:
     request.setToken(token);
 
     auto promise = request.send();
-    auto result = promise.wait(*waitScope);
+    auto result = promise.wait(waitScope);
     auto authSuccess = result.getAuthSuccess();
 
     if (!authSuccess) {
@@ -276,7 +307,7 @@ void dirbuf_add(fuse_req_t req, struct dirbuf *b, const char *name, fuse_ino_t i
  * }
  */
 static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
-  auto waitScope = rpc.waitScope;
+  auto &waitScope = rpc.ioContext->getWaitScope();
   auto request = rpc.client->getattrRequest();
 
   Getattr::Builder getattr = request.getReq();
@@ -287,7 +318,7 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
   fillFileInfo(&fuseFileInfo, fi);
 
   auto promise = request.send();
-  auto result = promise.wait(*waitScope);
+  auto result = promise.wait(waitScope);
   auto response = result.getRes();
 
   struct stat attr;
@@ -333,7 +364,7 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
 static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name) {
   // printf("Called .lookup\n");
 
-  auto waitScope = rpc.waitScope;
+  auto &waitScope = rpc.ioContext->getWaitScope();
   auto request = rpc.client->lookupRequest();
 
   Lookup::Builder lookup = request.getReq();
@@ -344,7 +375,7 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
   // std::cout << "LOOKUP name: " << name << std::endl;
 
   auto promise = request.send();
-  auto result = promise.wait(*waitScope);
+  auto result = promise.wait(waitScope);
   auto response = result.getRes();
 
   struct stat attr;
@@ -413,7 +444,7 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
                              struct fuse_file_info *fi) {
   // printf("Called .readdir\n");
 
-  auto waitScope = rpc.waitScope;
+  auto &waitScope = rpc.ioContext->getWaitScope();
   auto request = rpc.client->readdirRequest();
 
   Readdir::Builder readdir = request.getReq();
@@ -431,7 +462,7 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
   // std::cout << "Size: " << c.size() << std::endl;
 
   auto promise = request.send();
-  auto result = promise.wait(*waitScope);
+  auto result = promise.wait(waitScope);
   auto response = result.getRes();
 
   struct dirbuf b;
@@ -479,7 +510,7 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
 static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
   // printf("Called .open\n");
 
-  auto waitScope = rpc.waitScope;
+  auto &waitScope = rpc.ioContext->getWaitScope();
   auto request = rpc.client->openRequest();
 
   Open::Builder open = request.getReq();
@@ -490,7 +521,7 @@ static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info 
   fillFileInfo(&fuseFileInfo, fi);
 
   auto promise = request.send();
-  auto result = promise.wait(*waitScope);
+  auto result = promise.wait(waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -544,7 +575,7 @@ bool reply_from_cache(fuse_req_t req, uint64_t fh, size_t size, off_t off) {
 }
 
 void read_ahead(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off, struct fuse_file_info *fi) {
-  auto waitScope = rpc.waitScope;
+  auto &waitScope = rpc.ioContext->getWaitScope();
   auto request = rpc.client->readRequest();
 
   Read::Builder read = request.getReq();
@@ -557,7 +588,7 @@ void read_ahead(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off, struct f
   fillFileInfo(&fuseFileInfo, fi);
 
   auto promise = request.send();
-  auto result = promise.wait(*waitScope);
+  auto result = promise.wait(waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -623,7 +654,7 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
     return;
   }
 
-  auto waitScope = rpc.waitScope;
+  auto &waitScope = rpc.ioContext->getWaitScope();
   auto request = rpc.client->readRequest();
 
   Read::Builder read = request.getReq();
@@ -636,7 +667,7 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
   fillFileInfo(&fuseFileInfo, fi);
 
   auto promise = request.send();
-  auto result = promise.wait(*waitScope);
+  auto result = promise.wait(waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -678,7 +709,7 @@ void flush_write_back_cache(uint64_t fh, bool reply) {
     return;
   }
 
-  auto waitScope = rpc.waitScope;
+  auto &waitScope = rpc.ioContext->getWaitScope();
   auto request = rpc.client->bulkWriteRequest();
 
   capnp::List<Write>::Builder write = request.initReq(cached);
@@ -700,7 +731,7 @@ void flush_write_back_cache(uint64_t fh, bool reply) {
   }
 
   auto promise = request.send();
-  auto result = promise.wait(*waitScope);
+  auto result = promise.wait(waitScope);
 
   if (reply) {
     auto response = result.getRes();
@@ -767,7 +798,7 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
     return;
   }
 
-  auto waitScope = rpc.waitScope;
+  auto &waitScope = rpc.ioContext->getWaitScope();
   auto request = rpc.client->writeRequest();
 
   Write::Builder write = request.getReq();
@@ -784,7 +815,7 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
   fillFileInfo(&fuseFileInfo, fi);
 
   auto promise = request.send();
-  auto result = promise.wait(*waitScope);
+  auto result = promise.wait(waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -803,7 +834,7 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
 static void hello_ll_unlink(fuse_req_t req, fuse_ino_t parent, const char *name) {
   // printf("Called .unlink\n");
 
-  auto waitScope = rpc.waitScope;
+  auto &waitScope = rpc.ioContext->getWaitScope();
   auto request = rpc.client->unlinkRequest();
 
   Unlink::Builder unlink = request.getReq();
@@ -812,7 +843,7 @@ static void hello_ll_unlink(fuse_req_t req, fuse_ino_t parent, const char *name)
   unlink.setName(name);
 
   auto promise = request.send();
-  auto result = promise.wait(*waitScope);
+  auto result = promise.wait(waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -826,7 +857,7 @@ static void hello_ll_unlink(fuse_req_t req, fuse_ino_t parent, const char *name)
 static void hello_ll_rmdir(fuse_req_t req, fuse_ino_t parent, const char *name) {
   // printf("Called .rmdir\n");
 
-  auto waitScope = rpc.waitScope;
+  auto &waitScope = rpc.ioContext->getWaitScope();
   auto request = rpc.client->rmdirRequest();
 
   Rmdir::Builder rmdir = request.getReq();
@@ -835,7 +866,7 @@ static void hello_ll_rmdir(fuse_req_t req, fuse_ino_t parent, const char *name) 
   rmdir.setName(name);
 
   auto promise = request.send();
-  auto result = promise.wait(*waitScope);
+  auto result = promise.wait(waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -859,7 +890,7 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
                            dev_t rdev) {
   // printf("Called .mknod\n");
 
-  auto waitScope = rpc.waitScope;
+  auto &waitScope = rpc.ioContext->getWaitScope();
   auto request = rpc.client->mknodRequest();
 
   Mknod::Builder mknod = request.getReq();
@@ -870,7 +901,7 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
   mknod.setRdev(rdev);
 
   auto promise = request.send();
-  auto result = promise.wait(*waitScope);
+  auto result = promise.wait(waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -917,7 +948,7 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
  * @param mask -> int
  */
 static void hello_ll_access(fuse_req_t req, fuse_ino_t ino, int mask) {
-  auto waitScope = rpc.waitScope;
+  auto &waitScope = rpc.ioContext->getWaitScope();
   auto request = rpc.client->accessRequest();
 
   Access::Builder access = request.getReq();
@@ -926,7 +957,7 @@ static void hello_ll_access(fuse_req_t req, fuse_ino_t ino, int mask) {
   access.setMask(mask);
 
   auto promise = request.send();
-  auto result = promise.wait(*waitScope);
+  auto result = promise.wait(waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -964,7 +995,7 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
                             struct fuse_file_info *fi) {
   // printf("Called .create\n");
 
-  auto waitScope = rpc.waitScope;
+  auto &waitScope = rpc.ioContext->getWaitScope();
   auto request = rpc.client->createRequest();
 
   Create::Builder create = request.getReq();
@@ -977,7 +1008,7 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
   fillFileInfo(&fuseFileInfo, fi);
 
   auto promise = request.send();
-  auto result = promise.wait(*waitScope);
+  auto result = promise.wait(waitScope);
   auto response = result.getRes();
 
   struct stat attr;
@@ -1035,7 +1066,7 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
 static void hello_ll_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode) {
   // printf("Called .mkdir\n");
 
-  auto waitScope = rpc.waitScope;
+  auto &waitScope = rpc.ioContext->getWaitScope();
   auto request = rpc.client->mkdirRequest();
 
   Mkdir::Builder mkdir = request.getReq();
@@ -1045,7 +1076,7 @@ static void hello_ll_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, 
   mkdir.setMode(mode);
 
   auto promise = request.send();
-  auto result = promise.wait(*waitScope);
+  auto result = promise.wait(waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -1088,7 +1119,7 @@ static void hello_ll_rename(fuse_req_t req, fuse_ino_t parent, const char *name,
                             fuse_ino_t newparent, const char *newname) {
   // printf("Called .rename\n");
 
-  auto waitScope = rpc.waitScope;
+  auto &waitScope = rpc.ioContext->getWaitScope();
   auto request = rpc.client->renameRequest();
 
   Rename::Builder rename = request.getReq();
@@ -1099,7 +1130,7 @@ static void hello_ll_rename(fuse_req_t req, fuse_ino_t parent, const char *name,
   rename.setNewname(newname);
 
   auto promise = request.send();
-  auto result = promise.wait(*waitScope);
+  auto result = promise.wait(waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -1119,7 +1150,7 @@ static void hello_ll_rename(fuse_req_t req, fuse_ino_t parent, const char *name,
  * @param mode -> uint64_t
  */
 static void hello_ll_release(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
-  auto waitScope = rpc.waitScope;
+  auto &waitScope = rpc.ioContext->getWaitScope();
   auto request = rpc.client->releaseRequest();
 
   Release::Builder release = request.getReq();
@@ -1129,7 +1160,7 @@ static void hello_ll_release(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
   fillFileInfo(&fuseFileInfo, fi);
 
   auto promise = request.send();
-  auto result = promise.wait(*waitScope);
+  auto result = promise.wait(waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -1151,7 +1182,7 @@ static void hello_ll_release(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
 static void hello_ll_flush(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
   flush_write_back_cache(fi->fh, false);
 
-  auto waitScope = rpc.waitScope;
+  auto &waitScope = rpc.ioContext->getWaitScope();
   auto request = rpc.client->flushRequest();
 
   Flush::Builder flush = request.getReq();
@@ -1161,7 +1192,7 @@ static void hello_ll_flush(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info
   fillFileInfo(&fuseFileInfo, fi);
 
   auto promise = request.send();
-  auto result = promise.wait(*waitScope);
+  auto result = promise.wait(waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -1182,7 +1213,7 @@ static void hello_ll_fsync(fuse_req_t req, fuse_ino_t ino, int datasync,
                            struct fuse_file_info *fi) {
   flush_write_back_cache(fi->fh, false);
 
-  auto waitScope = rpc.waitScope;
+  auto &waitScope = rpc.ioContext->getWaitScope();
   auto request = rpc.client->fsyncRequest();
 
   Fsync::Builder fsync = request.getReq();
@@ -1194,7 +1225,7 @@ static void hello_ll_fsync(fuse_req_t req, fuse_ino_t ino, int datasync,
   fillFileInfo(&fuseFileInfo, fi);
 
   auto promise = request.send();
-  auto result = promise.wait(*waitScope);
+  auto result = promise.wait(waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -1241,7 +1272,7 @@ static void hello_ll_fsync(fuse_req_t req, fuse_ino_t ino, int datasync,
  */
 static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, int to_set,
                              struct fuse_file_info *fi) {
-  auto waitScope = rpc.waitScope;
+  auto &waitScope = rpc.ioContext->getWaitScope();
   auto request = rpc.client->setattrRequest();
 
   Setattr::Builder setattr = request.getReq();
@@ -1266,7 +1297,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-// clang-format off
+  // clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
@@ -1282,7 +1313,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   fillFileInfo(&fuseFileInfo, fi);
 
   auto promise = request.send();
-  auto result = promise.wait(*waitScope);
+  auto result = promise.wait(waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -1302,7 +1333,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
 static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, const char *value,
                               size_t size, int flags, uint32_t position) {
 
-  auto waitScope = rpc.waitScope;
+  auto &waitScope = rpc.ioContext->getWaitScope();
   auto request = rpc.client->setxattrRequest();
 
   Setxattr::Builder setxattr = request.getReq();
@@ -1315,7 +1346,7 @@ static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, 
   setxattr.setPosition(position);
 
   auto promise = request.send();
-  auto result = promise.wait(*waitScope);
+  auto result = promise.wait(waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
