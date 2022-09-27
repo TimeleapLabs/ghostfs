@@ -21,6 +21,12 @@ endif()
 # see https://github.com/TheLartians/CPM.cmake for more info
 include(cmake/CPM.cmake)
 
+# ---- Add OpenSSL ----
+find_package(OpenSSL REQUIRED)
+include_directories(OPENSSL_INCLUDE_DIR})
+
+message("OpenSSL Include: ${OPENSSL_INCLUDE_DIR}")
+
 # PackageProject.cmake will be used to make our target installable
 CPMAddPackage("gh:TheLartians/PackageProject.cmake@1.8.0")
 
@@ -64,11 +70,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
 find_package(FUSE REQUIRED)
 add_definitions(-D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=29)
 include_directories(${FUSE_INCLUDE_DIR})
-
-find_package(OpenSSL REQUIRED)
-include_directories(${OPENSSL_INCLUDE_DIR})
-
-message("OpenSSL Include: ${OPENSSL_INCLUDE_DIR}")
 
 # ---- Add source files ----
 
