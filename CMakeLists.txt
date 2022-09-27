@@ -34,6 +34,7 @@ CPMAddPackage(
   NAME capnproto
   VERSION 0.10.2
   GITHUB_REPOSITORY capnproto/capnproto
+  OPTIONS "WITH_OPENSSL ON" "BUILD_TESTING OFF"
 )
 
 CPMAddPackage(
@@ -64,6 +65,11 @@ find_package(FUSE REQUIRED)
 add_definitions(-D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=29)
 include_directories(${FUSE_INCLUDE_DIR})
 
+find_package(OpenSSL REQUIRED)
+include_directories(${OPENSSL_INCLUDE_DIR})
+
+message("OpenSSL Include: ${OPENSSL_INCLUDE_DIR}")
+
 # ---- Add source files ----
 
 # Note: globbing sources is considered bad practice as CMake's generators may not detect new files
@@ -92,6 +98,7 @@ target_compile_options(${PROJECT_NAME} PUBLIC "-mavx2")
 target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt)
 target_link_libraries(${PROJECT_NAME} PRIVATE CapnProto::capnp)
 target_link_libraries(${PROJECT_NAME} PRIVATE CapnProto::capnp-rpc)
+target_link_libraries(${PROJECT_NAME} PRIVATE CapnProto::kj-tls)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${FUSE_LIBRARIES})
 
 target_include_directories(
@@ -111,6 +118,11 @@ target_include_directories(
 
 target_include_directories(
   ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${FUSE_INCLUDE_DIR}>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
+)
+
+target_include_directories(
+  ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${OPENSSL_INCLUDE_DIR}>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
 )
 

@@ -33,6 +33,8 @@ auto main(int argc, char** argv) -> int {
     ("R,retries", "Authentication token retries", cxxopts::value<int64_t>()->default_value("-1"))
     ("w,write-back", "Write back cache size", cxxopts::value<uint8_t>()->default_value("8"))
     ("C,read-ahead", "Read ahead cache size", cxxopts::value<uint8_t>()->default_value("8"))
+    ("k,key", "TLS key", cxxopts::value<std::string>()->default_value(""))
+    ("T,cert", "TLS cert", cxxopts::value<std::string>()->default_value(""))
     ("A,authorize", "Run in authorizer mode")
     ("m,mount", "Soft mount a directory")
     ("M,mounts", "Get all soft mounts for user")
@@ -79,22 +81,26 @@ auto main(int argc, char** argv) -> int {
     std::string root = result["root"].as<std::string>();
     std::string bind = result["bind"].as<std::string>();
     std::string suffix = result["suffix"].as<std::string>();
+    std::string key = result["key"].as<std::string>();
+    std::string cert = result["cert"].as<std::string>();
 
     uint16_t port = result["port"].as<uint16_t>();
     uint16_t auth_port = result["auth-port"].as<uint16_t>();
 
-    return start_rpc_server(bind, port, auth_port, root, suffix);
+    return start_rpc_server(bind, port, auth_port, root, suffix, key, cert);
 
   } else if (result["client"].as<bool>()) {
     std::string host = result["host"].as<std::string>();
     uint16_t port = result["port"].as<uint16_t>();
     std::string user = result["user"].as<std::string>();
     std::string token = result["token"].as<std::string>();
+    std::string cert = result["cert"].as<std::string>();
     std::vector<std::string> options = result["options"].as<std::vector<std::string>>();
     int64_t write_back = result["write-back"].as<uint8_t>();
     int64_t read_ahead = result["read-ahead"].as<uint8_t>();
 
-    return start_fs(argv[0], argv[1], options, host, port, user, token, write_back, read_ahead);
+    return start_fs(argv[0], argv[1], options, host, port, user, token, write_back, read_ahead,
+                    cert);
 
   } else if (result["authorize"].as<bool>()) {
     uint16_t port = result["auth-port"].as<uint16_t>();
