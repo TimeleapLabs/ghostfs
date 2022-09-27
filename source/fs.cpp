@@ -1213,7 +1213,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
@@ -1371,16 +1371,16 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options, s
     std::cout << "Connected to the GhostFS server." << std::endl;
 
     auto &waitScope = context->waitScope;
-    auto request = ghostfsClient.get()->readdirRequest();
+    auto test_request = ghostfsClient.get()->readdirRequest();
 
-    Readdir::Builder readdir = request.getReq();
+    Readdir::Builder readdir = test_request.getReq();
 
     readdir.setIno(1);
 
-    auto promise = request.send();
-    auto result = promise.wait(waitScope);
-    auto response = result.getRes();
-    int res = response.getRes();
+    auto test_promise = test_request.send();
+    auto test_result = test_promise.wait(waitScope);
+    auto test_response = test_result.getRes();
+    int res = test_response.getRes();
 
     std::cout << "Test Readdir request res: " << res << std::endl;
   }
