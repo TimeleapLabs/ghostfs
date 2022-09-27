@@ -1369,6 +1369,20 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options, s
 
     ghostfsClient = kj::heap(result.getGhostFs());
     std::cout << "Connected to the GhostFS server." << std::endl;
+
+    auto &waitScope = context->waitScope;
+    auto request = ghostfsClient.get()->readdirRequest();
+
+    Readdir::Builder readdir = request.getReq();
+
+    readdir.setIno(1);
+
+    auto promise = request.send();
+    auto result = promise.wait(waitScope);
+    auto response = result.getRes();
+    int res = response.getRes();
+
+    std::cout << "Test Readdir request res: " << res << std::endl;
   }
 
   char *argv[2] = {executable, argmnt};
