@@ -114,7 +114,7 @@ static int reply_buf_limited(fuse_req_t req, const char *buf, size_t bufsize, of
   }
 }
 
-GhostFS::Client *client;
+kj::Own<GhostFS::Client> ghostfsClient;
 kj::AsyncIoContext *context;
 
 uint64_t get_parent_ino(uint64_t ino, std::string path) {
@@ -224,7 +224,7 @@ void dirbuf_add(fuse_req_t req, struct dirbuf *b, const char *name, fuse_ino_t i
  */
 static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
   auto &waitScope = context->waitScope;
-  auto request = client->getattrRequest();
+  auto request = ghostfsClient.get()->getattrRequest();
 
   Getattr::Builder getattr = request.getReq();
   Getattr::FuseFileInfo::Builder fuseFileInfo = getattr.initFi();
@@ -281,7 +281,7 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
   // printf("Called .lookup\n");
 
   auto &waitScope = context->waitScope;
-  auto request = client->lookupRequest();
+  auto request = ghostfsClient.get()->lookupRequest();
 
   Lookup::Builder lookup = request.getReq();
 
@@ -361,7 +361,7 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
   // printf("Called .readdir\n");
 
   auto &waitScope = context->waitScope;
-  auto request = client->readdirRequest();
+  auto request = ghostfsClient.get()->readdirRequest();
 
   Readdir::Builder readdir = request.getReq();
   Readdir::FuseFileInfo::Builder fuseFileInfo = readdir.initFi();
@@ -427,7 +427,7 @@ static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info 
   // printf("Called .open\n");
 
   auto &waitScope = context->waitScope;
-  auto request = client->openRequest();
+  auto request = ghostfsClient.get()->openRequest();
 
   Open::Builder open = request.getReq();
   Open::FuseFileInfo::Builder fuseFileInfo = open.initFi();
@@ -492,7 +492,7 @@ bool reply_from_cache(fuse_req_t req, uint64_t fh, size_t size, off_t off) {
 
 void read_ahead(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off, struct fuse_file_info *fi) {
   auto &waitScope = context->waitScope;
-  auto request = client->readRequest();
+  auto request = ghostfsClient.get()->readRequest();
 
   Read::Builder read = request.getReq();
   Read::FuseFileInfo::Builder fuseFileInfo = read.initFi();
@@ -571,7 +571,7 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
   }
 
   auto &waitScope = context->waitScope;
-  auto request = client->readRequest();
+  auto request = ghostfsClient.get()->readRequest();
 
   Read::Builder read = request.getReq();
   Read::FuseFileInfo::Builder fuseFileInfo = read.initFi();
@@ -626,7 +626,7 @@ void flush_write_back_cache(uint64_t fh, bool reply) {
   }
 
   auto &waitScope = context->waitScope;
-  auto request = client->bulkWriteRequest();
+  auto request = ghostfsClient.get()->bulkWriteRequest();
 
   capnp::List<Write>::Builder write = request.initReq(cached);
 
@@ -715,7 +715,7 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
   }
 
   auto &waitScope = context->waitScope;
-  auto request = client->writeRequest();
+  auto request = ghostfsClient.get()->writeRequest();
 
   Write::Builder write = request.getReq();
   Write::FuseFileInfo::Builder fuseFileInfo = write.initFi();
@@ -751,7 +751,7 @@ static void hello_ll_unlink(fuse_req_t req, fuse_ino_t parent, const char *name)
   // printf("Called .unlink\n");
 
   auto &waitScope = context->waitScope;
-  auto request = client->unlinkRequest();
+  auto request = ghostfsClient.get()->unlinkRequest();
 
   Unlink::Builder unlink = request.getReq();
 
@@ -774,7 +774,7 @@ static void hello_ll_rmdir(fuse_req_t req, fuse_ino_t parent, const char *name) 
   // printf("Called .rmdir\n");
 
   auto &waitScope = context->waitScope;
-  auto request = client->rmdirRequest();
+  auto request = ghostfsClient.get()->rmdirRequest();
 
   Rmdir::Builder rmdir = request.getReq();
 
@@ -807,7 +807,7 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
   // printf("Called .mknod\n");
 
   auto &waitScope = context->waitScope;
-  auto request = client->mknodRequest();
+  auto request = ghostfsClient.get()->mknodRequest();
 
   Mknod::Builder mknod = request.getReq();
 
@@ -865,7 +865,7 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
  */
 static void hello_ll_access(fuse_req_t req, fuse_ino_t ino, int mask) {
   auto &waitScope = context->waitScope;
-  auto request = client->accessRequest();
+  auto request = ghostfsClient.get()->accessRequest();
 
   Access::Builder access = request.getReq();
 
@@ -912,7 +912,7 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
   // printf("Called .create\n");
 
   auto &waitScope = context->waitScope;
-  auto request = client->createRequest();
+  auto request = ghostfsClient.get()->createRequest();
 
   Create::Builder create = request.getReq();
   Create::FuseFileInfo::Builder fuseFileInfo = create.initFi();
@@ -983,7 +983,7 @@ static void hello_ll_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, 
   // printf("Called .mkdir\n");
 
   auto &waitScope = context->waitScope;
-  auto request = client->mkdirRequest();
+  auto request = ghostfsClient.get()->mkdirRequest();
 
   Mkdir::Builder mkdir = request.getReq();
 
@@ -1036,7 +1036,7 @@ static void hello_ll_rename(fuse_req_t req, fuse_ino_t parent, const char *name,
   // printf("Called .rename\n");
 
   auto &waitScope = context->waitScope;
-  auto request = client->renameRequest();
+  auto request = ghostfsClient.get()->renameRequest();
 
   Rename::Builder rename = request.getReq();
 
@@ -1067,7 +1067,7 @@ static void hello_ll_rename(fuse_req_t req, fuse_ino_t parent, const char *name,
  */
 static void hello_ll_release(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
   auto &waitScope = context->waitScope;
-  auto request = client->releaseRequest();
+  auto request = ghostfsClient.get()->releaseRequest();
 
   Release::Builder release = request.getReq();
   Release::FuseFileInfo::Builder fuseFileInfo = release.initFi();
@@ -1099,7 +1099,7 @@ static void hello_ll_flush(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info
   flush_write_back_cache(fi->fh, false);
 
   auto &waitScope = context->waitScope;
-  auto request = client->flushRequest();
+  auto request = ghostfsClient.get()->flushRequest();
 
   Flush::Builder flush = request.getReq();
   Flush::FuseFileInfo::Builder fuseFileInfo = flush.initFi();
@@ -1130,7 +1130,7 @@ static void hello_ll_fsync(fuse_req_t req, fuse_ino_t ino, int datasync,
   flush_write_back_cache(fi->fh, false);
 
   auto &waitScope = context->waitScope;
-  auto request = client->fsyncRequest();
+  auto request = ghostfsClient.get()->fsyncRequest();
 
   Fsync::Builder fsync = request.getReq();
   Fsync::FuseFileInfo::Builder fuseFileInfo = fsync.initFi();
@@ -1189,7 +1189,7 @@ static void hello_ll_fsync(fuse_req_t req, fuse_ino_t ino, int datasync,
 static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, int to_set,
                              struct fuse_file_info *fi) {
   auto &waitScope = context->waitScope;
-  auto request = client->setattrRequest();
+  auto request = ghostfsClient.get()->setattrRequest();
 
   Setattr::Builder setattr = request.getReq();
   Setattr::FuseFileInfo::Builder fuseFileInfo = setattr.initFi();
@@ -1213,7 +1213,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-// clang-format off
+  // clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
@@ -1250,7 +1250,7 @@ static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, 
                               size_t size, int flags, uint32_t position) {
 
   auto &waitScope = context->waitScope;
-  auto request = client->setxattrRequest();
+  auto request = ghostfsClient.get()->setxattrRequest();
 
   Setxattr::Builder setxattr = request.getReq();
 
@@ -1342,9 +1342,7 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options, s
       return 1;
     }
 
-    auto ghostfsClient = result.getGhostFs();
-    client = &ghostfsClient;
-
+    ghostfsClient = kj::heap(result.getGhostFs());
     std::cout << "Connected to the GhostFS server." << std::endl;
 
   } else {
@@ -1369,9 +1367,7 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options, s
       return 1;
     }
 
-    auto ghostfsClient = result.getGhostFs();
-    client = &ghostfsClient;
-
+    ghostfsClient = kj::heap(result.getGhostFs());
     std::cout << "Connected to the GhostFS server." << std::endl;
   }
 
