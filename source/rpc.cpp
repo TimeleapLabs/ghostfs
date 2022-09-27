@@ -7,12 +7,24 @@
 #include <sys/xattr.h>
 #include <unistd.h>
 
+#include <fstream>
+#include <iostream>
+#include <iterator>
+#include <sstream>
+
 // Cap'n'Proto
 #include <access.capnp.h>
 #include <access.response.capnp.h>
 #include <capnp/ez-rpc.h>
 #include <capnp/message.h>
+#include <capnp/rpc-twoparty.h>
 #include <capnp/serialize-packed.h>
+#include <kj/async-io.h>
+#include <kj/async.h>
+#include <kj/compat/tls.h>
+#include <kj/debug.h>
+
+// Cap'n'Proto methods
 #include <create.capnp.h>
 #include <create.response.capnp.h>
 #include <flush.capnp.h>
@@ -1228,7 +1240,16 @@ public:
   }
 };
 
-int start_rpc_server(std::string bind, int port, int auth_port, std::string root, std::string suffix) {
+std::string read_file(const std::string& path) {
+    std::ifstream file(path);
+    if (!file.is_open()) {
+        exit(EXIT_FAILURE);
+    }
+    return std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+}
+
+int start_rpc_server(std::string bind, int port, int auth_port, std::string root,
+                     std::string suffix, std::string key_file, std::string cert_file) {
   if (root.length() > 0) {
     if (not std::filesystem::is_directory(root)) {
       std::cout << "ERROR: directory " << '"' << root << '"' << " does not exist." << std::endl;
@@ -1236,20 +1257,53 @@ int start_rpc_server(std::string bind, int port, int auth_port, std::string root
     };
   }
 
+  kj::_::Debug::setLogLevel(kj::_::Debug::Severity::ERROR);
+
+  std::string key = key_file.length() ? read_file(key_file) : "";
+  std::string cert = cert_file.length() ? read_file(cert_file) : "";
+
   std::cout << "Starting GhostFS server on " << bind << ":" << port << "..." << std::endl;
   std::cout << "Starting GhostFS auth server on port " << auth_port << "..." << std::endl;
 
   /**
-   * Capnp RPC server. We need to find out how to pass parameters to the
-   * GhostFSImpl class, instead of assigning them globally.
+   * Capnp RPC server. 
    */
 
-  capnp::EzRpcServer auth_rpc_server(kj::heap<GhostFSAuthServerImpl>(), "127.0.0.1", auth_port);
-  capnp::EzRpcServer rpc_server(kj::heap<GhostFSAuthImpl>(root, suffix), bind, port);
+  auto ioContext = kj::setupAsyncIo();
 
-  // Run forever, accepting connections and handling requests.
-  auto& waitScope = rpc_server.getWaitScope();
-  kj::NEVER_DONE.wait(waitScope);
+  capnp::TwoPartyServer server(kj::heap<GhostFSAuthImpl>(root, suffix));
+  capnp::TwoPartyServer auth_server(kj::heap<GhostFSAuthServerImpl>());
+
+  auto auth_address = ioContext.provider->getNetwork()
+      .parseAddress("127.0.0.1", auth_port).wait(ioContext.waitScope);
+
+  auto auth_listener = auth_address->listen();
+  auto auth_listen_promise = auth_server.listen(*auth_listener);
+
+  if (key_file.length() or cert_file.length()) {
+    kj::TlsKeypair keypair { kj::TlsPrivateKey(key), kj::TlsCertificate(cert) };
+    
+    kj::TlsContext::Options options;
+    options.defaultKeypair = keypair;
+    options.useSystemTrustStore = false;
+
+    kj::TlsContext tlsContext(kj::mv(options));
+
+    auto network = tlsContext.wrapNetwork(ioContext.provider->getNetwork());
+    auto address = network->parseAddress(bind, port).wait(ioContext.waitScope);
+    auto listener = address->listen();
+    auto listen_promise = server.listen(*listener);
+
+    listen_promise.wait(ioContext.waitScope);
+  } else {
+    auto address = ioContext.provider->getNetwork()
+      .parseAddress(bind, port).wait(ioContext.waitScope);
+
+    auto listener = address->listen();
+    auto listen_promise = server.listen(*listener);
+    
+    listen_promise.wait(ioContext.waitScope);
+  }
 
   return 0;
 }
