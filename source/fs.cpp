@@ -152,7 +152,6 @@ private:
 class GhostfsRpcClient {
 public:
   kj::Own<capnp::TwoPartyClient> twoParty;
-  kj::Own<kj::AsyncIoStream> connection;
   kj::Own<RpcContext> ioContext;
   kj::Own<GhostFS::Client> client;
 
@@ -169,17 +168,21 @@ public:
       auto network = tls.wrapNetwork(ioContext->getIoProvider().getNetwork());
       auto address = network->parseAddress(host, port).wait(waitScope);
 
-      connection = address->connect().wait(waitScope);
-      twoParty = kj::heap<capnp::TwoPartyClient>(*connection);
+      auto rpcConnection = address->connect().wait(waitScope);
+      auto rpcTwoParty = capnp::TwoPartyClient(*rpcConnection);
+
+      twoParty = kj::Own<capnp::TwoPartyClient>(&rpcTwoParty, kj::NullDisposer::instance);
     } else {
       auto address
           = ioContext->getIoProvider().getNetwork().parseAddress(host, port).wait(waitScope);
 
-      connection = address->connect().wait(waitScope);
-      twoParty = kj::heap<capnp::TwoPartyClient>(*connection);
+      auto rpcConnection = address->connect().wait(waitScope);
+      auto rpcTwoParty = capnp::TwoPartyClient(*rpcConnection);
+
+      twoParty = kj::Own<capnp::TwoPartyClient>(&rpcTwoParty, kj::NullDisposer::instance);
     }
 
-    auto authClient = twoParty->bootstrap().castAs<GhostFSAuth>();
+    auto authClient = twoParty.get()->bootstrap().castAs<GhostFSAuth>();
     auto request = authClient.authRequest();
 
     request.setUser(user);
@@ -1297,7 +1300,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
