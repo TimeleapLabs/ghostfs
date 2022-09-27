@@ -152,6 +152,7 @@ private:
 class GhostfsRpcClient {
 public:
   kj::Own<capnp::TwoPartyClient> twoParty;
+  kj::Own<kj::AsyncIoStream> connection;
   kj::Own<RpcContext> ioContext;
   kj::Own<GhostFS::Client> client;
 
@@ -168,16 +169,16 @@ public:
       auto network = tls.wrapNetwork(ioContext->getIoProvider().getNetwork());
       auto address = network->parseAddress(host, port).wait(waitScope);
 
-      auto rpcConnection = address->connect().wait(waitScope);
-      auto rpcTwoParty = capnp::TwoPartyClient(*rpcConnection);
+      connection = address->connect().wait(waitScope);
+      auto rpcTwoParty = capnp::TwoPartyClient(*connection);
 
       twoParty = kj::Own<capnp::TwoPartyClient>(&rpcTwoParty, kj::NullDisposer::instance);
     } else {
       auto address
           = ioContext->getIoProvider().getNetwork().parseAddress(host, port).wait(waitScope);
 
-      auto rpcConnection = address->connect().wait(waitScope);
-      auto rpcTwoParty = capnp::TwoPartyClient(*rpcConnection);
+      connection = address->connect().wait(waitScope);
+      auto rpcTwoParty = capnp::TwoPartyClient(*connection);
 
       twoParty = kj::Own<capnp::TwoPartyClient>(&rpcTwoParty, kj::NullDisposer::instance);
     }
