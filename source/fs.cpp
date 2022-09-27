@@ -114,8 +114,58 @@ static int reply_buf_limited(fuse_req_t req, const char *buf, size_t bufsize, of
   }
 }
 
-kj::Own<GhostFS::Client> ghostfsClient;
-kj::AsyncIoContext *context;
+class GhostfsRpcClient {
+public:
+  kj::Own<capnp::TwoPartyClient> two_party;
+  kj::Own<kj::AsyncIoStream> connection;
+
+  GhostFS::Client *client;
+  kj::WaitScope *waitScope;
+
+  int connect(std::string host, int port, std::string cert, std::string user, std::string token) {
+    auto ioContext = kj::setupAsyncIo();
+    waitScope = &ioContext.waitScope;
+
+    if (cert.length()) {
+      kj::TlsContext::Options options;
+      kj::TlsCertificate caCert(cert);
+      options.trustedCertificates = kj::arrayPtr(&caCert, 1);
+
+      kj::TlsContext tls(kj::mv(options));
+      auto network = tls.wrapNetwork(ioContext.provider->getNetwork());
+      auto address = network->parseAddress(host, port).wait(*waitScope);
+
+      connection = address->connect().wait(*waitScope);
+      two_party = kj::heap<capnp::TwoPartyClient>(*connection);
+
+    } else {
+      auto address = ioContext.provider->getNetwork().parseAddress(host, port).wait(*waitScope);
+
+      connection = address->connect().wait(*waitScope);
+      two_party = kj::heap<capnp::TwoPartyClient>(*connection);
+    }
+
+    auto authClient = two_party->bootstrap().castAs<GhostFSAuth>();
+    auto request = authClient.authRequest();
+
+    request.setUser(user);
+    request.setToken(token);
+
+    auto promise = request.send();
+    auto result = promise.wait(*waitScope);
+    auto authSuccess = result.getAuthSuccess();
+
+    if (!authSuccess) {
+      return 1;
+    } else {
+      auto ghostfsClient = result.getGhostFs();
+      client = &ghostfsClient;
+      return 0;
+    }
+  }
+};
+
+GhostfsRpcClient rpc;
 
 uint64_t get_parent_ino(uint64_t ino, std::string path) {
   if (ino == 1) {
@@ -223,8 +273,8 @@ void dirbuf_add(fuse_req_t req, struct dirbuf *b, const char *name, fuse_ino_t i
  * }
  */
 static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
-  auto &waitScope = context->waitScope;
-  auto request = ghostfsClient.get()->getattrRequest();
+  auto waitScope = rpc.waitScope;
+  auto request = rpc.client->getattrRequest();
 
   Getattr::Builder getattr = request.getReq();
   Getattr::FuseFileInfo::Builder fuseFileInfo = getattr.initFi();
@@ -234,7 +284,7 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
   fillFileInfo(&fuseFileInfo, fi);
 
   auto promise = request.send();
-  auto result = promise.wait(waitScope);
+  auto result = promise.wait(*waitScope);
   auto response = result.getRes();
 
   struct stat attr;
@@ -280,8 +330,8 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
 static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name) {
   // printf("Called .lookup\n");
 
-  auto &waitScope = context->waitScope;
-  auto request = ghostfsClient.get()->lookupRequest();
+  auto waitScope = rpc.waitScope;
+  auto request = rpc.client->lookupRequest();
 
   Lookup::Builder lookup = request.getReq();
 
@@ -291,7 +341,7 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
   // std::cout << "LOOKUP name: " << name << std::endl;
 
   auto promise = request.send();
-  auto result = promise.wait(waitScope);
+  auto result = promise.wait(*waitScope);
   auto response = result.getRes();
 
   struct stat attr;
@@ -360,8 +410,8 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
                              struct fuse_file_info *fi) {
   // printf("Called .readdir\n");
 
-  auto &waitScope = context->waitScope;
-  auto request = ghostfsClient.get()->readdirRequest();
+  auto waitScope = rpc.waitScope;
+  auto request = rpc.client->readdirRequest();
 
   Readdir::Builder readdir = request.getReq();
   Readdir::FuseFileInfo::Builder fuseFileInfo = readdir.initFi();
@@ -378,7 +428,7 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
   // std::cout << "Size: " << c.size() << std::endl;
 
   auto promise = request.send();
-  auto result = promise.wait(waitScope);
+  auto result = promise.wait(*waitScope);
   auto response = result.getRes();
 
   struct dirbuf b;
@@ -426,8 +476,8 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
 static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
   // printf("Called .open\n");
 
-  auto &waitScope = context->waitScope;
-  auto request = ghostfsClient.get()->openRequest();
+  auto waitScope = rpc.waitScope;
+  auto request = rpc.client->openRequest();
 
   Open::Builder open = request.getReq();
   Open::FuseFileInfo::Builder fuseFileInfo = open.initFi();
@@ -437,7 +487,7 @@ static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info 
   fillFileInfo(&fuseFileInfo, fi);
 
   auto promise = request.send();
-  auto result = promise.wait(waitScope);
+  auto result = promise.wait(*waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -491,8 +541,8 @@ bool reply_from_cache(fuse_req_t req, uint64_t fh, size_t size, off_t off) {
 }
 
 void read_ahead(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off, struct fuse_file_info *fi) {
-  auto &waitScope = context->waitScope;
-  auto request = ghostfsClient.get()->readRequest();
+  auto waitScope = rpc.waitScope;
+  auto request = rpc.client->readRequest();
 
   Read::Builder read = request.getReq();
   Read::FuseFileInfo::Builder fuseFileInfo = read.initFi();
@@ -504,7 +554,7 @@ void read_ahead(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off, struct f
   fillFileInfo(&fuseFileInfo, fi);
 
   auto promise = request.send();
-  auto result = promise.wait(waitScope);
+  auto result = promise.wait(*waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -570,8 +620,8 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
     return;
   }
 
-  auto &waitScope = context->waitScope;
-  auto request = ghostfsClient.get()->readRequest();
+  auto waitScope = rpc.waitScope;
+  auto request = rpc.client->readRequest();
 
   Read::Builder read = request.getReq();
   Read::FuseFileInfo::Builder fuseFileInfo = read.initFi();
@@ -583,7 +633,7 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
   fillFileInfo(&fuseFileInfo, fi);
 
   auto promise = request.send();
-  auto result = promise.wait(waitScope);
+  auto result = promise.wait(*waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -625,8 +675,8 @@ void flush_write_back_cache(uint64_t fh, bool reply) {
     return;
   }
 
-  auto &waitScope = context->waitScope;
-  auto request = ghostfsClient.get()->bulkWriteRequest();
+  auto waitScope = rpc.waitScope;
+  auto request = rpc.client->bulkWriteRequest();
 
   capnp::List<Write>::Builder write = request.initReq(cached);
 
@@ -647,7 +697,7 @@ void flush_write_back_cache(uint64_t fh, bool reply) {
   }
 
   auto promise = request.send();
-  auto result = promise.wait(waitScope);
+  auto result = promise.wait(*waitScope);
 
   if (reply) {
     auto response = result.getRes();
@@ -714,8 +764,8 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
     return;
   }
 
-  auto &waitScope = context->waitScope;
-  auto request = ghostfsClient.get()->writeRequest();
+  auto waitScope = rpc.waitScope;
+  auto request = rpc.client->writeRequest();
 
   Write::Builder write = request.getReq();
   Write::FuseFileInfo::Builder fuseFileInfo = write.initFi();
@@ -731,7 +781,7 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
   fillFileInfo(&fuseFileInfo, fi);
 
   auto promise = request.send();
-  auto result = promise.wait(waitScope);
+  auto result = promise.wait(*waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -750,8 +800,8 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
 static void hello_ll_unlink(fuse_req_t req, fuse_ino_t parent, const char *name) {
   // printf("Called .unlink\n");
 
-  auto &waitScope = context->waitScope;
-  auto request = ghostfsClient.get()->unlinkRequest();
+  auto waitScope = rpc.waitScope;
+  auto request = rpc.client->unlinkRequest();
 
   Unlink::Builder unlink = request.getReq();
 
@@ -759,7 +809,7 @@ static void hello_ll_unlink(fuse_req_t req, fuse_ino_t parent, const char *name)
   unlink.setName(name);
 
   auto promise = request.send();
-  auto result = promise.wait(waitScope);
+  auto result = promise.wait(*waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -773,8 +823,8 @@ static void hello_ll_unlink(fuse_req_t req, fuse_ino_t parent, const char *name)
 static void hello_ll_rmdir(fuse_req_t req, fuse_ino_t parent, const char *name) {
   // printf("Called .rmdir\n");
 
-  auto &waitScope = context->waitScope;
-  auto request = ghostfsClient.get()->rmdirRequest();
+  auto waitScope = rpc.waitScope;
+  auto request = rpc.client->rmdirRequest();
 
   Rmdir::Builder rmdir = request.getReq();
 
@@ -782,7 +832,7 @@ static void hello_ll_rmdir(fuse_req_t req, fuse_ino_t parent, const char *name) 
   rmdir.setName(name);
 
   auto promise = request.send();
-  auto result = promise.wait(waitScope);
+  auto result = promise.wait(*waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -806,8 +856,8 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
                            dev_t rdev) {
   // printf("Called .mknod\n");
 
-  auto &waitScope = context->waitScope;
-  auto request = ghostfsClient.get()->mknodRequest();
+  auto waitScope = rpc.waitScope;
+  auto request = rpc.client->mknodRequest();
 
   Mknod::Builder mknod = request.getReq();
 
@@ -817,7 +867,7 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
   mknod.setRdev(rdev);
 
   auto promise = request.send();
-  auto result = promise.wait(waitScope);
+  auto result = promise.wait(*waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -864,8 +914,8 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
  * @param mask -> int
  */
 static void hello_ll_access(fuse_req_t req, fuse_ino_t ino, int mask) {
-  auto &waitScope = context->waitScope;
-  auto request = ghostfsClient.get()->accessRequest();
+  auto waitScope = rpc.waitScope;
+  auto request = rpc.client->accessRequest();
 
   Access::Builder access = request.getReq();
 
@@ -873,7 +923,7 @@ static void hello_ll_access(fuse_req_t req, fuse_ino_t ino, int mask) {
   access.setMask(mask);
 
   auto promise = request.send();
-  auto result = promise.wait(waitScope);
+  auto result = promise.wait(*waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -911,8 +961,8 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
                             struct fuse_file_info *fi) {
   // printf("Called .create\n");
 
-  auto &waitScope = context->waitScope;
-  auto request = ghostfsClient.get()->createRequest();
+  auto waitScope = rpc.waitScope;
+  auto request = rpc.client->createRequest();
 
   Create::Builder create = request.getReq();
   Create::FuseFileInfo::Builder fuseFileInfo = create.initFi();
@@ -924,7 +974,7 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
   fillFileInfo(&fuseFileInfo, fi);
 
   auto promise = request.send();
-  auto result = promise.wait(waitScope);
+  auto result = promise.wait(*waitScope);
   auto response = result.getRes();
 
   struct stat attr;
@@ -982,8 +1032,8 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
 static void hello_ll_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode) {
   // printf("Called .mkdir\n");
 
-  auto &waitScope = context->waitScope;
-  auto request = ghostfsClient.get()->mkdirRequest();
+  auto waitScope = rpc.waitScope;
+  auto request = rpc.client->mkdirRequest();
 
   Mkdir::Builder mkdir = request.getReq();
 
@@ -992,7 +1042,7 @@ static void hello_ll_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, 
   mkdir.setMode(mode);
 
   auto promise = request.send();
-  auto result = promise.wait(waitScope);
+  auto result = promise.wait(*waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -1035,8 +1085,8 @@ static void hello_ll_rename(fuse_req_t req, fuse_ino_t parent, const char *name,
                             fuse_ino_t newparent, const char *newname) {
   // printf("Called .rename\n");
 
-  auto &waitScope = context->waitScope;
-  auto request = ghostfsClient.get()->renameRequest();
+  auto waitScope = rpc.waitScope;
+  auto request = rpc.client->renameRequest();
 
   Rename::Builder rename = request.getReq();
 
@@ -1046,7 +1096,7 @@ static void hello_ll_rename(fuse_req_t req, fuse_ino_t parent, const char *name,
   rename.setNewname(newname);
 
   auto promise = request.send();
-  auto result = promise.wait(waitScope);
+  auto result = promise.wait(*waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -1066,8 +1116,8 @@ static void hello_ll_rename(fuse_req_t req, fuse_ino_t parent, const char *name,
  * @param mode -> uint64_t
  */
 static void hello_ll_release(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
-  auto &waitScope = context->waitScope;
-  auto request = ghostfsClient.get()->releaseRequest();
+  auto waitScope = rpc.waitScope;
+  auto request = rpc.client->releaseRequest();
 
   Release::Builder release = request.getReq();
   Release::FuseFileInfo::Builder fuseFileInfo = release.initFi();
@@ -1076,7 +1126,7 @@ static void hello_ll_release(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
   fillFileInfo(&fuseFileInfo, fi);
 
   auto promise = request.send();
-  auto result = promise.wait(waitScope);
+  auto result = promise.wait(*waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -1098,8 +1148,8 @@ static void hello_ll_release(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
 static void hello_ll_flush(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
   flush_write_back_cache(fi->fh, false);
 
-  auto &waitScope = context->waitScope;
-  auto request = ghostfsClient.get()->flushRequest();
+  auto waitScope = rpc.waitScope;
+  auto request = rpc.client->flushRequest();
 
   Flush::Builder flush = request.getReq();
   Flush::FuseFileInfo::Builder fuseFileInfo = flush.initFi();
@@ -1108,7 +1158,7 @@ static void hello_ll_flush(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info
   fillFileInfo(&fuseFileInfo, fi);
 
   auto promise = request.send();
-  auto result = promise.wait(waitScope);
+  auto result = promise.wait(*waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -1129,8 +1179,8 @@ static void hello_ll_fsync(fuse_req_t req, fuse_ino_t ino, int datasync,
                            struct fuse_file_info *fi) {
   flush_write_back_cache(fi->fh, false);
 
-  auto &waitScope = context->waitScope;
-  auto request = ghostfsClient.get()->fsyncRequest();
+  auto waitScope = rpc.waitScope;
+  auto request = rpc.client->fsyncRequest();
 
   Fsync::Builder fsync = request.getReq();
   Fsync::FuseFileInfo::Builder fuseFileInfo = fsync.initFi();
@@ -1141,7 +1191,7 @@ static void hello_ll_fsync(fuse_req_t req, fuse_ino_t ino, int datasync,
   fillFileInfo(&fuseFileInfo, fi);
 
   auto promise = request.send();
-  auto result = promise.wait(waitScope);
+  auto result = promise.wait(*waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -1188,8 +1238,8 @@ static void hello_ll_fsync(fuse_req_t req, fuse_ino_t ino, int datasync,
  */
 static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, int to_set,
                              struct fuse_file_info *fi) {
-  auto &waitScope = context->waitScope;
-  auto request = ghostfsClient.get()->setattrRequest();
+  auto waitScope = rpc.waitScope;
+  auto request = rpc.client->setattrRequest();
 
   Setattr::Builder setattr = request.getReq();
   Setattr::FuseFileInfo::Builder fuseFileInfo = setattr.initFi();
@@ -1213,7 +1263,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-// clang-format off
+  // clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
@@ -1229,7 +1279,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   fillFileInfo(&fuseFileInfo, fi);
 
   auto promise = request.send();
-  auto result = promise.wait(waitScope);
+  auto result = promise.wait(*waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -1249,8 +1299,8 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
 static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, const char *value,
                               size_t size, int flags, uint32_t position) {
 
-  auto &waitScope = context->waitScope;
-  auto request = ghostfsClient.get()->setxattrRequest();
+  auto waitScope = rpc.waitScope;
+  auto request = rpc.client->setxattrRequest();
 
   Setxattr::Builder setxattr = request.getReq();
 
@@ -1262,7 +1312,7 @@ static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, 
   setxattr.setPosition(position);
 
   auto promise = request.send();
-  auto result = promise.wait(waitScope);
+  auto result = promise.wait(*waitScope);
   auto response = result.getRes();
 
   int res = response.getRes();
@@ -1311,78 +1361,13 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options, s
   max_read_ahead_cache = read_ahead_cache_size;
 
   std::string cert = cert_file.length() ? read_file(cert_file) : "";
+  int rpcRes = rpc.connect(host, port, cert, user, token);
 
-  auto ioContext = kj::setupAsyncIo();
-  context = &ioContext;
-
-  if (cert_file.length()) {
-    kj::TlsContext::Options options;
-    kj::TlsCertificate caCert(cert);
-    options.trustedCertificates = kj::arrayPtr(&caCert, 1);
-
-    kj::TlsContext tls(kj::mv(options));
-    auto network = tls.wrapNetwork(ioContext.provider->getNetwork());
-    auto address = network->parseAddress(host, port).wait(ioContext.waitScope);
-    auto connection = address->connect().wait(ioContext.waitScope);
-
-    capnp::TwoPartyClient two_party(*connection);
-
-    auto authClient = two_party.bootstrap().castAs<GhostFSAuth>();
-    auto request = authClient.authRequest();
-
-    request.setUser(user);
-    request.setToken(token);
-
-    auto promise = request.send();
-    auto result = promise.wait(ioContext.waitScope);
-    auto authSuccess = result.getAuthSuccess();
-
-    if (!authSuccess) {
-      std::cout << "Authentication failed!" << std::endl;
-      return 1;
-    }
-
-    ghostfsClient = kj::heap(result.getGhostFs());
-    std::cout << "Connected to the GhostFS server." << std::endl;
-
+  if (rpcRes == 1) {
+    std::cout << "Authentication failed!" << std::endl;
+    return 1;
   } else {
-    auto address
-        = ioContext.provider->getNetwork().parseAddress(host, port).wait(ioContext.waitScope);
-    auto connection = address->connect().wait(ioContext.waitScope);
-
-    capnp::TwoPartyClient two_party(*connection);
-
-    auto authClient = two_party.bootstrap().castAs<GhostFSAuth>();
-    auto request = authClient.authRequest();
-
-    request.setUser(user);
-    request.setToken(token);
-
-    auto promise = request.send();
-    auto result = promise.wait(ioContext.waitScope);
-    auto authSuccess = result.getAuthSuccess();
-
-    if (!authSuccess) {
-      std::cout << "Authentication failed!" << std::endl;
-      return 1;
-    }
-
-    ghostfsClient = kj::heap(result.getGhostFs());
     std::cout << "Connected to the GhostFS server." << std::endl;
-
-    auto &waitScope = context->waitScope;
-    auto test_request = ghostfsClient.get()->readdirRequest();
-
-    Readdir::Builder readdir = test_request.getReq();
-
-    readdir.setIno(1);
-
-    auto test_promise = test_request.send();
-    auto test_result = test_promise.wait(waitScope);
-    auto test_response = test_result.getRes();
-    int res = test_response.getRes();
-
-    std::cout << "Test Readdir request res: " << res << std::endl;
   }
 
   char *argv[2] = {executable, argmnt};
