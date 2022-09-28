@@ -192,7 +192,7 @@ private:
   kj::Own<GhostFS::Client> client;
 };
 
-kj::Own<GhostfsRpcClient> rpc = GhostfsRpcClient::getThreadLocal();
+kj::Own<GhostfsRpcClient> rpc;
 
 uint64_t get_parent_ino(uint64_t ino, std::string path) {
   if (ino == 1) {
@@ -1290,7 +1290,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
@@ -1388,6 +1388,8 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options, s
   max_read_ahead_cache = read_ahead_cache_size;
 
   std::string cert = cert_file.length() ? read_file(cert_file) : "";
+
+  rpc = GhostfsRpcClient::getThreadLocal();
   int rpcRes = rpc->connect(host, port, cert, user, token);
 
   if (rpcRes == 1) {
