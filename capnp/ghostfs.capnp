@@ -14,6 +14,8 @@ using import "unlink.capnp".Unlink;
 using import "unlink.response.capnp".UnlinkResponse;
 using import "rmdir.capnp".Rmdir;
 using import "rmdir.response.capnp".RmdirResponse;
+using import "symlink.capnp".Symlink;
+using import "symlink.response.capnp".SymlinkResponse;
 using import "rename.capnp".Rename;
 using import "rename.response.capnp".RenameResponse;
 using import "open.capnp".Open;
@@ -57,18 +59,19 @@ interface GhostFS {
   mkdir    @4  (req :Mkdir)    -> (res :MkdirResponse);
   unlink   @5  (req :Unlink)   -> (res :UnlinkResponse);
   rmdir    @6  (req :Rmdir)    -> (res :RmdirResponse);
-  rename   @7  (req :Rename)   -> (res :RenameResponse);
-  open     @8  (req :Open)     -> (res :OpenResponse);
-  read     @9  (req :Read)     -> (res :ReadResponse);
-  write    @10 (req :Write)    -> (res :WriteResponse);
-  release  @11 (req :Release)  -> (res :ReleaseResponse);
-  readdir  @12 (req :Readdir)  -> (res :ReaddirResponse);
-  setxattr @13 (req :Setxattr) -> (res :SetxattrResponse);
-  access   @14 (req :Access)   -> (res :AccessResponse);
-  create   @15 (req :Create)   -> (res :CreateResponse);
-  flush    @16 (req :Flush)    -> (res :FlushResponse);
-  fsync    @17 (req :Fsync)    -> (res :FsyncResponse);
+  symlink  @7  (req :Symlink)  -> (res :SymlinkResponse);
+  rename   @8  (req :Rename)   -> (res :RenameResponse);
+  open     @9  (req :Open)     -> (res :OpenResponse);
+  read     @10  (req :Read)    -> (res :ReadResponse);
+  write    @11 (req :Write)    -> (res :WriteResponse);
+  release  @12 (req :Release)  -> (res :ReleaseResponse);
+  readdir  @13 (req :Readdir)  -> (res :ReaddirResponse);
+  setxattr @14 (req :Setxattr) -> (res :SetxattrResponse);
+  access   @15 (req :Access)   -> (res :AccessResponse);
+  create   @16 (req :Create)   -> (res :CreateResponse);
+  flush    @17 (req :Flush)    -> (res :FlushResponse);
+  fsync    @18 (req :Fsync)    -> (res :FsyncResponse);
   
   # Special methods (non-fuse)
-  bulkWrite @18 (req :List(Write))         -> (res :List(WriteResponse));
+  bulkWrite @19 (req :List(Write))         -> (res :List(WriteResponse));
 }

@@ -64,6 +64,8 @@
 #include <rename.response.capnp.h>
 #include <rmdir.capnp.h>
 #include <rmdir.response.capnp.h>
+#include <symlink.capnp.h>
+#include <symlink.response.capnp.h>
 #include <setattr.capnp.h>
 #include <setattr.response.capnp.h>
 #include <setxattr.capnp.h>
@@ -796,6 +798,30 @@ static void hello_ll_rmdir(fuse_req_t req, fuse_ino_t parent, const char *name) 
   // std::cout << "rmdir executed correctly: " << payload << std::endl;
 }
 
+static void hello_ll_symlink(fuse_req_t req, const char *link, fuse_ino_t parent, const char *name) {
+  // printf("Called .symlink\n");
+
+  auto &waitScope = ioContext->waitScope;
+  auto request = client->symlinkRequest();
+
+  Symlink::Builder symlink = request.getReq();
+
+  symlink.setLink(link);
+  symlink.setParent(parent);
+  symlink.setName(name);
+
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+  auto response = result.getRes();
+
+  int res = response.getRes();
+  int err = response.getErrno();
+
+  fuse_reply_err(req, res == -1 ? err : 0);
+
+  // std::cout << "symlink executed correctly: " << payload << std::endl;
+}
+
 /**
  * @brief
  *
@@ -1289,6 +1315,7 @@ static const struct fuse_lowlevel_ops hello_ll_oper = {
     .mkdir = hello_ll_mkdir,
     .unlink = hello_ll_unlink,
     .rmdir = hello_ll_rmdir,
+    .symlink = hello_ll_symlink,
     .rename = hello_ll_rename,
     .open = hello_ll_open,
     .read = hello_ll_read,
