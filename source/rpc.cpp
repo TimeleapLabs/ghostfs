@@ -521,8 +521,8 @@ public:
     // std::cout << "SYMLINK link: " << link.c_str() << std::endl;
 
 
-    path link_path = std::filesystem::path(link);
-    path link_absolute = link_path.is_relative() ?
+    std::filesystem::path link_path = std::filesystem::path(link);
+    std::filesystem::path link_absolute = link_path.is_relative() ?
       std::filesystem::canonical(parent_path / link_path) : link_path;
     
     int res = ::symlinkat(file_path.c_str(), link_absolute.c_str());
