@@ -518,9 +518,9 @@ public:
     std::filesystem::path file_path = parent_path / std::filesystem::path(name);
 
     // std::cout << "SYMLINK file_path: " << file_path.c_str() << std::endl;
-    std::cout << "SYMLINK link: " << link.c_str() << std::endl;
+    // std::cout << "SYMLINK link: " << link.c_str() << std::endl;
 
-    int res = ::symlink(file_path.c_str(), link.c_str());
+    int res = ::symlink(link.c_str(), file_path.c_str());
     int err = errno;
     
     response.setErrno(err);
