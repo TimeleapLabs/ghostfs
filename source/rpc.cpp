@@ -519,14 +519,20 @@ public:
 
     // std::cout << "SYMLINK file_path: " << file_path.c_str() << std::endl;
     // std::cout << "SYMLINK link: " << link.c_str() << std::endl;
-
-
-    std::filesystem::path link_path = std::filesystem::path(link);
-    std::filesystem::path link_absolute = link_path.is_relative() ?
-      std::filesystem::canonical(parent_path / link_path) : link_path;
     
-    int res = ::symlink(link_absolute.c_str(), file_path.c_str());
+    int fd = ::open(parent_path.c_str(), O_RDONLY|O_DIRECTORY);
+
+    if (fd == -1) {
+      int err = errno;
+      response.setErrno(err);
+      response.setRes(fd);
+      return kj::READY_NOW;
+    }
+
+    int res = ::symlinkat(link.c_str(), fd, file_path.c_str());
     int err = errno;
+
+    ::close(fd);
     
     response.setErrno(err);
     response.setRes(res);
