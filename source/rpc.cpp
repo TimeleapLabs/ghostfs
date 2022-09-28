@@ -525,7 +525,7 @@ public:
     std::filesystem::path link_absolute = link_path.is_relative() ?
       std::filesystem::canonical(parent_path / link_path) : link_path;
     
-    int res = ::symlink(file_path.c_str(), link_absolute.c_str());
+    int res = ::symlink(link_absolute.c_str(), file_path.c_str());
     int err = errno;
     
     response.setErrno(err);
