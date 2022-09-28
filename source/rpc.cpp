@@ -520,7 +520,12 @@ public:
     // std::cout << "SYMLINK file_path: " << file_path.c_str() << std::endl;
     // std::cout << "SYMLINK link: " << link.c_str() << std::endl;
 
-    int res = ::symlink(link.c_str(), file_path.c_str());
+
+    path link_path = std::filesystem::path(link);
+    path link_absolute = link_path.is_relative() ?
+      std::filesystem::canonical(parent_path / link_path) : link_path;
+    
+    int res = ::symlinkat(file_path.c_str(), link_absolute.c_str());
     int err = errno;
     
     response.setErrno(err);
