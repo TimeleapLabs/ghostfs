@@ -40,7 +40,7 @@ CPMAddPackage(
   NAME capnproto
   VERSION 0.10.2
   GITHUB_REPOSITORY capnproto/capnproto
-  OPTIONS "WITH_OPENSSL ON" "BUILD_TESTING OFF"
+  OPTIONS "WITH_OPENSSL ON" "BUILD_TESTING OFF" "CMAKE_BUILD_TYPE Debug"
 )
 
 CPMAddPackage(
@@ -51,7 +51,8 @@ CPMAddPackage(
 )
 
 # ---- Build type ----
-# set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Debug)
+
 # set(CMAKE_BUILD_TYPE RelWithDebInfo)
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)

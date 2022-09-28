@@ -114,85 +114,11 @@ static int reply_buf_limited(fuse_req_t req, const char *buf, size_t bufsize, of
   }
 }
 
-class GhostfsRpcClient;
-
-KJ_THREADLOCAL_PTR(GhostfsRpcClient) threadContext = nullptr;
-
-class GhostfsRpcClient : public kj::Refcounted {
-public:
-  GhostfsRpcClient() : ioContext(kj::setupAsyncIo()) { threadContext = this; }
-
-  ~GhostfsRpcClient() noexcept(false) {
-    KJ_REQUIRE(threadContext == this,
-               "GhostfsRpcClient destroyed from different thread than it was created.") {
-      return;
-    }
-    threadContext = nullptr;
-  }
-
-  int connect(std::string host, int port, std::string cert, std::string user, std::string token) {
-    if (cert.length()) {
-      kj::TlsContext::Options options;
-      kj::TlsCertificate caCert(cert);
-      options.trustedCertificates = kj::arrayPtr(&caCert, 1);
-
-      kj::TlsContext tls(kj::mv(options));
-      auto network = tls.wrapNetwork(getIoProvider().getNetwork());
-      auto address = network->parseAddress(host, port).wait(getWaitScope());
-
-      connection = address->connect().wait(getWaitScope());
-      twoParty = kj::heap<capnp::TwoPartyClient>(*kj::mv(connection));
-    } else {
-      auto address = getIoProvider().getNetwork().parseAddress(host, port).wait(getWaitScope());
-
-      connection = address->connect().wait(getWaitScope());
-      twoParty = kj::heap<capnp::TwoPartyClient>(*kj::mv(connection));
-    }
-
-    auto authClient = twoParty->bootstrap().castAs<GhostFSAuth>();
-    auto request = authClient.authRequest();
-
-    request.setUser(user);
-    request.setToken(token);
-
-    auto promise = request.send();
-    auto result = promise.wait(getWaitScope());
-    auto authSuccess = result.getAuthSuccess();
-
-    if (!authSuccess) {
-      return 1;
-    } else {
-      auto ghostfsClient = result.getGhostFs();
-      client = kj::Own<GhostFS::Client>(&ghostfsClient, kj::NullDisposer::instance);
-      return 0;
-    }
-  }
-
-  GhostFS::Client &getClient() { return *client.get(); }
-
-  kj::WaitScope &getWaitScope() { return ioContext.waitScope; }
-
-  kj::AsyncIoProvider &getIoProvider() { return *ioContext.provider; }
-
-  kj::LowLevelAsyncIoProvider &getLowLevelIoProvider() { return *ioContext.lowLevelProvider; }
-
-  static kj::Own<GhostfsRpcClient> getThreadLocal() {
-    GhostfsRpcClient *existing = threadContext;
-    if (existing != nullptr) {
-      return kj::addRef(*existing);
-    } else {
-      return kj::refcounted<GhostfsRpcClient>();
-    }
-  }
-
-private:
-  kj::AsyncIoContext ioContext;
-  kj::Own<capnp::TwoPartyClient> twoParty;
-  kj::Own<kj::AsyncIoStream> connection;
-  kj::Own<GhostFS::Client> client;
-};
-
-kj::Own<GhostfsRpcClient> rpc;
+kj::Own<kj::AsyncIoContext> ioContext;
+kj::Own<capnp::TwoPartyClient> twoParty;
+kj::Own<kj::AsyncIoStream> connection;
+kj::Own<GhostFS::Client> client;
+kj::Own<capnp::Capability::Client> capability;
 
 uint64_t get_parent_ino(uint64_t ino, std::string path) {
   if (ino == 1) {
@@ -300,8 +226,8 @@ void dirbuf_add(fuse_req_t req, struct dirbuf *b, const char *name, fuse_ino_t i
  * }
  */
 static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
-  auto &waitScope = rpc->getWaitScope();
-  auto request = rpc->getClient().getattrRequest();
+  auto &waitScope = ioContext->waitScope;
+  auto request = client->getattrRequest();
 
   Getattr::Builder getattr = request.getReq();
   Getattr::FuseFileInfo::Builder fuseFileInfo = getattr.initFi();
@@ -357,8 +283,8 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
 static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name) {
   // printf("Called .lookup\n");
 
-  auto &waitScope = rpc->getWaitScope();
-  auto request = rpc->getClient().lookupRequest();
+  auto &waitScope = ioContext->waitScope;
+  auto request = client->lookupRequest();
 
   Lookup::Builder lookup = request.getReq();
 
@@ -437,8 +363,8 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
                              struct fuse_file_info *fi) {
   // printf("Called .readdir\n");
 
-  auto &waitScope = rpc->getWaitScope();
-  auto request = rpc->getClient().readdirRequest();
+  auto &waitScope = ioContext->waitScope;
+  auto request = client->readdirRequest();
 
   Readdir::Builder readdir = request.getReq();
   Readdir::FuseFileInfo::Builder fuseFileInfo = readdir.initFi();
@@ -503,8 +429,8 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
 static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
   // printf("Called .open\n");
 
-  auto &waitScope = rpc->getWaitScope();
-  auto request = rpc->getClient().openRequest();
+  auto &waitScope = ioContext->waitScope;
+  auto request = client->openRequest();
 
   Open::Builder open = request.getReq();
   Open::FuseFileInfo::Builder fuseFileInfo = open.initFi();
@@ -568,8 +494,8 @@ bool reply_from_cache(fuse_req_t req, uint64_t fh, size_t size, off_t off) {
 }
 
 void read_ahead(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off, struct fuse_file_info *fi) {
-  auto &waitScope = rpc->getWaitScope();
-  auto request = rpc->getClient().readRequest();
+  auto &waitScope = ioContext->waitScope;
+  auto request = client->readRequest();
 
   Read::Builder read = request.getReq();
   Read::FuseFileInfo::Builder fuseFileInfo = read.initFi();
@@ -647,8 +573,8 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
     return;
   }
 
-  auto &waitScope = rpc->getWaitScope();
-  auto request = rpc->getClient().readRequest();
+  auto &waitScope = ioContext->waitScope;
+  auto request = client->readRequest();
 
   Read::Builder read = request.getReq();
   Read::FuseFileInfo::Builder fuseFileInfo = read.initFi();
@@ -702,8 +628,8 @@ void flush_write_back_cache(uint64_t fh, bool reply) {
     return;
   }
 
-  auto &waitScope = rpc->getWaitScope();
-  auto request = rpc->getClient().bulkWriteRequest();
+  auto &waitScope = ioContext->waitScope;
+  auto request = client->bulkWriteRequest();
 
   capnp::List<Write>::Builder write = request.initReq(cached);
 
@@ -791,8 +717,8 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
     return;
   }
 
-  auto &waitScope = rpc->getWaitScope();
-  auto request = rpc->getClient().writeRequest();
+  auto &waitScope = ioContext->waitScope;
+  auto request = client->writeRequest();
 
   Write::Builder write = request.getReq();
   Write::FuseFileInfo::Builder fuseFileInfo = write.initFi();
@@ -827,8 +753,8 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
 static void hello_ll_unlink(fuse_req_t req, fuse_ino_t parent, const char *name) {
   // printf("Called .unlink\n");
 
-  auto &waitScope = rpc->getWaitScope();
-  auto request = rpc->getClient().unlinkRequest();
+  auto &waitScope = ioContext->waitScope;
+  auto request = client->unlinkRequest();
 
   Unlink::Builder unlink = request.getReq();
 
@@ -850,8 +776,8 @@ static void hello_ll_unlink(fuse_req_t req, fuse_ino_t parent, const char *name)
 static void hello_ll_rmdir(fuse_req_t req, fuse_ino_t parent, const char *name) {
   // printf("Called .rmdir\n");
 
-  auto &waitScope = rpc->getWaitScope();
-  auto request = rpc->getClient().rmdirRequest();
+  auto &waitScope = ioContext->waitScope;
+  auto request = client->rmdirRequest();
 
   Rmdir::Builder rmdir = request.getReq();
 
@@ -883,8 +809,8 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
                            dev_t rdev) {
   // printf("Called .mknod\n");
 
-  auto &waitScope = rpc->getWaitScope();
-  auto request = rpc->getClient().mknodRequest();
+  auto &waitScope = ioContext->waitScope;
+  auto request = client->mknodRequest();
 
   Mknod::Builder mknod = request.getReq();
 
@@ -941,8 +867,8 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
  * @param mask -> int
  */
 static void hello_ll_access(fuse_req_t req, fuse_ino_t ino, int mask) {
-  auto &waitScope = rpc->getWaitScope();
-  auto request = rpc->getClient().accessRequest();
+  auto &waitScope = ioContext->waitScope;
+  auto request = client->accessRequest();
 
   Access::Builder access = request.getReq();
 
@@ -988,8 +914,8 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
                             struct fuse_file_info *fi) {
   // printf("Called .create\n");
 
-  auto &waitScope = rpc->getWaitScope();
-  auto request = rpc->getClient().createRequest();
+  auto &waitScope = ioContext->waitScope;
+  auto request = client->createRequest();
 
   Create::Builder create = request.getReq();
   Create::FuseFileInfo::Builder fuseFileInfo = create.initFi();
@@ -1059,8 +985,8 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
 static void hello_ll_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode) {
   // printf("Called .mkdir\n");
 
-  auto &waitScope = rpc->getWaitScope();
-  auto request = rpc->getClient().mkdirRequest();
+  auto &waitScope = ioContext->waitScope;
+  auto request = client->mkdirRequest();
 
   Mkdir::Builder mkdir = request.getReq();
 
@@ -1112,8 +1038,8 @@ static void hello_ll_rename(fuse_req_t req, fuse_ino_t parent, const char *name,
                             fuse_ino_t newparent, const char *newname) {
   // printf("Called .rename\n");
 
-  auto &waitScope = rpc->getWaitScope();
-  auto request = rpc->getClient().renameRequest();
+  auto &waitScope = ioContext->waitScope;
+  auto request = client->renameRequest();
 
   Rename::Builder rename = request.getReq();
 
@@ -1143,8 +1069,8 @@ static void hello_ll_rename(fuse_req_t req, fuse_ino_t parent, const char *name,
  * @param mode -> uint64_t
  */
 static void hello_ll_release(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
-  auto &waitScope = rpc->getWaitScope();
-  auto request = rpc->getClient().releaseRequest();
+  auto &waitScope = ioContext->waitScope;
+  auto request = client->releaseRequest();
 
   Release::Builder release = request.getReq();
   Release::FuseFileInfo::Builder fuseFileInfo = release.initFi();
@@ -1175,8 +1101,8 @@ static void hello_ll_release(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
 static void hello_ll_flush(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
   flush_write_back_cache(fi->fh, false);
 
-  auto &waitScope = rpc->getWaitScope();
-  auto request = rpc->getClient().flushRequest();
+  auto &waitScope = ioContext->waitScope;
+  auto request = client->flushRequest();
 
   Flush::Builder flush = request.getReq();
   Flush::FuseFileInfo::Builder fuseFileInfo = flush.initFi();
@@ -1206,8 +1132,8 @@ static void hello_ll_fsync(fuse_req_t req, fuse_ino_t ino, int datasync,
                            struct fuse_file_info *fi) {
   flush_write_back_cache(fi->fh, false);
 
-  auto &waitScope = rpc->getWaitScope();
-  auto request = rpc->getClient().fsyncRequest();
+  auto &waitScope = ioContext->waitScope;
+  auto request = client->fsyncRequest();
 
   Fsync::Builder fsync = request.getReq();
   Fsync::FuseFileInfo::Builder fuseFileInfo = fsync.initFi();
@@ -1265,8 +1191,8 @@ static void hello_ll_fsync(fuse_req_t req, fuse_ino_t ino, int datasync,
  */
 static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, int to_set,
                              struct fuse_file_info *fi) {
-  auto &waitScope = rpc->getWaitScope();
-  auto request = rpc->getClient().setattrRequest();
+  auto &waitScope = ioContext->waitScope;
+  auto request = client->setattrRequest();
 
   Setattr::Builder setattr = request.getReq();
   Setattr::FuseFileInfo::Builder fuseFileInfo = setattr.initFi();
@@ -1326,8 +1252,8 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
 static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, const char *value,
                               size_t size, int flags, uint32_t position) {
 
-  auto &waitScope = rpc->getWaitScope();
-  auto request = rpc->getClient().setxattrRequest();
+  auto &waitScope = ioContext->waitScope;
+  auto request = client->setxattrRequest();
 
   Setxattr::Builder setxattr = request.getReq();
 
@@ -1384,20 +1310,57 @@ std::string read_file(const std::string &path);
 int start_fs(char *executable, char *argmnt, std::vector<std::string> options, std::string host,
              int port, std::string user, std::string token, uint8_t write_back_cache_size,
              uint8_t read_ahead_cache_size, std::string cert_file) {
+  kj::_::Debug::setLogLevel(kj::_::Debug::Severity::INFO);
+
   max_write_back_cache = write_back_cache_size;
   max_read_ahead_cache = read_ahead_cache_size;
 
   std::string cert = cert_file.length() ? read_file(cert_file) : "";
 
-  rpc = GhostfsRpcClient::getThreadLocal();
-  int rpcRes = rpc->connect(host, port, cert, user, token);
+  auto context = kj::setupAsyncIo();
+  ioContext = kj::Own<kj::AsyncIoContext>(&context, kj::NullDisposer::instance);
 
-  if (rpcRes == 1) {
+  if (cert.length()) {
+    kj::TlsContext::Options options;
+    kj::TlsCertificate caCert(cert);
+    options.trustedCertificates = kj::arrayPtr(&caCert, 1);
+
+    kj::TlsContext tls(kj::mv(options));
+    auto network = tls.wrapNetwork(ioContext->provider->getNetwork());
+    auto address = network->parseAddress(host, port).wait(ioContext->waitScope);
+
+    connection = address->connect().wait(ioContext->waitScope);
+    twoParty = kj::heap<capnp::TwoPartyClient>(*kj::mv(connection));
+  } else {
+    auto address
+        = ioContext->provider->getNetwork().parseAddress(host, port).wait(ioContext->waitScope);
+
+    connection = address->connect().wait(ioContext->waitScope);
+    twoParty = kj::heap<capnp::TwoPartyClient>(*kj::mv(connection));
+  }
+
+  auto rpcCapability = twoParty->bootstrap();
+  capability = kj::Own<capnp::Capability::Client>(&rpcCapability, kj::NullDisposer::instance);
+
+  auto authClient = capability->castAs<GhostFSAuth>();
+  auto request = authClient.authRequest();
+
+  request.setUser(user);
+  request.setToken(token);
+
+  auto promise = request.send();
+  auto result = promise.wait(ioContext->waitScope);
+  auto authSuccess = result.getAuthSuccess();
+
+  if (!authSuccess) {
     std::cout << "Authentication failed!" << std::endl;
     return 1;
   } else {
     std::cout << "Connected to the GhostFS server." << std::endl;
   }
+
+  auto ghostfsClient = result.getGhostFs();
+  client = kj::Own<GhostFS::Client>(&ghostfsClient, kj::NullDisposer::instance);
 
   char *argv[2] = {executable, argmnt};
   int err = -1;
