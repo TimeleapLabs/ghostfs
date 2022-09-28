@@ -52,6 +52,8 @@
 #include <rename.response.capnp.h>
 #include <rmdir.capnp.h>
 #include <rmdir.response.capnp.h>
+#include <symlink.capnp.h>
+#include <symlink.response.capnp.h>
 #include <setattr.capnp.h>
 #include <setattr.response.capnp.h>
 #include <setxattr.capnp.h>
@@ -489,6 +491,35 @@ public:
     // std::cout << "RMDIR file_path: " << file_path.c_str() << std::endl;
 
     int res = ::rmdir(file_path.c_str());
+    int err = errno;
+    
+    response.setErrno(err);
+    response.setRes(res);
+
+    return kj::READY_NOW;
+  }
+
+    kj::Promise<void> symlink(SymlinkContext context) override {
+    auto params = context.getParams();
+    auto req = params.getReq();
+
+    auto results = context.getResults();
+    auto response = results.getRes();
+
+    std::string link = req.getLink();
+    uint64_t parent = req.getParent();
+    std::string name = req.getName();
+
+    // std::cout << "SYMLINK name: " << name << std::endl;
+
+    std::string user_root = normalize_path(root, user, suffix);
+    std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
+    std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
+    std::filesystem::path file_path = parent_path / std::filesystem::path(name);
+
+    // std::cout << "SYMLINK file_path: " << file_path.c_str() << std::endl;
+
+    int res = ::symlink(file_path.c_str(), link.c_str());
     int err = errno;
     
     response.setErrno(err);
