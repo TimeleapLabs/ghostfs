@@ -52,6 +52,8 @@
 #include <rename.response.capnp.h>
 #include <rmdir.capnp.h>
 #include <rmdir.response.capnp.h>
+#include <readlink.capnp.h>
+#include <readlink.response.capnp.h>
 #include <setattr.capnp.h>
 #include <setattr.response.capnp.h>
 #include <setxattr.capnp.h>
@@ -499,7 +501,33 @@ public:
     return kj::READY_NOW;
   }
 
-    kj::Promise<void> symlink(SymlinkContext context) override {
+  kj::Promise<void> readlink(ReadlinkContext context) override {
+    auto params = context.getParams();
+    auto req = params.getReq();
+
+    auto results = context.getResults();
+    auto response = results.getRes();
+
+    // std::cout << "READLINK name: " << name << std::endl;
+
+    char buf[PATH_MAX + 1];
+
+
+    int res = ::readlink(ino_to_path[req.getIno()].c_str(), buf, sizeof(buf));
+    int err = errno;
+
+    if (res == sizeof(buf)) {
+      response.setErrno(ENAMETOOLONG);
+    }
+    else {
+      response.setErrno(err);
+    }
+    
+    response.setRes(res);
+    return kj::READY_NOW;
+  }
+
+  kj::Promise<void> symlink(SymlinkContext context) override {
     auto params = context.getParams();
     auto req = params.getReq();
 
