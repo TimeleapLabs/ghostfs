@@ -1329,6 +1329,10 @@ int start_rpc_server(std::string bind, int port, int auth_port, std::string root
     kj::TlsContext::Options options;
     options.defaultKeypair = keypair;
     options.useSystemTrustStore = false;
+    // using TlsErrorHandler = kj::Function<void(kj::Exception&&)>;
+    options.acceptErrorHandler = [](kj::Exception &&e) {
+      std::cout << "Error: " << e.getDescription().cStr() << std::endl;
+    };
 
     kj::TlsContext tlsContext(kj::mv(options));
 
