@@ -1243,7 +1243,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
@@ -1343,6 +1343,12 @@ void free_capnp_resources() {
   capability.~Own();
 }
 
+void capnpErrorHandler(kj::Exception &e) {
+  std::cout << "Error: " << e.getDescription().cStr() << std::endl;
+  free_capnp_resources();
+  exit(1);
+}
+
 int start_fs(char *executable, char *argmnt, std::vector<std::string> options, std::string host,
              int port, std::string user, std::string token, uint8_t write_back_cache_size,
              uint8_t read_ahead_cache_size, std::string cert_file) {
@@ -1364,26 +1370,26 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options, s
     kj::TlsContext tls(kj::mv(options));
     auto network = tls.wrapNetwork(ioContext->provider->getNetwork());
     auto address = network->parseAddress(host, port).wait(ioContext->waitScope);
-    try {
-      connection = address->connect().wait(ioContext->waitScope);
-      twoParty = kj::heap<capnp::TwoPartyClient>(*kj::mv(connection));
-    } catch (const kj::Exception &e) {
-      std::cout << "Error: " << e.getDescription().cStr() << std::endl;
-      free_capnp_resources();
-      return 1;
-    }
-
+    connection
+        = address->connect()
+              .catch_([](kj::Exception &&exception) -> kj::Promise<kj::Own<kj::AsyncIoStream>> {
+                capnpErrorHandler(exception);
+                return nullptr;
+              })
+              .wait(ioContext->waitScope);
+    twoParty = kj::heap<capnp::TwoPartyClient>(*kj::mv(connection));
   } else {
     auto address
         = ioContext->provider->getNetwork().parseAddress(host, port).wait(ioContext->waitScope);
-    try {
-      connection = address->connect().wait(ioContext->waitScope);
-      twoParty = kj::heap<capnp::TwoPartyClient>(*kj::mv(connection));
-    } catch (const kj::Exception &e) {
-      std::cout << "Error: " << e.getDescription().cStr() << std::endl;
-      free_capnp_resources();
-      return 1;
-    }
+
+    connection
+        = address->connect()
+              .catch_([](kj::Exception &&exception) -> kj::Promise<kj::Own<kj::AsyncIoStream>> {
+                capnpErrorHandler(exception);
+                return nullptr;
+              })
+              .wait(ioContext->waitScope);
+    twoParty = kj::heap<capnp::TwoPartyClient>(*kj::mv(connection));
   }
 
   auto rpcCapability = twoParty->bootstrap();
@@ -1395,26 +1401,26 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options, s
   request.setUser(user);
   request.setToken(token);
 
-  try {
-    auto promise = request.send();
-    auto result = promise.wait(ioContext->waitScope);
-    auto authSuccess = result.getAuthSuccess();
+  auto promise = request.send();
+  auto result = promise
+                    .catch_([](kj::Exception &&exception)
+                                -> kj::Promise<capnp::Response<GhostFSAuth::AuthResults>> {
+                      capnpErrorHandler(exception);
+                      return nullptr;
+                    })
+                    .wait(ioContext->waitScope);
+  auto authSuccess = result.getAuthSuccess();
 
-    if (!authSuccess) {
-      std::cout << "Authentication failed!" << std::endl;
-      free_capnp_resources();
-      return 1;
-    } else {
-      std::cout << "Connected to the GhostFS server." << std::endl;
-    }
-
-    auto ghostfsClient = result.getGhostFs();
-    client = kj::Own<GhostFS::Client>(&ghostfsClient, kj::NullDisposer::instance);
-  } catch (const kj::Exception &e) {
-    std::cout << "Error: " << e.getDescription().cStr() << std::endl;
+  if (!authSuccess) {
+    std::cout << "Authentication failed!" << std::endl;
     free_capnp_resources();
     return 1;
+  } else {
+    std::cout << "Connected to the GhostFS server." << std::endl;
   }
+
+  auto ghostfsClient = result.getGhostFs();
+  client = kj::Own<GhostFS::Client>(&ghostfsClient, kj::NullDisposer::instance);
 
   char *argv[2] = {executable, argmnt};
   int err = -1;
