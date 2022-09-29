@@ -6,6 +6,7 @@
 #include <ghostfs/rpc.h>
 #include <sys/xattr.h>
 #include <unistd.h>
+#include <limits.h>
 
 #include <fstream>
 #include <iostream>
