@@ -58,6 +58,8 @@
 #include <read.response.capnp.h>
 #include <readdir.capnp.h>
 #include <readdir.response.capnp.h>
+#include <readlink.capnp.h>
+#include <readlink.response.capnp.h>
 #include <release.capnp.h>
 #include <release.response.capnp.h>
 #include <rename.capnp.h>
@@ -1307,16 +1309,39 @@ static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, 
 }
 #endif
 
+static void hello_ll_readlink(fuse_req_t req, fuse_ino_t ino) {
+  // printf("Called .readlink\n");
+
+  auto &waitScope = ioContext->waitScope;
+  auto request = client->readlinkRequest();
+
+  Readlink::Builder readlink = request.getReq();
+
+  readlink.setIno(ino);
+
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+  auto response = result.getRes();
+
+  int res = response.getRes();
+  int err = response.getErrno();
+
+  fuse_reply_err(req, res == -1 ? err : 0);
+
+  // std::cout << "readlink executed correctly: " << payload << std::endl;
+}
+
 // clang-format off
 static const struct fuse_lowlevel_ops hello_ll_oper = {
     .lookup = hello_ll_lookup,
     .getattr = hello_ll_getattr,
     .setattr = hello_ll_setattr,
+    .readlink = hello_ll_readlink,
     .mknod = hello_ll_mknod,
     .mkdir = hello_ll_mkdir,
     .unlink = hello_ll_unlink,
     .rmdir = hello_ll_rmdir,
-    //.symlink = hello_ll_symlink,
+    .symlink = hello_ll_symlink,
     .rename = hello_ll_rename,
     .open = hello_ll_open,
     .read = hello_ll_read,
