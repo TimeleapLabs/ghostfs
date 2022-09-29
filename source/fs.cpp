@@ -1395,20 +1395,26 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options, s
   request.setUser(user);
   request.setToken(token);
 
-  auto promise = request.send();
-  auto result = promise.wait(ioContext->waitScope);
-  auto authSuccess = result.getAuthSuccess();
+  try {
+    auto promise = request.send();
+    auto result = promise.wait(ioContext->waitScope);
+    auto authSuccess = result.getAuthSuccess();
 
-  if (!authSuccess) {
-    std::cout << "Authentication failed!" << std::endl;
+    if (!authSuccess) {
+      std::cout << "Authentication failed!" << std::endl;
+      free_capnp_resources();
+      return 1;
+    } else {
+      std::cout << "Connected to the GhostFS server." << std::endl;
+    }
+
+    auto ghostfsClient = result.getGhostFs();
+    client = kj::Own<GhostFS::Client>(&ghostfsClient, kj::NullDisposer::instance);
+  } catch (const kj::Exception &e) {
+    std::cout << "Error: " << e.getDescription().cStr() << std::endl;
     free_capnp_resources();
     return 1;
-  } else {
-    std::cout << "Connected to the GhostFS server." << std::endl;
   }
-
-  auto ghostfsClient = result.getGhostFs();
-  client = kj::Own<GhostFS::Client>(&ghostfsClient, kj::NullDisposer::instance);
 
   char *argv[2] = {executable, argmnt};
   int err = -1;
