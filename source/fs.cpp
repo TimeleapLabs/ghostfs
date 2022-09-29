@@ -1336,11 +1336,11 @@ static const struct fuse_lowlevel_ops hello_ll_oper = {
 std::string read_file(const std::string &path);
 
 void free_capnp_resources() {
-  ioContext.dispose();
-  twoParty.dispose();
-  connection.dispose();
-  client.dispose();
-  capability.dispose();
+  free(ioContext);
+  free(twoParty);
+  free(connection);
+  free(client);
+  free(capability);
 }
 
 int start_fs(char *executable, char *argmnt, std::vector<std::string> options, std::string host,
@@ -1364,15 +1364,26 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options, s
     kj::TlsContext tls(kj::mv(options));
     auto network = tls.wrapNetwork(ioContext->provider->getNetwork());
     auto address = network->parseAddress(host, port).wait(ioContext->waitScope);
+    try {
+      connection = address->connect().wait(ioContext->waitScope);
+      twoParty = kj::heap<capnp::TwoPartyClient>(*kj::mv(connection));
+    } catch (const kj::Exception &e) {
+      std::cout << "Error: " << e.getDescription().cStr() << std::endl;
+      free_capnp_resources();
+      return 1;
+    }
 
-    connection = address->connect().wait(ioContext->waitScope);
-    twoParty = kj::heap<capnp::TwoPartyClient>(*kj::mv(connection));
   } else {
     auto address
         = ioContext->provider->getNetwork().parseAddress(host, port).wait(ioContext->waitScope);
-
-    connection = address->connect().wait(ioContext->waitScope);
-    twoParty = kj::heap<capnp::TwoPartyClient>(*kj::mv(connection));
+    try {
+      connection = address->connect().wait(ioContext->waitScope);
+      twoParty = kj::heap<capnp::TwoPartyClient>(*kj::mv(connection));
+    } catch (const kj::Exception &e) {
+      std::cout << "Error: " << e.getDescription().cStr() << std::endl;
+      free_capnp_resources();
+      return 1;
+    }
   }
 
   auto rpcCapability = twoParty->bootstrap();
