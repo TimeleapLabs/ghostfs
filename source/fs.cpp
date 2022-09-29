@@ -1243,7 +1243,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-// clang-format off
+  // clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
@@ -1349,6 +1349,18 @@ void capnpErrorHandler(kj::Exception &e) {
   exit(1);
 }
 
+#define CATCH_OWN(TYPE)                                         \
+  [](kj::Exception &&exception) -> kj::Promise<kj::Own<TYPE>> { \
+    capnpErrorHandler(exception);                               \
+    return nullptr;                                             \
+  }
+
+#define CATCH_RESPONSE(TYPE)                                            \
+  [](kj::Exception &&exception) -> kj::Promise<capnp::Response<TYPE>> { \
+    capnpErrorHandler(exception);                                       \
+    return nullptr;                                                     \
+  }
+
 int start_fs(char *executable, char *argmnt, std::vector<std::string> options, std::string host,
              int port, std::string user, std::string token, uint8_t write_back_cache_size,
              uint8_t read_ahead_cache_size, std::string cert_file) {
@@ -1370,25 +1382,13 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options, s
     kj::TlsContext tls(kj::mv(options));
     auto network = tls.wrapNetwork(ioContext->provider->getNetwork());
     auto address = network->parseAddress(host, port).wait(ioContext->waitScope);
-    connection
-        = address->connect()
-              .catch_([](kj::Exception &&exception) -> kj::Promise<kj::Own<kj::AsyncIoStream>> {
-                capnpErrorHandler(exception);
-                return nullptr;
-              })
-              .wait(ioContext->waitScope);
+    connection = address->connect().catch_(CATCH_OWN(kj::AsyncIoStream)).wait(ioContext->waitScope);
     twoParty = kj::heap<capnp::TwoPartyClient>(*kj::mv(connection));
   } else {
     auto address
         = ioContext->provider->getNetwork().parseAddress(host, port).wait(ioContext->waitScope);
 
-    connection
-        = address->connect()
-              .catch_([](kj::Exception &&exception) -> kj::Promise<kj::Own<kj::AsyncIoStream>> {
-                capnpErrorHandler(exception);
-                return nullptr;
-              })
-              .wait(ioContext->waitScope);
+    connection = address->connect().catch_(CATCH_OWN(kj::AsyncIoStream)).wait(ioContext->waitScope);
     twoParty = kj::heap<capnp::TwoPartyClient>(*kj::mv(connection));
   }
 
@@ -1402,13 +1402,7 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options, s
   request.setToken(token);
 
   auto promise = request.send();
-  auto result = promise
-                    .catch_([](kj::Exception &&exception)
-                                -> kj::Promise<capnp::Response<GhostFSAuth::AuthResults>> {
-                      capnpErrorHandler(exception);
-                      return nullptr;
-                    })
-                    .wait(ioContext->waitScope);
+  auto result = promise.catch_(CATCH_RESPONSE(GhostFSAuth::AuthResults)).wait(ioContext->waitScope);
   auto authSuccess = result.getAuthSuccess();
 
   if (!authSuccess) {
