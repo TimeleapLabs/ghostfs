@@ -64,12 +64,12 @@
 #include <rename.response.capnp.h>
 #include <rmdir.capnp.h>
 #include <rmdir.response.capnp.h>
-#include <symlink.capnp.h>
-#include <symlink.response.capnp.h>
 #include <setattr.capnp.h>
 #include <setattr.response.capnp.h>
 #include <setxattr.capnp.h>
 #include <setxattr.response.capnp.h>
+#include <symlink.capnp.h>
+#include <symlink.response.capnp.h>
 #include <sys/xattr.h>
 #include <unlink.capnp.h>
 #include <unlink.response.capnp.h>
@@ -798,7 +798,8 @@ static void hello_ll_rmdir(fuse_req_t req, fuse_ino_t parent, const char *name) 
   // std::cout << "rmdir executed correctly: " << payload << std::endl;
 }
 
-static void hello_ll_symlink(fuse_req_t req, const char *link, fuse_ino_t parent, const char *name) {
+static void hello_ll_symlink(fuse_req_t req, const char *link, fuse_ino_t parent,
+                             const char *name) {
   // printf("Called .symlink\n");
 
   auto &waitScope = ioContext->waitScope;
@@ -1315,7 +1316,7 @@ static const struct fuse_lowlevel_ops hello_ll_oper = {
     .mkdir = hello_ll_mkdir,
     .unlink = hello_ll_unlink,
     .rmdir = hello_ll_rmdir,
-    .symlink = hello_ll_symlink,
+    //.symlink = hello_ll_symlink,
     .rename = hello_ll_rename,
     .open = hello_ll_open,
     .read = hello_ll_read,
@@ -1333,6 +1334,14 @@ static const struct fuse_lowlevel_ops hello_ll_oper = {
 // clang-format on
 
 std::string read_file(const std::string &path);
+
+void free_capnp_resources() {
+  ioContext.dispose();
+  twoParty.dispose();
+  connection.dispose();
+  client.dispose();
+  capability.dispose();
+}
 
 int start_fs(char *executable, char *argmnt, std::vector<std::string> options, std::string host,
              int port, std::string user, std::string token, uint8_t write_back_cache_size,
@@ -1381,6 +1390,7 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options, s
 
   if (!authSuccess) {
     std::cout << "Authentication failed!" << std::endl;
+    free_capnp_resources();
     return 1;
   } else {
     std::cout << "Connected to the GhostFS server." << std::endl;
@@ -1398,6 +1408,7 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options, s
 
   if (err == -1) {
     std::cout << "There was an issue parsing fuse options" << std::endl;
+    free_capnp_resources();
     return err;
   }
 
@@ -1410,6 +1421,7 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options, s
 
   if (ch == NULL) {
     std::cout << "There was an error mounting the fuse endpoint" << std::endl;
+    free_capnp_resources();
     return -1;
   }
 
@@ -1428,6 +1440,7 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options, s
 
   fuse_unmount(mountpoint, ch);
   fuse_opt_free_args(&args);
+  free_capnp_resources();
 
   return err ? 1 : 0;
 }
