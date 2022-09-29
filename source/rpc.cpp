@@ -52,12 +52,12 @@
 #include <rename.response.capnp.h>
 #include <rmdir.capnp.h>
 #include <rmdir.response.capnp.h>
-#include <symlink.capnp.h>
-#include <symlink.response.capnp.h>
 #include <setattr.capnp.h>
 #include <setattr.response.capnp.h>
 #include <setxattr.capnp.h>
 #include <setxattr.response.capnp.h>
+#include <symlink.capnp.h>
+#include <symlink.response.capnp.h>
 #include <unlink.capnp.h>
 #include <unlink.response.capnp.h>
 #include <write.capnp.h>

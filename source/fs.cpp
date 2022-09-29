@@ -1243,7 +1243,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-// clang-format off
+  // clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
@@ -1336,11 +1336,11 @@ static const struct fuse_lowlevel_ops hello_ll_oper = {
 std::string read_file(const std::string &path);
 
 void free_capnp_resources() {
-  free(ioContext);
-  free(twoParty);
-  free(connection);
-  free(client);
-  free(capability);
+  ioContext.~Own();
+  twoParty.~Own();
+  connection.~Own();
+  client.~Own();
+  capability.~Own();
 }
 
 int start_fs(char *executable, char *argmnt, std::vector<std::string> options, std::string host,
