@@ -3,10 +3,10 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <iostream>
 #include <iterator>
 #include <map>
 #include <string>
-#include <iostream>
 
 struct User {
   std::string sub_directory;
@@ -14,7 +14,7 @@ struct User {
 };
 
 struct Token {
-  std::string token;
+  std::string user;
   int64_t usable;
 };
 
@@ -30,7 +30,7 @@ std::string random_token() {
 std::string add_token(std::string user, std::string token, int64_t retries) {
   std::string token_to_add = token.length() ? token : random_token();
 
-  tokens[user] = {.token = token_to_add, .usable = retries};
+  tokens[token_to_add] = {.user = user, .usable = retries};
 
   if (not users.contains(user)) {
     users[user] = {.sub_directory = user};
@@ -62,24 +62,20 @@ std::map<std::string, std::string>* get_user_mounts(std::string user) {
 }
 
 bool authenticate(std::string token, std::string user) {
-  if (not tokens.contains(user)) {
-    std::cout << "user does not exist: " << user << std::endl;
+  if (not tokens.contains(token)) {
     return false;
   }
 
-  struct Token* t = &tokens[user];
+  struct Token* t = &tokens[token];
 
-  if (t->token != token) {
-    std::cout << "got: " << token << std::endl;
-    std::cout << "token in db: " << t->token << std::endl;
+  if (t->user != user) {
     return false;
   }
 
   if (t->usable == 0) {
-    std::cout << "token had no more uses: " << t->token << std::endl;
     return false;
   } else if (t->usable > 0) {  // pass -1 to allow infinite use
-    t->usable--; 
+    t->usable--;
   }
 
   return true;
