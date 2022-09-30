@@ -1425,12 +1425,15 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options, s
 
   request.setUser(user);
   request.setToken(token);
+  std::cout << "user: " << user << std::endl;
+  std::cout << "token: " << token << std::endl;
 
   auto promise = request.send();
   auto result = promise.catch_(CATCH_RESPONSE(GhostFSAuth::AuthResults)).wait(ioContext->waitScope);
   auto authSuccess = result.getAuthSuccess();
 
   if (!authSuccess) {
+    std::cout << "authSuccess: " << authSuccess << std::endl;
     std::cout << "Authentication failed!" << std::endl;
     free_capnp_resources();
     return 1;
