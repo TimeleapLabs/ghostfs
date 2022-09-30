@@ -4,9 +4,9 @@
 #include <ghostfs/auth.h>
 #include <ghostfs/fs.h>
 #include <ghostfs/rpc.h>
+#include <limits.h>
 #include <sys/xattr.h>
 #include <unistd.h>
-#include <limits.h>
 
 #include <fstream>
 #include <iostream>
@@ -47,14 +47,14 @@
 #include <read.response.capnp.h>
 #include <readdir.capnp.h>
 #include <readdir.response.capnp.h>
+#include <readlink.capnp.h>
+#include <readlink.response.capnp.h>
 #include <release.capnp.h>
 #include <release.response.capnp.h>
 #include <rename.capnp.h>
 #include <rename.response.capnp.h>
 #include <rmdir.capnp.h>
 #include <rmdir.response.capnp.h>
-#include <readlink.capnp.h>
-#include <readlink.response.capnp.h>
 #include <setattr.capnp.h>
 #include <setattr.response.capnp.h>
 #include <setxattr.capnp.h>
@@ -519,12 +519,13 @@ public:
 
     if (res == sizeof(buf)) {
       response.setErrno(ENAMETOOLONG);
-    }
-    else {
+    } else {
       response.setErrno(err);
     }
     
     response.setRes(res);
+    response.setLink(std::string(buf, res));
+
     return kj::READY_NOW;
   }
 
@@ -565,6 +566,40 @@ public:
     
     response.setErrno(err);
     response.setRes(res);
+
+    if (res == 0) {
+      struct stat attr;
+      memset(&attr, 0, sizeof(attr));
+
+      uint64_t file_ino;
+
+      file_ino = ++current_ino;
+      ino_to_path[file_ino] = file_path;
+      path_to_ino[file_path] = file_ino;
+
+      //e.attr_timeout = 1.0;
+      //e.entry_timeout = 1.0;
+      
+      response.setIno(file_ino);
+
+      hello_stat(file_ino, &attr);
+
+      SymlinkResponse::Attr::Builder attributes = response.initAttr();
+
+      attributes.setStDev(attr.st_dev);
+      attributes.setStIno(attr.st_ino);
+      attributes.setStMode(attr.st_mode);
+      attributes.setStNlink(attr.st_nlink);
+      attributes.setStUid(attr.st_uid);
+      attributes.setStGid(attr.st_gid);
+      attributes.setStRdev(attr.st_rdev);
+      attributes.setStSize(attr.st_size);
+      attributes.setStAtime(attr.st_atime);
+      attributes.setStMtime(attr.st_mtime);
+      attributes.setStCtime(attr.st_ctime);
+      attributes.setStBlksize(attr.st_blksize);
+      attributes.setStBlocks(attr.st_blocks);
+    }
 
     return kj::READY_NOW;
   }

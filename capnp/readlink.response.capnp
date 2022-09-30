@@ -3,4 +3,5 @@
 struct ReadlinkResponse {
   res    @0 :Int8;
   errno  @1 :Int8;
+  link   @2 :Text;
 }
