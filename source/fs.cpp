@@ -818,9 +818,36 @@ static void hello_ll_symlink(fuse_req_t req, const char *link, fuse_ino_t parent
   auto response = result.getRes();
 
   int res = response.getRes();
-  int err = response.getErrno();
 
-  fuse_reply_err(req, res == -1 ? err : 0);
+  if (res != 0) {
+    int err = response.getErrno();
+    fuse_reply_err(req, err);
+  } else {
+    struct fuse_entry_param e;
+
+    memset(&e, 0, sizeof(e));
+    e.ino = response.getIno();
+    e.attr_timeout = 1.0;
+    e.entry_timeout = 1.0;
+
+    SymlinkResponse::Attr::Reader attributes = response.getAttr();
+
+    e.attr.st_dev = attributes.getStDev();
+    e.attr.st_ino = attributes.getStIno();
+    e.attr.st_mode = attributes.getStMode();
+    e.attr.st_nlink = attributes.getStNlink();
+    e.attr.st_uid = geteuid();  // attributes.getStUid();
+    e.attr.st_gid = getegid();  // attributes.getStGid();
+    e.attr.st_rdev = attributes.getStRdev();
+    e.attr.st_size = attributes.getStSize();
+    e.attr.st_atime = attributes.getStAtime();
+    e.attr.st_mtime = attributes.getStMtime();
+    e.attr.st_ctime = attributes.getStCtime();
+    e.attr.st_blksize = attributes.getStBlksize();
+    e.attr.st_blocks = attributes.getStBlocks();
+
+    fuse_reply_entry(req, &e);
+  }
 
   // std::cout << "symlink executed correctly: " << payload << std::endl;
 }
@@ -1029,7 +1056,7 @@ static void hello_ll_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, 
 
   int res = response.getRes();
 
-  if (res == -1) {
+  if (res != 0) {
     // std::cout << "MKDIR::ENOENT" << std::endl;
     fuse_reply_err(req, response.getErrno());
     return;
@@ -1324,9 +1351,14 @@ static void hello_ll_readlink(fuse_req_t req, fuse_ino_t ino) {
   auto response = result.getRes();
 
   int res = response.getRes();
-  int err = response.getErrno();
 
-  fuse_reply_err(req, res == -1 ? err : 0);
+  if (res){
+    int err = response.getErrno();
+    fuse_reply_err(req, err);
+  } else {
+    std::string link = response.getLink();
+    fuse_reply_readlink(req, link.c_str());
+  }
 
   // std::cout << "readlink executed correctly: " << payload << std::endl;
 }

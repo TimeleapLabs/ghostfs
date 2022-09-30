@@ -5,9 +5,6 @@
 
 #include <capnp/generated-header-support.h>
 #include <kj/windows-sanity.h>
-#if !CAPNP_LITE
-#include <capnp/capability.h>
-#endif  // !CAPNP_LITE
 
 #if CAPNP_VERSION != 10002
 #error "Version mismatch between generated code and library headers.  You must use the same version of the Cap'n Proto compiler and library."
@@ -33,7 +30,7 @@ struct ReadlinkResponse {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(cd65c21a4a6004e4, 1, 0)
+    CAPNP_DECLARE_STRUCT_HEADER(cd65c21a4a6004e4, 1, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -62,6 +59,9 @@ public:
   inline  ::int8_t getRes() const;
 
   inline  ::int8_t getErrno() const;
+
+  inline bool hasLink() const;
+  inline  ::capnp::Text::Reader getLink() const;
 
 private:
   ::capnp::_::StructReader _reader;
@@ -96,6 +96,13 @@ public:
 
   inline  ::int8_t getErrno();
   inline void setErrno( ::int8_t value);
+
+  inline bool hasLink();
+  inline  ::capnp::Text::Builder getLink();
+  inline void setLink( ::capnp::Text::Reader value);
+  inline  ::capnp::Text::Builder initLink(unsigned int size);
+  inline void adoptLink(::capnp::Orphan< ::capnp::Text>&& value);
+  inline ::capnp::Orphan< ::capnp::Text> disownLink();
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -151,6 +158,40 @@ inline  ::int8_t ReadlinkResponse::Builder::getErrno() {
 inline void ReadlinkResponse::Builder::setErrno( ::int8_t value) {
   _builder.setDataField< ::int8_t>(
       ::capnp::bounded<1>() * ::capnp::ELEMENTS, value);
+}
+
+inline bool ReadlinkResponse::Reader::hasLink() const {
+  return !_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline bool ReadlinkResponse::Builder::hasLink() {
+  return !_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::Text::Reader ReadlinkResponse::Reader::getLink() const {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline  ::capnp::Text::Builder ReadlinkResponse::Builder::getLink() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline void ReadlinkResponse::Builder::setLink( ::capnp::Text::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::set(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), value);
+}
+inline  ::capnp::Text::Builder ReadlinkResponse::Builder::initLink(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), size);
+}
+inline void ReadlinkResponse::Builder::adoptLink(
+    ::capnp::Orphan< ::capnp::Text>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::Text> ReadlinkResponse::Builder::disownLink() {
+  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 
 

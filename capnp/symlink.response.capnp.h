@@ -5,9 +5,6 @@
 
 #include <capnp/generated-header-support.h>
 #include <kj/windows-sanity.h>
-#if !CAPNP_LITE
-#include <capnp/capability.h>
-#endif  // !CAPNP_LITE
 
 #if CAPNP_VERSION != 10002
 #error "Version mismatch between generated code and library headers.  You must use the same version of the Cap'n Proto compiler and library."
@@ -20,6 +17,7 @@ namespace capnp {
 namespace schemas {
 
 CAPNP_DECLARE_SCHEMA(b2fd7c76c88911ff);
+CAPNP_DECLARE_SCHEMA(e110cd8fc5342b80);
 
 }  // namespace schemas
 }  // namespace capnp
@@ -31,9 +29,25 @@ struct SymlinkResponse {
   class Reader;
   class Builder;
   class Pipeline;
+  struct Attr;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(b2fd7c76c88911ff, 1, 0)
+    CAPNP_DECLARE_STRUCT_HEADER(b2fd7c76c88911ff, 2, 1)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct SymlinkResponse::Attr {
+  Attr() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(e110cd8fc5342b80, 11, 0)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -62,6 +76,11 @@ public:
   inline  ::int8_t getRes() const;
 
   inline  ::int8_t getErrno() const;
+
+  inline  ::uint64_t getIno() const;
+
+  inline bool hasAttr() const;
+  inline  ::SymlinkResponse::Attr::Reader getAttr() const;
 
 private:
   ::capnp::_::StructReader _reader;
@@ -97,6 +116,16 @@ public:
   inline  ::int8_t getErrno();
   inline void setErrno( ::int8_t value);
 
+  inline  ::uint64_t getIno();
+  inline void setIno( ::uint64_t value);
+
+  inline bool hasAttr();
+  inline  ::SymlinkResponse::Attr::Builder getAttr();
+  inline void setAttr( ::SymlinkResponse::Attr::Reader value);
+  inline  ::SymlinkResponse::Attr::Builder initAttr();
+  inline void adoptAttr(::capnp::Orphan< ::SymlinkResponse::Attr>&& value);
+  inline ::capnp::Orphan< ::SymlinkResponse::Attr> disownAttr();
+
 private:
   ::capnp::_::StructBuilder _builder;
   template <typename, ::capnp::Kind>
@@ -110,6 +139,143 @@ private:
 class SymlinkResponse::Pipeline {
 public:
   typedef SymlinkResponse Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+  inline  ::SymlinkResponse::Attr::Pipeline getAttr();
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class SymlinkResponse::Attr::Reader {
+public:
+  typedef Attr Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand());
+  }
+#endif  // !CAPNP_LITE
+
+  inline  ::uint16_t getStDev() const;
+
+  inline  ::uint64_t getStIno() const;
+
+  inline  ::uint64_t getStMode() const;
+
+  inline  ::uint16_t getStNlink() const;
+
+  inline  ::int64_t getStUid() const;
+
+  inline  ::int64_t getStGid() const;
+
+  inline  ::uint16_t getStRdev() const;
+
+  inline  ::int64_t getStSize() const;
+
+  inline  ::int64_t getStAtime() const;
+
+  inline  ::int64_t getStMtime() const;
+
+  inline  ::int64_t getStCtime() const;
+
+  inline  ::uint64_t getStBlksize() const;
+
+  inline  ::uint64_t getStBlocks() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class SymlinkResponse::Attr::Builder {
+public:
+  typedef Attr Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline  ::uint16_t getStDev();
+  inline void setStDev( ::uint16_t value);
+
+  inline  ::uint64_t getStIno();
+  inline void setStIno( ::uint64_t value);
+
+  inline  ::uint64_t getStMode();
+  inline void setStMode( ::uint64_t value);
+
+  inline  ::uint16_t getStNlink();
+  inline void setStNlink( ::uint16_t value);
+
+  inline  ::int64_t getStUid();
+  inline void setStUid( ::int64_t value);
+
+  inline  ::int64_t getStGid();
+  inline void setStGid( ::int64_t value);
+
+  inline  ::uint16_t getStRdev();
+  inline void setStRdev( ::uint16_t value);
+
+  inline  ::int64_t getStSize();
+  inline void setStSize( ::int64_t value);
+
+  inline  ::int64_t getStAtime();
+  inline void setStAtime( ::int64_t value);
+
+  inline  ::int64_t getStMtime();
+  inline void setStMtime( ::int64_t value);
+
+  inline  ::int64_t getStCtime();
+  inline void setStCtime( ::int64_t value);
+
+  inline  ::uint64_t getStBlksize();
+  inline void setStBlksize( ::uint64_t value);
+
+  inline  ::uint64_t getStBlocks();
+  inline void setStBlocks( ::uint64_t value);
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class SymlinkResponse::Attr::Pipeline {
+public:
+  typedef Attr Pipelines;
 
   inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
   inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
@@ -151,6 +317,241 @@ inline  ::int8_t SymlinkResponse::Builder::getErrno() {
 inline void SymlinkResponse::Builder::setErrno( ::int8_t value) {
   _builder.setDataField< ::int8_t>(
       ::capnp::bounded<1>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint64_t SymlinkResponse::Reader::getIno() const {
+  return _reader.getDataField< ::uint64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+
+inline  ::uint64_t SymlinkResponse::Builder::getIno() {
+  return _builder.getDataField< ::uint64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+inline void SymlinkResponse::Builder::setIno( ::uint64_t value) {
+  _builder.setDataField< ::uint64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS, value);
+}
+
+inline bool SymlinkResponse::Reader::hasAttr() const {
+  return !_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline bool SymlinkResponse::Builder::hasAttr() {
+  return !_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline  ::SymlinkResponse::Attr::Reader SymlinkResponse::Reader::getAttr() const {
+  return ::capnp::_::PointerHelpers< ::SymlinkResponse::Attr>::get(_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline  ::SymlinkResponse::Attr::Builder SymlinkResponse::Builder::getAttr() {
+  return ::capnp::_::PointerHelpers< ::SymlinkResponse::Attr>::get(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+#if !CAPNP_LITE
+inline  ::SymlinkResponse::Attr::Pipeline SymlinkResponse::Pipeline::getAttr() {
+  return  ::SymlinkResponse::Attr::Pipeline(_typeless.getPointerField(0));
+}
+#endif  // !CAPNP_LITE
+inline void SymlinkResponse::Builder::setAttr( ::SymlinkResponse::Attr::Reader value) {
+  ::capnp::_::PointerHelpers< ::SymlinkResponse::Attr>::set(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), value);
+}
+inline  ::SymlinkResponse::Attr::Builder SymlinkResponse::Builder::initAttr() {
+  return ::capnp::_::PointerHelpers< ::SymlinkResponse::Attr>::init(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline void SymlinkResponse::Builder::adoptAttr(
+    ::capnp::Orphan< ::SymlinkResponse::Attr>&& value) {
+  ::capnp::_::PointerHelpers< ::SymlinkResponse::Attr>::adopt(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::SymlinkResponse::Attr> SymlinkResponse::Builder::disownAttr() {
+  return ::capnp::_::PointerHelpers< ::SymlinkResponse::Attr>::disown(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+
+inline  ::uint16_t SymlinkResponse::Attr::Reader::getStDev() const {
+  return _reader.getDataField< ::uint16_t>(
+      ::capnp::bounded<0>() * ::capnp::ELEMENTS);
+}
+
+inline  ::uint16_t SymlinkResponse::Attr::Builder::getStDev() {
+  return _builder.getDataField< ::uint16_t>(
+      ::capnp::bounded<0>() * ::capnp::ELEMENTS);
+}
+inline void SymlinkResponse::Attr::Builder::setStDev( ::uint16_t value) {
+  _builder.setDataField< ::uint16_t>(
+      ::capnp::bounded<0>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint64_t SymlinkResponse::Attr::Reader::getStIno() const {
+  return _reader.getDataField< ::uint64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+
+inline  ::uint64_t SymlinkResponse::Attr::Builder::getStIno() {
+  return _builder.getDataField< ::uint64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+inline void SymlinkResponse::Attr::Builder::setStIno( ::uint64_t value) {
+  _builder.setDataField< ::uint64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint64_t SymlinkResponse::Attr::Reader::getStMode() const {
+  return _reader.getDataField< ::uint64_t>(
+      ::capnp::bounded<2>() * ::capnp::ELEMENTS);
+}
+
+inline  ::uint64_t SymlinkResponse::Attr::Builder::getStMode() {
+  return _builder.getDataField< ::uint64_t>(
+      ::capnp::bounded<2>() * ::capnp::ELEMENTS);
+}
+inline void SymlinkResponse::Attr::Builder::setStMode( ::uint64_t value) {
+  _builder.setDataField< ::uint64_t>(
+      ::capnp::bounded<2>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint16_t SymlinkResponse::Attr::Reader::getStNlink() const {
+  return _reader.getDataField< ::uint16_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+
+inline  ::uint16_t SymlinkResponse::Attr::Builder::getStNlink() {
+  return _builder.getDataField< ::uint16_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+inline void SymlinkResponse::Attr::Builder::setStNlink( ::uint16_t value) {
+  _builder.setDataField< ::uint16_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int64_t SymlinkResponse::Attr::Reader::getStUid() const {
+  return _reader.getDataField< ::int64_t>(
+      ::capnp::bounded<3>() * ::capnp::ELEMENTS);
+}
+
+inline  ::int64_t SymlinkResponse::Attr::Builder::getStUid() {
+  return _builder.getDataField< ::int64_t>(
+      ::capnp::bounded<3>() * ::capnp::ELEMENTS);
+}
+inline void SymlinkResponse::Attr::Builder::setStUid( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
+      ::capnp::bounded<3>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int64_t SymlinkResponse::Attr::Reader::getStGid() const {
+  return _reader.getDataField< ::int64_t>(
+      ::capnp::bounded<4>() * ::capnp::ELEMENTS);
+}
+
+inline  ::int64_t SymlinkResponse::Attr::Builder::getStGid() {
+  return _builder.getDataField< ::int64_t>(
+      ::capnp::bounded<4>() * ::capnp::ELEMENTS);
+}
+inline void SymlinkResponse::Attr::Builder::setStGid( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
+      ::capnp::bounded<4>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint16_t SymlinkResponse::Attr::Reader::getStRdev() const {
+  return _reader.getDataField< ::uint16_t>(
+      ::capnp::bounded<2>() * ::capnp::ELEMENTS);
+}
+
+inline  ::uint16_t SymlinkResponse::Attr::Builder::getStRdev() {
+  return _builder.getDataField< ::uint16_t>(
+      ::capnp::bounded<2>() * ::capnp::ELEMENTS);
+}
+inline void SymlinkResponse::Attr::Builder::setStRdev( ::uint16_t value) {
+  _builder.setDataField< ::uint16_t>(
+      ::capnp::bounded<2>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int64_t SymlinkResponse::Attr::Reader::getStSize() const {
+  return _reader.getDataField< ::int64_t>(
+      ::capnp::bounded<5>() * ::capnp::ELEMENTS);
+}
+
+inline  ::int64_t SymlinkResponse::Attr::Builder::getStSize() {
+  return _builder.getDataField< ::int64_t>(
+      ::capnp::bounded<5>() * ::capnp::ELEMENTS);
+}
+inline void SymlinkResponse::Attr::Builder::setStSize( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
+      ::capnp::bounded<5>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int64_t SymlinkResponse::Attr::Reader::getStAtime() const {
+  return _reader.getDataField< ::int64_t>(
+      ::capnp::bounded<6>() * ::capnp::ELEMENTS);
+}
+
+inline  ::int64_t SymlinkResponse::Attr::Builder::getStAtime() {
+  return _builder.getDataField< ::int64_t>(
+      ::capnp::bounded<6>() * ::capnp::ELEMENTS);
+}
+inline void SymlinkResponse::Attr::Builder::setStAtime( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
+      ::capnp::bounded<6>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int64_t SymlinkResponse::Attr::Reader::getStMtime() const {
+  return _reader.getDataField< ::int64_t>(
+      ::capnp::bounded<7>() * ::capnp::ELEMENTS);
+}
+
+inline  ::int64_t SymlinkResponse::Attr::Builder::getStMtime() {
+  return _builder.getDataField< ::int64_t>(
+      ::capnp::bounded<7>() * ::capnp::ELEMENTS);
+}
+inline void SymlinkResponse::Attr::Builder::setStMtime( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
+      ::capnp::bounded<7>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::int64_t SymlinkResponse::Attr::Reader::getStCtime() const {
+  return _reader.getDataField< ::int64_t>(
+      ::capnp::bounded<8>() * ::capnp::ELEMENTS);
+}
+
+inline  ::int64_t SymlinkResponse::Attr::Builder::getStCtime() {
+  return _builder.getDataField< ::int64_t>(
+      ::capnp::bounded<8>() * ::capnp::ELEMENTS);
+}
+inline void SymlinkResponse::Attr::Builder::setStCtime( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
+      ::capnp::bounded<8>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint64_t SymlinkResponse::Attr::Reader::getStBlksize() const {
+  return _reader.getDataField< ::uint64_t>(
+      ::capnp::bounded<9>() * ::capnp::ELEMENTS);
+}
+
+inline  ::uint64_t SymlinkResponse::Attr::Builder::getStBlksize() {
+  return _builder.getDataField< ::uint64_t>(
+      ::capnp::bounded<9>() * ::capnp::ELEMENTS);
+}
+inline void SymlinkResponse::Attr::Builder::setStBlksize( ::uint64_t value) {
+  _builder.setDataField< ::uint64_t>(
+      ::capnp::bounded<9>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint64_t SymlinkResponse::Attr::Reader::getStBlocks() const {
+  return _reader.getDataField< ::uint64_t>(
+      ::capnp::bounded<10>() * ::capnp::ELEMENTS);
+}
+
+inline  ::uint64_t SymlinkResponse::Attr::Builder::getStBlocks() {
+  return _builder.getDataField< ::uint64_t>(
+      ::capnp::bounded<10>() * ::capnp::ELEMENTS);
+}
+inline void SymlinkResponse::Attr::Builder::setStBlocks( ::uint64_t value) {
+  _builder.setDataField< ::uint64_t>(
+      ::capnp::bounded<10>() * ::capnp::ELEMENTS, value);
 }
 
 
