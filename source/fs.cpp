@@ -819,7 +819,7 @@ static void hello_ll_symlink(fuse_req_t req, const char *link, fuse_ino_t parent
 
   int res = response.getRes();
 
-  if (res != 0) {
+  if (res == -1) {
     int err = response.getErrno();
     fuse_reply_err(req, err);
   } else {
@@ -1056,7 +1056,7 @@ static void hello_ll_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, 
 
   int res = response.getRes();
 
-  if (res != 0) {
+  if (res == -1) {
     // std::cout << "MKDIR::ENOENT" << std::endl;
     fuse_reply_err(req, response.getErrno());
     return;

@@ -524,7 +524,10 @@ public:
     }
     
     response.setRes(res);
-    response.setLink(std::string(buf, res));
+
+    if (res != -1) {
+      response.setLink(std::string(buf, res));
+    }
 
     return kj::READY_NOW;
   }
@@ -567,7 +570,7 @@ public:
     response.setErrno(err);
     response.setRes(res);
 
-    if (res == 0) {
+    if (res != -1) {
       struct stat attr;
       memset(&attr, 0, sizeof(attr));
 
