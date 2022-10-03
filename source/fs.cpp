@@ -567,6 +567,19 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
                           struct fuse_file_info *fi) {
   // printf("Called .read\n");
 
+  if (max_write_back_cache > 0 && write_back_cache.contains(fi->fh)) {
+    // Try and reply from the write cache
+    for (cached_write cache : write_back_cache[fi->fh]) {
+      if (cache.size == size && cache.off == off) {
+        fuse_reply_buf(req, cache.buf, size);
+        return;
+      }
+    }
+    // If no write cache entry satisfies this read, flush the write cache
+    // and erase both write back and read ahead caches for this fh
+    flush_write_back_cache(fi->fh, true);
+  }
+
   if (max_read_ahead_cache > 0) {
     bool is_cached = reply_from_cache(req, fi->fh, size, off);
 
@@ -674,6 +687,10 @@ void flush_write_back_cache(uint64_t fh, bool reply) {
 
   write_back_cache[fh].clear();
   write_back_cache.erase(fh);
+
+  if (max_read_ahead_cache > 0) {
+    read_ahead_cache.erase(fh);
+  }
 }
 
 /**
@@ -702,10 +719,6 @@ void flush_write_back_cache(uint64_t fh, bool reply) {
 static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size_t size, off_t off,
                            struct fuse_file_info *fi) {
   // printf("Called .write\n");
-
-  if (max_read_ahead_cache > 0) {
-    read_ahead_cache.erase(fi->fh);
-  }
 
   if (max_write_back_cache > 0) {
     cached_write cache = {req, ino, (char *)malloc(size), size, off, fi};
