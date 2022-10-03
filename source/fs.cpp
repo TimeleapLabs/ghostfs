@@ -541,6 +541,74 @@ void read_ahead(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off, struct f
   }
 }
 
+uint64_t add_to_write_back_cache(cached_write cache) {
+  if (not write_back_cache.contains(cache.fi->fh)) {
+    write_back_cache[cache.fi->fh] = std::vector<cached_write>();
+  }
+
+  write_back_cache[cache.fi->fh].push_back(cache);
+  return write_back_cache[cache.fi->fh].size();
+}
+
+void flush_write_back_cache(uint64_t fh, bool reply) {
+  if (not write_back_cache.contains(fh)) {
+    return;
+  }
+
+  uint64_t cached = write_back_cache[fh].size();
+
+  if (cached == 0) {
+    return;
+  }
+
+  auto &waitScope = ioContext->waitScope;
+  auto request = client->bulkWriteRequest();
+
+  capnp::List<Write>::Builder write = request.initReq(cached);
+
+  uint8_t i = 0;
+  for (auto cache : write_back_cache[fh]) {
+    write[i].setIno(cache.ino);
+    write[i].setOff(cache.off);
+    write[i].setSize(cache.size);
+
+    kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte *)cache.buf, cache.size);
+    capnp::Data::Reader buf_reader(buf_ptr);
+    write[i].setBuf(buf_reader);
+
+    Write::FuseFileInfo::Builder fuseFileInfo = write[i].initFi();
+    fillFileInfo(&fuseFileInfo, cache.fi);
+
+    i++;
+  }
+
+  auto promise = request.send();
+  auto result = promise.wait(waitScope);
+
+  if (reply) {
+    auto response = result.getRes();
+    int res = response[cached - 1].getRes();
+    auto req = write_back_cache[fh][cached - 1].req;
+
+    if (res == -1) {
+      fuse_reply_err(req, response[cached - 1].getErrno());
+    } else {
+      fuse_reply_write(req, response[cached - 1].getWritten());
+    }
+  }
+
+  for (auto cache : write_back_cache[fh]) {
+    free(cache.buf);
+  }
+
+  write_back_cache[fh].clear();
+  write_back_cache.erase(fh);
+
+  if (max_read_ahead_cache > 0) {
+    read_ahead_cache.erase(fh);
+  }
+}
+
 /**
  * @brief
  *
@@ -623,74 +691,6 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
   fuse_reply_buf(req, buf, res);
 
   // std::cout << "hello_ll_read executed correctly: " << payload << std::endl;
-}
-
-uint64_t add_to_write_back_cache(cached_write cache) {
-  if (not write_back_cache.contains(cache.fi->fh)) {
-    write_back_cache[cache.fi->fh] = std::vector<cached_write>();
-  }
-
-  write_back_cache[cache.fi->fh].push_back(cache);
-  return write_back_cache[cache.fi->fh].size();
-}
-
-void flush_write_back_cache(uint64_t fh, bool reply) {
-  if (not write_back_cache.contains(fh)) {
-    return;
-  }
-
-  uint64_t cached = write_back_cache[fh].size();
-
-  if (cached == 0) {
-    return;
-  }
-
-  auto &waitScope = ioContext->waitScope;
-  auto request = client->bulkWriteRequest();
-
-  capnp::List<Write>::Builder write = request.initReq(cached);
-
-  uint8_t i = 0;
-  for (auto cache : write_back_cache[fh]) {
-    write[i].setIno(cache.ino);
-    write[i].setOff(cache.off);
-    write[i].setSize(cache.size);
-
-    kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte *)cache.buf, cache.size);
-    capnp::Data::Reader buf_reader(buf_ptr);
-    write[i].setBuf(buf_reader);
-
-    Write::FuseFileInfo::Builder fuseFileInfo = write[i].initFi();
-    fillFileInfo(&fuseFileInfo, cache.fi);
-
-    i++;
-  }
-
-  auto promise = request.send();
-  auto result = promise.wait(waitScope);
-
-  if (reply) {
-    auto response = result.getRes();
-    int res = response[cached - 1].getRes();
-    auto req = write_back_cache[fh][cached - 1].req;
-
-    if (res == -1) {
-      fuse_reply_err(req, response[cached - 1].getErrno());
-    } else {
-      fuse_reply_write(req, response[cached - 1].getWritten());
-    }
-  }
-
-  for (auto cache : write_back_cache[fh]) {
-    free(cache.buf);
-  }
-
-  write_back_cache[fh].clear();
-  write_back_cache.erase(fh);
-
-  if (max_read_ahead_cache > 0) {
-    read_ahead_cache.erase(fh);
-  }
 }
 
 /**
