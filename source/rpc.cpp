@@ -845,14 +845,12 @@ public:
 
     /**
      * example check access
-     * TODO: Add suffix here
      */
-    bool access_ok = check_access(root, user, path);
+    bool access_ok = check_access(root, user, suffix, path);
 
     if (not access_ok) {
       response.setErrno(EACCES);
       response.setRes(-1);
-
       return kj::READY_NOW;
     }  // END EXAMPLE
 

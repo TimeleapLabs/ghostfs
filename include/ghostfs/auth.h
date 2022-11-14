@@ -4,7 +4,7 @@
 #include <string>
 
 bool authenticate(std::string token, std::string user_id);
-bool check_access(std::string root, std::string user_id, std::string path);
+bool check_access(std::string root, std::string user_id, std::string suffix, std::string path);
 
 std::string add_token(std::string user, std::string token, int64_t retries);
 

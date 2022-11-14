@@ -80,8 +80,19 @@ bool authenticate(std::string token, std::string user) {
   return true;
 }
 
-bool check_access(std::string root, std::string user_id, std::string path) {
-  std::filesystem::path user_root = std::filesystem::path(root) / users[user_id].sub_directory;
+std::filesystem::path normalize_path(std::string root, std::string user_id) {
+  return std::filesystem::path(root) / users[user_id].sub_directory;
+}
+
+std::filesystem::path normalize_path(std::string root, std::string user_id, std::string path) {
+  if (!path.length()) {
+    return normalize_path(root, user_id);
+  }
+  return std::filesystem::path(root) / users[user_id].sub_directory / path;
+}
+
+bool check_access(std::string root, std::string user_id, std::string suffix, std::string path) {
+  std::filesystem::path user_root = normalize_path(root, user_id, suffix);
 
   auto const root_can = std::filesystem::canonical(user_root);
   auto const path_can = std::filesystem::canonical(path);
@@ -104,15 +115,4 @@ bool check_access(std::string root, std::string user_id, std::string path) {
   }
 
   return false;
-}
-
-std::filesystem::path normalize_path(std::string root, std::string user_id) {
-  return std::filesystem::path(root) / users[user_id].sub_directory;
-}
-
-std::filesystem::path normalize_path(std::string root, std::string user_id, std::string path) {
-  if (!path.length()) {
-    return normalize_path(root, user_id);
-  }
-  return std::filesystem::path(root) / users[user_id].sub_directory / path;
 }
