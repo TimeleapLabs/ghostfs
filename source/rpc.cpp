@@ -708,7 +708,7 @@ public:
       return kj::READY_NOW;
     }
 
-    bool access_ok = check_access(root, user, suffix, newfile_path);
+    access_ok = check_access(root, user, suffix, newfile_path);
 
     if (not access_ok) {
       response.setErrno(EACCES);
