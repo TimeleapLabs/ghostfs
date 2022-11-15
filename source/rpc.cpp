@@ -73,6 +73,7 @@ class GhostFSImpl final : public GhostFS::Server {
   std::string user;
   std::string root;
   std::string suffix;
+  std::set<int64_t> fh_set;
 
 public:
   explicit GhostFSImpl(std::string _user, std::string _root, std::string _suffix)
@@ -784,6 +785,8 @@ public:
       return kj::READY_NOW;
     }
 
+    fh_set.insert(fh);
+
     OpenResponse::FuseFileInfo::Builder fi_response = response.initFi();
 
     fi_response.setCacheReaddir(fi.getCacheReaddir());
@@ -914,9 +917,18 @@ public:
     auto response = results.getRes();
 
     Release::FuseFileInfo::Reader fi = req.getFi();
+    int64_t fh = fi.getFh();
 
-    int res = ::close(fi.getFh());
+    if (not fh_set.contains(fh)) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    int res = ::close(fh);
     int err = errno;
+
+    fh_set.erase(fh);
 
     response.setErrno(err);
     response.setRes(res);
