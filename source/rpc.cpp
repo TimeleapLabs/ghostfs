@@ -101,6 +101,14 @@ public:
       file_path = parent_path / std::filesystem::path(name);
     }
 
+    bool access_ok = check_access(root, user, suffix, file_path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
     if (not std::filesystem::exists(file_path)) {
       int err = errno;
       response.setErrno(err);
@@ -159,6 +167,14 @@ public:
     auto results = context.getResults();
     auto response = results.getRes();
 
+    bool access_ok = check_access(root, user, suffix, ino_to_path[req.getIno()]);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
     struct stat attr;
 
     memset(&attr, 0, sizeof(attr));
@@ -214,6 +230,14 @@ public:
     auto response = results.getRes();
 
     uint64_t ino = req.getIno();
+
+    bool access_ok = check_access(root, user, suffix, ino_to_path[ino]);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
 
     int err = 0;
 
@@ -333,6 +357,14 @@ public:
     std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
     std::filesystem::path file_path = parent_path / req.getName();
 
+    bool access_ok = check_access(root, user, suffix, file_path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
     uint64_t file_ino;
 
     file_ino = ++current_ino;
@@ -399,6 +431,14 @@ public:
     std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
     std::filesystem::path file_path = parent_path / req.getName();
 
+    bool access_ok = check_access(root, user, suffix, file_path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
     int res = ::mkdir(file_path.c_str(), req.getMode());
     int err = errno;
 
@@ -464,6 +504,14 @@ public:
     std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
     std::filesystem::path file_path = parent_path / std::filesystem::path(name);
 
+    bool access_ok = check_access(root, user, suffix, file_path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
     // TODO: this removes write protected files without warning
     int res = ::unlink(file_path.c_str());
     int err = errno;
@@ -491,6 +539,14 @@ public:
     std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
     std::filesystem::path file_path = parent_path / std::filesystem::path(name);
 
+    bool access_ok = check_access(root, user, suffix, file_path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
     // std::cout << "RMDIR file_path: " << file_path.c_str() << std::endl;
 
     int res = ::rmdir(file_path.c_str());
@@ -509,10 +565,17 @@ public:
     auto results = context.getResults();
     auto response = results.getRes();
 
+    bool access_ok = check_access(root, user, suffix, ino_to_path[req.getIno()]);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
     // std::cout << "READLINK name: " << name << std::endl;
 
     char buf[PATH_MAX + 1];
-
 
     int res = ::readlink(ino_to_path[req.getIno()].c_str(), buf, sizeof(buf));
     int err = errno;
@@ -549,6 +612,14 @@ public:
     std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
     std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
     std::filesystem::path file_path = parent_path / std::filesystem::path(name);
+
+    bool access_ok = check_access(root, user, suffix, file_path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
 
     // std::cout << "SYMLINK file_path: " << file_path.c_str() << std::endl;
     // std::cout << "SYMLINK link: " << link.c_str() << std::endl;
@@ -629,6 +700,22 @@ public:
     std::filesystem::path newparent_path = std::filesystem::path(newparent_path_name);
     std::filesystem::path newfile_path = newparent_path / std::filesystem::path(newname);
 
+    bool access_ok = check_access(root, user, suffix, file_path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    bool access_ok = check_access(root, user, suffix, newfile_path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
     // use rename
     int res = ::rename(file_path.c_str(), newfile_path.c_str());
     int err = errno;
@@ -667,6 +754,14 @@ public:
 
     auto results = context.getResults();
     auto response = results.getRes();
+
+    bool access_ok = check_access(root, user, suffix, ino_to_path[req.getIno()]);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
 
     if (not ino_to_path.contains(req.getIno())) {
       // File is unknown
@@ -715,6 +810,14 @@ public:
 
     auto results = context.getResults();
     auto response = results.getRes();
+
+    bool access_ok = check_access(root, user, suffix, ino_to_path[req.getIno()]);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
 
     if (not ino_to_path.contains(req.getIno())) {
       // File is unknown
@@ -945,6 +1048,14 @@ public:
 
     std::string file_path = ino_to_path[ino];
 
+    bool access_ok = check_access(root, user, suffix, file_path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
     int res = ::setxattr(file_path.c_str(), req.getName().cStr(), req.getValue().cStr(), (size_t) req.getSize(), req.getPosition(), req.getFlags());
     int err = errno;
     response.setRes(res);
@@ -984,6 +1095,14 @@ public:
 
     std::string file_path = ino_to_path[ino];
 
+    bool access_ok = check_access(root, user, suffix, file_path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
     int res = ::access(file_path.c_str(), req.getMask());
     int err = errno;
 
@@ -1008,6 +1127,14 @@ public:
     std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
     std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
     std::filesystem::path file_path = parent_path / req.getName();
+
+    bool access_ok = check_access(root, user, suffix, file_path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
 
     // std::cout << "create: open file path: " << file_path.c_str() << std::endl;
     // std::cout << "create: flags: " << fi.getFlags() << std::endl;
