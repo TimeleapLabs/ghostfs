@@ -1224,8 +1224,18 @@ public:
 
     Flush::FuseFileInfo::Reader fi = req.getFi();
 
-    int res = ::close(dup(fi.getFh()));
+    int64_t fh = fi.getFh();
+
+    if (not fh_set.contains(fh)) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    int res = ::close(dup(fh));
     int err = errno;
+
+    fh_set.erase(fh);
 
     response.setErrno(err);
     response.setRes(res);
