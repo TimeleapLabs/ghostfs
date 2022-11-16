@@ -861,13 +861,22 @@ public:
     const auto chars = buf_reader.asChars();
     const char* buf = chars.begin();
 
-    ::lseek(fi.getFh(), req.getOff(), SEEK_SET);
-    size_t written = ::write(fi.getFh(), buf, req.getSize());
-
-    int err = errno;
-
     auto results = context.getResults();
     auto response = results.getRes();
+
+    int64_t fh = fi.getFh();
+
+    if (not fh_set.contains(fh)) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    ::lseek(fi.getFh(), req.getOff(), SEEK_SET);
+    size_t written = ::write(fi.getFh(), buf, req.getSize());
+    int err = errno;
+
+    fh_set.erase(fh);
 
     response.setRes(0);
     response.setErrno(err);
@@ -897,9 +906,19 @@ public:
       const auto chars = buf_reader.asChars();
       const char* buf = chars.begin();
 
+      int64_t fh = fi.getFh();
+
+      if (not fh_set.contains(fh)) {
+        response[i].setErrno(EACCES);
+        response[i].setRes(-1);
+        return kj::READY_NOW;
+      }
+
       ::lseek(fi.getFh(), req.getOff(), SEEK_SET);
       size_t written = ::write(fi.getFh(), buf, req.getSize());
       int err = errno;
+
+      fh_set.erase(fh);
 
       response[i].setRes(0);
       response[i].setErrno(err);
@@ -1254,19 +1273,28 @@ public:
     Fsync::FuseFileInfo::Reader fi = req.getFi();
 
     int res;
+    int64_t fh = fi.getFh();
+
+    if (not fh_set.contains(fh)) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
 
     #ifndef __APPLE__
       uint64_t datasync = req.getDatasync();
       if (datasync) {
-        res = ::fdatasync(fi.getFh());
+        res = ::fdatasync(fh);
       } else {
-        res = ::fsync(fi.getFh());
+        res = ::fsync(fh);
       }
     #else
-      res = ::fsync(fi.getFh());
+      res = ::fsync(fh);
     #endif
 
     int err = errno;
+
+    fh_set.erase(fh);
 
     response.setErrno(err);
     response.setRes(res);
