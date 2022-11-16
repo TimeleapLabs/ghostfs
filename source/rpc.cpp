@@ -181,8 +181,18 @@ public:
 
     memset(&attr, 0, sizeof(attr));
 
-    int res = hello_stat(req.getIno(), req.getFi().getFh(), &attr);
+    int64_t fh = req.getFi().getFh();
+
+    if (not fh_set.contains(fh)) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    int res = hello_stat(req.getIno(), fh, &attr);
     int err = errno;
+
+    fh_set.erase(fh);
 
     GetattrResponse::Attr::Builder attributes = response.initAttr();
 
@@ -836,10 +846,20 @@ public:
     char buf[size];
     Read::FuseFileInfo::Reader fi = req.getFi();
 
+    int64_t fh = fi.getFh();
+
+    if (not fh_set.contains(fh)) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
     ::lseek(fi.getFh(), off, SEEK_SET);
     uint64_t res = ::read(fi.getFh(), &buf, size);
 
     int err = errno;
+
+    fh_set.erase(fh);
 
     kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte*)buf, res);
     capnp::Data::Reader buf_reader(buf_ptr);
