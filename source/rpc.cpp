@@ -68,6 +68,7 @@
 
 #include <filesystem>
 #include <iostream>
+#include <set>
 
 class GhostFSImpl final : public GhostFS::Server {
   std::string user;
