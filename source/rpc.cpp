@@ -206,6 +206,7 @@ public:
     int64_t fh = req.getFi().getFh();
 
     if (not fh_set.contains(fh)) {
+      std::cout << fh << std::endl;
       std::cout << "getattr fh: access denied!" << std::endl;
 
       response.setErrno(EACCES);
