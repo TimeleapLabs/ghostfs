@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <iostream>
 #include <iterator>
 #include <map>
 #include <string>
@@ -95,6 +96,9 @@ bool check_access(std::string root, std::string user_id, std::string suffix, std
 
   auto const root_can = std::filesystem::canonical(user_root);
   auto const path_can = std::filesystem::canonical(path);
+
+  std::cout << "root_can: " << root_can << std::endl;
+  std::cout << "path_can: " << path_can << std::endl;
 
   if (root_can == path_can) {
     return true;
