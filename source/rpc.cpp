@@ -188,6 +188,7 @@ public:
     }
 
     bool access_ok = check_access(root, user, suffix, path);
+    std::cout << "getattr: " << access_ok << std::endl;
 
     if (not access_ok) {
       response.setErrno(EACCES);
