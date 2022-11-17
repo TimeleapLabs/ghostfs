@@ -205,7 +205,7 @@ public:
 
     int64_t fh = req.getFi().getFh();
 
-    if (not fh_set.contains(fh)) {
+    if (fh and not fh_set.contains(fh)) {
       std::cout << fh << std::endl;
       std::cout << "getattr fh: access denied!" << std::endl;
 
@@ -909,7 +909,7 @@ public:
 
     int64_t fh = fi.getFh();
 
-    if (not fh_set.contains(fh)) {
+    if (fh and not fh_set.contains(fh)) {
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -947,7 +947,7 @@ public:
 
     int64_t fh = fi.getFh();
 
-    if (not fh_set.contains(fh)) {
+    if (fh and not fh_set.contains(fh)) {
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -989,7 +989,7 @@ public:
 
       int64_t fh = fi.getFh();
 
-      if (not fh_set.contains(fh)) {
+      if (fh and not fh_set.contains(fh)) {
         response[i].setErrno(EACCES);
         response[i].setRes(-1);
         return kj::READY_NOW;
@@ -1020,7 +1020,7 @@ public:
     Release::FuseFileInfo::Reader fi = req.getFi();
     int64_t fh = fi.getFh();
 
-    if (not fh_set.contains(fh)) {
+    if (fh and not fh_set.contains(fh)) {
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -1335,7 +1335,7 @@ public:
 
     int64_t fh = fi.getFh();
 
-    if (not fh_set.contains(fh)) {
+    if (fh and not fh_set.contains(fh)) {
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -1364,7 +1364,7 @@ public:
     int res;
     int64_t fh = fi.getFh();
 
-    if (not fh_set.contains(fh)) {
+    if (fh and not fh_set.contains(fh)) {
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
