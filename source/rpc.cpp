@@ -1183,20 +1183,6 @@ public:
     auto response = results.getRes();
 
     uint64_t ino = req.getIno();
-
-    if (ino == 1) {
-      response.setRes(0);      
-      return kj::READY_NOW;
-    }
-
-    if (not ino_to_path.contains(ino)) {
-      response.setRes(-1);
-      response.setErrno(ENOENT);
-      
-      return kj::READY_NOW;
-    }
-
-    uint64_t ino = req.getIno();
     std::string path = get_path_from_ino(ino);
 
     if (not path.length()) {
@@ -1210,6 +1196,18 @@ public:
     if (not access_ok) {
       response.setErrno(EACCES);
       response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    if (ino == 1) {
+      response.setRes(0);      
+      return kj::READY_NOW;
+    }
+
+    if (not ino_to_path.contains(ino)) {
+      response.setRes(-1);
+      response.setErrno(ENOENT);
+      
       return kj::READY_NOW;
     }
 
