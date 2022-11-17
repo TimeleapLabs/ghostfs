@@ -67,7 +67,6 @@
 #include <write.response.capnp.h>
 
 #include <filesystem>
-#include <iostream>
 #include <set>
 
 class GhostFSImpl final : public GhostFS::Server {
@@ -75,6 +74,16 @@ class GhostFSImpl final : public GhostFS::Server {
   std::string root;
   std::string suffix;
   std::set<int64_t> fh_set;
+
+  std::string get_path_from_ino(uint64_t ino) {
+    // ROOT
+    if (ino == 1) {
+      return normalize_path(root, user, suffix);
+    } else if (ino_to_path.contains(ino)) {
+      return ino_to_path[ino];
+    }
+    return "";
+  }
 
 public:
   explicit GhostFSImpl(std::string _user, std::string _root, std::string _suffix)
@@ -169,7 +178,16 @@ public:
     auto results = context.getResults();
     auto response = results.getRes();
 
-    bool access_ok = check_access(root, user, suffix, ino_to_path[req.getIno()]);
+    uint64_t ino = req.getIno();
+    std::string path = get_path_from_ino(ino);
+
+    if (not path.length()) {
+      response.setErrno(ENOENT);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    bool access_ok = check_access(root, user, suffix, path);
 
     if (not access_ok) {
       response.setErrno(EACCES);
@@ -242,8 +260,15 @@ public:
     auto response = results.getRes();
 
     uint64_t ino = req.getIno();
+    std::string path = get_path_from_ino(ino);
 
-    bool access_ok = check_access(root, user, suffix, ino_to_path[ino]);
+    if (not path.length()) {
+      response.setErrno(ENOENT);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    bool access_ok = check_access(root, user, suffix, path);
 
     if (not access_ok) {
       response.setErrno(EACCES);
@@ -577,7 +602,16 @@ public:
     auto results = context.getResults();
     auto response = results.getRes();
 
-    bool access_ok = check_access(root, user, suffix, ino_to_path[req.getIno()]);
+    uint64_t ino = req.getIno();
+    std::string path = get_path_from_ino(ino);
+
+    if (not path.length()) {
+      response.setErrno(ENOENT);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    bool access_ok = check_access(root, user, suffix, path);
 
     if (not access_ok) {
       response.setErrno(EACCES);
@@ -767,7 +801,16 @@ public:
     auto results = context.getResults();
     auto response = results.getRes();
 
-    bool access_ok = check_access(root, user, suffix, ino_to_path[req.getIno()]);
+    uint64_t ino = req.getIno();
+    std::string path = get_path_from_ino(ino);
+
+    if (not path.length()) {
+      response.setErrno(ENOENT);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    bool access_ok = check_access(root, user, suffix, path);
 
     if (not access_ok) {
       response.setErrno(EACCES);
@@ -825,7 +868,16 @@ public:
     auto results = context.getResults();
     auto response = results.getRes();
 
-    bool access_ok = check_access(root, user, suffix, ino_to_path[req.getIno()]);
+    uint64_t ino = req.getIno();
+    std::string path = get_path_from_ino(ino);
+
+    if (not path.length()) {
+      response.setErrno(ENOENT);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    bool access_ok = check_access(root, user, suffix, path);
 
     if (not access_ok) {
       response.setErrno(EACCES);
@@ -833,7 +885,7 @@ public:
       return kj::READY_NOW;
     }
 
-    if (not ino_to_path.contains(req.getIno())) {
+    if (not ino_to_path.contains(ino)) {
       // File is unknown
       response.setRes(-1);
       response.setErrno(ENOENT);
@@ -984,23 +1036,17 @@ public:
     auto response = results.getRes();
 
     uint64_t ino = req.getIno();
-    std::string path;
-
-    // Root
-    if (ino == 1) {
-      path = normalize_path(root, user, suffix);
-    } else if (ino_to_path.contains(ino)) {
-      path = ino_to_path[ino];
-    } else {
-      response.setErrno(ENOENT);
-      response.setRes(-1);
-
-      return kj::READY_NOW;
-    }
+    std::string path = get_path_from_ino(ino);
 
     /**
      * example check access
      */
+    if (not path.length()) {
+      response.setErrno(ENOENT);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
     bool access_ok = check_access(root, user, suffix, path);
 
     if (not access_ok) {
@@ -1097,10 +1143,15 @@ public:
     auto response = results.getRes();
 
     uint64_t ino = req.getIno();
+    std::string path = get_path_from_ino(ino);
 
-    std::string file_path = ino_to_path[ino];
+    if (not path.length()) {
+      response.setErrno(ENOENT);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
 
-    bool access_ok = check_access(root, user, suffix, file_path);
+    bool access_ok = check_access(root, user, suffix, path);
 
     if (not access_ok) {
       response.setErrno(EACCES);
@@ -1108,7 +1159,7 @@ public:
       return kj::READY_NOW;
     }
 
-    int res = ::setxattr(file_path.c_str(), req.getName().cStr(), req.getValue().cStr(), (size_t) req.getSize(), req.getPosition(), req.getFlags());
+    int res = ::setxattr(path.c_str(), req.getName().cStr(), req.getValue().cStr(), (size_t) req.getSize(), req.getPosition(), req.getFlags());
     int err = errno;
     response.setRes(res);
     response.setErrno(err);
@@ -1145,9 +1196,16 @@ public:
       return kj::READY_NOW;
     }
 
-    std::string file_path = ino_to_path[ino];
+    uint64_t ino = req.getIno();
+    std::string path = get_path_from_ino(ino);
 
-    bool access_ok = check_access(root, user, suffix, file_path);
+    if (not path.length()) {
+      response.setErrno(ENOENT);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    bool access_ok = check_access(root, user, suffix, path);
 
     if (not access_ok) {
       response.setErrno(EACCES);
@@ -1155,7 +1213,7 @@ public:
       return kj::READY_NOW;
     }
 
-    int res = ::access(file_path.c_str(), req.getMask());
+    int res = ::access(path.c_str(), req.getMask());
     int err = errno;
 
     response.setRes(res);
