@@ -1,4 +1,3 @@
-
 #include <ghostfs/uuid.h>
 
 #include <algorithm>
