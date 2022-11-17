@@ -96,6 +96,10 @@ bool check_access(std::string root, std::string user_id, std::string suffix, std
   auto const root_can = std::filesystem::canonical(user_root);
   auto const path_can = std::filesystem::canonical(path);
 
+  if (root_can == path_can) {
+    return true;
+  }
+
   auto itr = std::search(path_can.begin(), path_can.end(), root_can.begin(), root_can.end());
 
   if (itr == path_can.begin()) {
