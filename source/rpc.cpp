@@ -115,6 +115,8 @@ public:
     bool access_ok = check_access(root, user, suffix, file_path);
 
     if (not access_ok) {
+      std::cout << "lookup: access denied!" << std::endl;
+
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -188,7 +190,6 @@ public:
     }
 
     bool access_ok = check_access(root, user, suffix, path);
-    std::cout << "getattr: " << access_ok << std::endl;
 
     if (not access_ok) {
       std::cout << "getattr: access denied!" << std::endl;
@@ -1053,6 +1054,8 @@ public:
     bool access_ok = check_access(root, user, suffix, path);
 
     if (not access_ok) {
+      std::cout << "readdir: access denied!" << std::endl;
+
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -1197,6 +1200,8 @@ public:
     bool access_ok = check_access(root, user, suffix, path);
 
     if (not access_ok) {
+      std::cout << "access: access denied!" << std::endl;
+
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
