@@ -191,6 +191,8 @@ public:
     std::cout << "getattr: " << access_ok << std::endl;
 
     if (not access_ok) {
+      std::cout << "getattr: access denied!" << std::endl;
+
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
