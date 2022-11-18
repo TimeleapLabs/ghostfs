@@ -217,9 +217,6 @@ public:
     int res = hello_stat(req.getIno(), fh, &attr);
     int err = errno;
 
-    std::cout << "getattr fh erased: " << fh << std::endl;
-    fh_set.erase(fh);
-
     GetattrResponse::Attr::Builder attributes = response.initAttr();
 
     attributes.setStDev(attr.st_dev);
@@ -923,9 +920,6 @@ public:
 
     int err = errno;
 
-    std::cout << "read fh erased: " << fh << std::endl;
-    fh_set.erase(fh);
-
     kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte*)buf, res);
     capnp::Data::Reader buf_reader(buf_ptr);
 
@@ -961,9 +955,6 @@ public:
     ::lseek(fi.getFh(), req.getOff(), SEEK_SET);
     size_t written = ::write(fi.getFh(), buf, req.getSize());
     int err = errno;
-
-    std::cout << "write fh erased: " << fh << std::endl;
-    fh_set.erase(fh);
 
     response.setRes(0);
     response.setErrno(err);
@@ -1005,9 +996,6 @@ public:
       ::lseek(fi.getFh(), req.getOff(), SEEK_SET);
       size_t written = ::write(fi.getFh(), buf, req.getSize());
       int err = errno;
-
-      std::cout << "bulkwrite fh erased: " << fh << std::endl;
-      fh_set.erase(fh);
 
       response[i].setRes(0);
       response[i].setErrno(err);
@@ -1394,9 +1382,6 @@ public:
     #endif
 
     int err = errno;
-
-    std::cout << "fsync fh erased: " << fh << std::endl;
-    fh_set.erase(fh);
 
     response.setErrno(err);
     response.setRes(res);
