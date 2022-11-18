@@ -848,6 +848,7 @@ public:
       return kj::READY_NOW;
     }
 
+    std::cout << "open inserting fh: " << fh << std::endl;
     fh_set.insert(fh);
 
     OpenResponse::FuseFileInfo::Builder fi_response = response.initFi();
@@ -1025,6 +1026,7 @@ public:
 
     if (fh and not fh_set.contains(fh)) {
       std::cout << "release fh: access denied!" << std::endl;
+      std::cout << "release fh: " << fh << std::endl;
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -1341,6 +1343,7 @@ public:
 
     if (fh and not fh_set.contains(fh)) {
       std::cout << "flush fh: access denied!" << std::endl;
+      std::cout << "flush fh: " << fh << std::endl;
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
