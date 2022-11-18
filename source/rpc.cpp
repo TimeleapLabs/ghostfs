@@ -413,17 +413,19 @@ public:
     ino_to_path[file_ino] = file_path;
     path_to_ino[file_path] = file_ino;
 
-    int res = ::mknod(file_path.c_str(), req.getMode(), req.getRdev());
+    int fh = ::mknod(file_path.c_str(), req.getMode(), req.getRdev());
     int err = errno;
 
-    if (res == -1) {      
+    if (fh == -1) {      
       ino_to_path.erase(file_ino);
       path_to_ino.erase(file_path);
       
       response.setErrno(err);
-      response.setRes(res);
+      response.setRes(fh);
       return kj::READY_NOW;
     } else {
+      fh_set.insert(fh);
+
       response.setIno(file_ino);
 
       struct stat attr;
@@ -452,7 +454,7 @@ public:
     }
     
     response.setErrno(err);
-    response.setRes(res);
+    response.setRes(fh);
 
     // std::cout << "mknod_response sent correctly: " << response_payload << std::endl;
 
@@ -481,15 +483,17 @@ public:
       return kj::READY_NOW;
     }
 
-    int res = ::mkdir(file_path.c_str(), req.getMode());
+    int fh = ::mkdir(file_path.c_str(), req.getMode());
     int err = errno;
 
-    if (res == -1) {
+    if (fh == -1) {
       response.setRes(-1);
       response.setErrno(err);
       return kj::READY_NOW;
     }
     else {
+      fh_set.insert(fh);
+
       struct stat attr;
       memset(&attr, 0, sizeof(attr));
 
@@ -524,7 +528,7 @@ public:
     }
     
     response.setErrno(err);
-    response.setRes(res);
+    response.setRes(fh);
 
     // std::cout << "mkdir_response sent correctly: " << response_payload << std::endl;
 
@@ -1259,15 +1263,17 @@ public:
     // std::cout << "create: open file path: " << file_path.c_str() << std::endl;
     // std::cout << "create: flags: " << fi.getFlags() << std::endl;
 
-    int res = ::creat(file_path.c_str(), req.getMode());
+    int fh = ::creat(file_path.c_str(), req.getMode());
 
-    if (res == -1) {
+    if (fh == -1) {
       int err = errno;
 
-      response.setRes(res);
+      response.setRes(fh);
       response.setErrno(err);
       return kj::READY_NOW;
     }
+
+    fh_set.insert(fh);
 
     struct stat attr;
     memset(&attr, 0, sizeof(attr));
@@ -1285,7 +1291,7 @@ public:
 
     fi_response.setCacheReaddir(fi.getCacheReaddir());
     fi_response.setDirectIo(fi.getDirectIo());
-    fi_response.setFh(res);
+    fi_response.setFh(fh);
     fi_response.setFlags(fi.getFlags());
     fi_response.setFlush(fi.getFlush());
     fi_response.setKeepCache(fi.getKeepCache());
@@ -1296,7 +1302,7 @@ public:
     fi_response.setPollEvents(fi.getPollEvents());
     fi_response.setWritepage(fi.getWritepage());
 
-    res = hello_stat(file_ino, &attr);
+    int res = hello_stat(file_ino, &attr);
     int err = errno;
 
     response.setIno(file_ino);
