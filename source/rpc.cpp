@@ -424,6 +424,7 @@ public:
       response.setRes(fh);
       return kj::READY_NOW;
     } else {
+      std::cout << "mknod inserting fh: " << fh << std::endl;
       fh_set.insert(fh);
 
       response.setIno(file_ino);
@@ -1272,7 +1273,7 @@ public:
       response.setErrno(err);
       return kj::READY_NOW;
     }
-
+    std::cout << "create inserting fh: " << fh << std::endl;
     fh_set.insert(fh);
 
     struct stat attr;
