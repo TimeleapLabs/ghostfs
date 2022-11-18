@@ -677,19 +677,19 @@ public:
     // std::cout << "SYMLINK file_path: " << file_path.c_str() << std::endl;
     // std::cout << "SYMLINK link: " << link.c_str() << std::endl;
     
-    int fd = ::open(parent_path.c_str(), O_RDONLY|O_DIRECTORY);
+    int fh = ::open(parent_path.c_str(), O_RDONLY|O_DIRECTORY);
 
-    if (fd == -1) {
+    if (fh == -1) {
       int err = errno;
       response.setErrno(err);
-      response.setRes(fd);
+      response.setRes(fh);
       return kj::READY_NOW;
     }
 
-    int res = ::symlinkat(link.c_str(), fd, file_path.c_str());
+    int res = ::symlinkat(link.c_str(), fh, file_path.c_str());
     int err = errno;
 
-    ::close(fd);
+    ::close(fh);
     
     response.setErrno(err);
     response.setRes(res);
@@ -910,6 +910,7 @@ public:
     int64_t fh = fi.getFh();
 
     if (fh and not fh_set.contains(fh)) {
+      std::cout << "read fh: access denied!" << std::endl;
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -948,6 +949,7 @@ public:
     int64_t fh = fi.getFh();
 
     if (fh and not fh_set.contains(fh)) {
+      std::cout << "write fh: access denied!" << std::endl;
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -990,6 +992,7 @@ public:
       int64_t fh = fi.getFh();
 
       if (fh and not fh_set.contains(fh)) {
+        std::cout << "bulkwrite fh: access denied!" << std::endl;
         response[i].setErrno(EACCES);
         response[i].setRes(-1);
         return kj::READY_NOW;
@@ -1021,6 +1024,7 @@ public:
     int64_t fh = fi.getFh();
 
     if (fh and not fh_set.contains(fh)) {
+      std::cout << "release fh: access denied!" << std::endl;
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -1336,6 +1340,7 @@ public:
     int64_t fh = fi.getFh();
 
     if (fh and not fh_set.contains(fh)) {
+      std::cout << "flush fh: access denied!" << std::endl;
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -1365,6 +1370,7 @@ public:
     int64_t fh = fi.getFh();
 
     if (fh and not fh_set.contains(fh)) {
+      std::cout << "fsync: access denied!" << std::endl;
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
