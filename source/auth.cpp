@@ -94,8 +94,8 @@ std::filesystem::path normalize_path(std::string root, std::string user_id, std:
 bool check_access(std::string root, std::string user_id, std::string suffix, std::string path) {
   std::filesystem::path user_root = normalize_path(root, user_id, suffix);
 
-  auto const root_can = std::filesystem::canonical(user_root);
-  auto const path_can = std::filesystem::canonical(path);
+  auto const root_can = user_root.lexically_normal();
+  auto const path_can = std::filesystem::path(path).lexically_normal();
 
   std::cout << "root_can: " << root_can << std::endl;
   std::cout << "path_can: " << path_can << std::endl;
