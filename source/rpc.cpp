@@ -67,12 +67,23 @@
 #include <write.response.capnp.h>
 
 #include <filesystem>
-#include <iostream>
+#include <set>
 
 class GhostFSImpl final : public GhostFS::Server {
   std::string user;
   std::string root;
   std::string suffix;
+  std::set<int64_t> fh_set;
+
+  std::string get_path_from_ino(uint64_t ino) {
+    // ROOT
+    if (ino == 1) {
+      return normalize_path(root, user, suffix);
+    } else if (ino_to_path.contains(ino)) {
+      return ino_to_path[ino];
+    }
+    return "";
+  }
 
 public:
   explicit GhostFSImpl(std::string _user, std::string _root, std::string _suffix)
@@ -99,6 +110,14 @@ public:
       std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
       std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
       file_path = parent_path / std::filesystem::path(name);
+    }
+
+    bool access_ok = check_access(root, user, suffix, file_path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
     }
 
     if (not std::filesystem::exists(file_path)) {
@@ -159,11 +178,36 @@ public:
     auto results = context.getResults();
     auto response = results.getRes();
 
+    uint64_t ino = req.getIno();
+    std::string path = get_path_from_ino(ino);
+
+    if (not path.length()) {
+      response.setErrno(ENOENT);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    bool access_ok = check_access(root, user, suffix, path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
     struct stat attr;
 
     memset(&attr, 0, sizeof(attr));
 
-    int res = hello_stat(req.getIno(), req.getFi().getFh(), &attr);
+    int64_t fh = req.getFi().getFh();
+
+    if (fh and not fh_set.contains(fh)) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    int res = hello_stat(req.getIno(), fh, &attr);
     int err = errno;
 
     GetattrResponse::Attr::Builder attributes = response.initAttr();
@@ -214,6 +258,21 @@ public:
     auto response = results.getRes();
 
     uint64_t ino = req.getIno();
+    std::string path = get_path_from_ino(ino);
+
+    if (not path.length()) {
+      response.setErrno(ENOENT);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    bool access_ok = check_access(root, user, suffix, path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
 
     int err = 0;
 
@@ -333,23 +392,33 @@ public:
     std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
     std::filesystem::path file_path = parent_path / req.getName();
 
+    bool access_ok = check_access(root, user, suffix, file_path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
     uint64_t file_ino;
 
     file_ino = ++current_ino;
     ino_to_path[file_ino] = file_path;
     path_to_ino[file_path] = file_ino;
 
-    int res = ::mknod(file_path.c_str(), req.getMode(), req.getRdev());
+    int fh = ::mknod(file_path.c_str(), req.getMode(), req.getRdev());
     int err = errno;
 
-    if (res == -1) {      
+    if (fh == -1) {      
       ino_to_path.erase(file_ino);
       path_to_ino.erase(file_path);
       
       response.setErrno(err);
-      response.setRes(res);
+      response.setRes(fh);
       return kj::READY_NOW;
     } else {
+      fh_set.insert(fh);
+
       response.setIno(file_ino);
 
       struct stat attr;
@@ -378,7 +447,7 @@ public:
     }
     
     response.setErrno(err);
-    response.setRes(res);
+    response.setRes(fh);
 
     // std::cout << "mknod_response sent correctly: " << response_payload << std::endl;
 
@@ -399,15 +468,25 @@ public:
     std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
     std::filesystem::path file_path = parent_path / req.getName();
 
-    int res = ::mkdir(file_path.c_str(), req.getMode());
+    bool access_ok = check_access(root, user, suffix, file_path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    int fh = ::mkdir(file_path.c_str(), req.getMode());
     int err = errno;
 
-    if (res == -1) {
+    if (fh == -1) {
       response.setRes(-1);
       response.setErrno(err);
       return kj::READY_NOW;
     }
     else {
+      fh_set.insert(fh);
+
       struct stat attr;
       memset(&attr, 0, sizeof(attr));
 
@@ -442,7 +521,7 @@ public:
     }
     
     response.setErrno(err);
-    response.setRes(res);
+    response.setRes(fh);
 
     // std::cout << "mkdir_response sent correctly: " << response_payload << std::endl;
 
@@ -463,6 +542,14 @@ public:
     std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
     std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
     std::filesystem::path file_path = parent_path / std::filesystem::path(name);
+
+    bool access_ok = check_access(root, user, suffix, file_path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
 
     // TODO: this removes write protected files without warning
     int res = ::unlink(file_path.c_str());
@@ -491,6 +578,14 @@ public:
     std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
     std::filesystem::path file_path = parent_path / std::filesystem::path(name);
 
+    bool access_ok = check_access(root, user, suffix, file_path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
     // std::cout << "RMDIR file_path: " << file_path.c_str() << std::endl;
 
     int res = ::rmdir(file_path.c_str());
@@ -509,10 +604,26 @@ public:
     auto results = context.getResults();
     auto response = results.getRes();
 
+    uint64_t ino = req.getIno();
+    std::string path = get_path_from_ino(ino);
+
+    if (not path.length()) {
+      response.setErrno(ENOENT);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    bool access_ok = check_access(root, user, suffix, path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
     // std::cout << "READLINK name: " << name << std::endl;
 
     char buf[PATH_MAX + 1];
-
 
     int res = ::readlink(ino_to_path[req.getIno()].c_str(), buf, sizeof(buf));
     int err = errno;
@@ -550,22 +661,30 @@ public:
     std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
     std::filesystem::path file_path = parent_path / std::filesystem::path(name);
 
-    // std::cout << "SYMLINK file_path: " << file_path.c_str() << std::endl;
-    // std::cout << "SYMLINK link: " << link.c_str() << std::endl;
-    
-    int fd = ::open(parent_path.c_str(), O_RDONLY|O_DIRECTORY);
+    bool access_ok = check_access(root, user, suffix, file_path);
 
-    if (fd == -1) {
-      int err = errno;
-      response.setErrno(err);
-      response.setRes(fd);
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
       return kj::READY_NOW;
     }
 
-    int res = ::symlinkat(link.c_str(), fd, file_path.c_str());
+    // std::cout << "SYMLINK file_path: " << file_path.c_str() << std::endl;
+    // std::cout << "SYMLINK link: " << link.c_str() << std::endl;
+    
+    int fh = ::open(parent_path.c_str(), O_RDONLY|O_DIRECTORY);
+
+    if (fh == -1) {
+      int err = errno;
+      response.setErrno(err);
+      response.setRes(fh);
+      return kj::READY_NOW;
+    }
+
+    int res = ::symlinkat(link.c_str(), fh, file_path.c_str());
     int err = errno;
 
-    ::close(fd);
+    ::close(fh);
     
     response.setErrno(err);
     response.setRes(res);
@@ -629,6 +748,22 @@ public:
     std::filesystem::path newparent_path = std::filesystem::path(newparent_path_name);
     std::filesystem::path newfile_path = newparent_path / std::filesystem::path(newname);
 
+    bool access_ok = check_access(root, user, suffix, file_path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    access_ok = check_access(root, user, suffix, newfile_path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
     // use rename
     int res = ::rename(file_path.c_str(), newfile_path.c_str());
     int err = errno;
@@ -668,6 +803,23 @@ public:
     auto results = context.getResults();
     auto response = results.getRes();
 
+    uint64_t ino = req.getIno();
+    std::string path = get_path_from_ino(ino);
+
+    if (not path.length()) {
+      response.setErrno(ENOENT);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    bool access_ok = check_access(root, user, suffix, path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
     if (not ino_to_path.contains(req.getIno())) {
       // File is unknown
       response.setRes(-1);
@@ -688,6 +840,8 @@ public:
       response.setRes(fh);
       return kj::READY_NOW;
     }
+
+    fh_set.insert(fh);
 
     OpenResponse::FuseFileInfo::Builder fi_response = response.initFi();
 
@@ -716,7 +870,24 @@ public:
     auto results = context.getResults();
     auto response = results.getRes();
 
-    if (not ino_to_path.contains(req.getIno())) {
+    uint64_t ino = req.getIno();
+    std::string path = get_path_from_ino(ino);
+
+    if (not path.length()) {
+      response.setErrno(ENOENT);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    bool access_ok = check_access(root, user, suffix, path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    if (not ino_to_path.contains(ino)) {
       // File is unknown
       response.setRes(-1);
       response.setErrno(ENOENT);
@@ -728,6 +899,14 @@ public:
 
     char buf[size];
     Read::FuseFileInfo::Reader fi = req.getFi();
+
+    int64_t fh = fi.getFh();
+
+    if (fh and not fh_set.contains(fh)) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
 
     ::lseek(fi.getFh(), off, SEEK_SET);
     uint64_t res = ::read(fi.getFh(), &buf, size);
@@ -754,13 +933,20 @@ public:
     const auto chars = buf_reader.asChars();
     const char* buf = chars.begin();
 
-    ::lseek(fi.getFh(), req.getOff(), SEEK_SET);
-    size_t written = ::write(fi.getFh(), buf, req.getSize());
-
-    int err = errno;
-
     auto results = context.getResults();
     auto response = results.getRes();
+
+    int64_t fh = fi.getFh();
+
+    if (fh and not fh_set.contains(fh)) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    ::lseek(fi.getFh(), req.getOff(), SEEK_SET);
+    size_t written = ::write(fi.getFh(), buf, req.getSize());
+    int err = errno;
 
     response.setRes(0);
     response.setErrno(err);
@@ -790,6 +976,14 @@ public:
       const auto chars = buf_reader.asChars();
       const char* buf = chars.begin();
 
+      int64_t fh = fi.getFh();
+
+      if (fh and not fh_set.contains(fh)) {
+        response[i].setErrno(EACCES);
+        response[i].setRes(-1);
+        return kj::READY_NOW;
+      }
+
       ::lseek(fi.getFh(), req.getOff(), SEEK_SET);
       size_t written = ::write(fi.getFh(), buf, req.getSize());
       int err = errno;
@@ -811,9 +1005,18 @@ public:
     auto response = results.getRes();
 
     Release::FuseFileInfo::Reader fi = req.getFi();
+    int64_t fh = fi.getFh();
 
-    int res = ::close(fi.getFh());
+    if (fh and not fh_set.contains(fh)) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    int res = ::close(fh);
     int err = errno;
+
+    fh_set.erase(fh);
 
     response.setErrno(err);
     response.setRes(res);
@@ -829,30 +1032,22 @@ public:
     auto response = results.getRes();
 
     uint64_t ino = req.getIno();
-    std::string path;
-
-    // Root
-    if (ino == 1) {
-      path = normalize_path(root, user, suffix);
-    } else if (ino_to_path.contains(ino)) {
-      path = ino_to_path[ino];
-    } else {
-      response.setErrno(ENOENT);
-      response.setRes(-1);
-
-      return kj::READY_NOW;
-    }
+    std::string path = get_path_from_ino(ino);
 
     /**
      * example check access
-     * TODO: Add suffix here
      */
-    bool access_ok = check_access(root, user, path);
+    if (not path.length()) {
+      response.setErrno(ENOENT);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    bool access_ok = check_access(root, user, suffix, path);
 
     if (not access_ok) {
       response.setErrno(EACCES);
       response.setRes(-1);
-
       return kj::READY_NOW;
     }  // END EXAMPLE
 
@@ -944,10 +1139,23 @@ public:
     auto response = results.getRes();
 
     uint64_t ino = req.getIno();
+    std::string path = get_path_from_ino(ino);
 
-    std::string file_path = ino_to_path[ino];
+    if (not path.length()) {
+      response.setErrno(ENOENT);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
 
-    int res = ::setxattr(file_path.c_str(), req.getName().cStr(), req.getValue().cStr(), (size_t) req.getSize(), req.getPosition(), req.getFlags());
+    bool access_ok = check_access(root, user, suffix, path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    int res = ::setxattr(path.c_str(), req.getName().cStr(), req.getValue().cStr(), (size_t) req.getSize(), req.getPosition(), req.getFlags());
     int err = errno;
     response.setRes(res);
     response.setErrno(err);
@@ -971,6 +1179,21 @@ public:
     auto response = results.getRes();
 
     uint64_t ino = req.getIno();
+    std::string path = get_path_from_ino(ino);
+
+    if (not path.length()) {
+      response.setErrno(ENOENT);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    bool access_ok = check_access(root, user, suffix, path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
 
     if (ino == 1) {
       response.setRes(0);      
@@ -984,9 +1207,7 @@ public:
       return kj::READY_NOW;
     }
 
-    std::string file_path = ino_to_path[ino];
-
-    int res = ::access(file_path.c_str(), req.getMask());
+    int res = ::access(path.c_str(), req.getMask());
     int err = errno;
 
     response.setRes(res);
@@ -1011,18 +1232,27 @@ public:
     std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
     std::filesystem::path file_path = parent_path / req.getName();
 
+    bool access_ok = check_access(root, user, suffix, file_path);
+
+    if (not access_ok) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
     // std::cout << "create: open file path: " << file_path.c_str() << std::endl;
     // std::cout << "create: flags: " << fi.getFlags() << std::endl;
 
-    int res = ::creat(file_path.c_str(), req.getMode());
+    int fh = ::creat(file_path.c_str(), req.getMode());
 
-    if (res == -1) {
+    if (fh == -1) {
       int err = errno;
 
-      response.setRes(res);
+      response.setRes(fh);
       response.setErrno(err);
       return kj::READY_NOW;
     }
+    fh_set.insert(fh);
 
     struct stat attr;
     memset(&attr, 0, sizeof(attr));
@@ -1040,7 +1270,7 @@ public:
 
     fi_response.setCacheReaddir(fi.getCacheReaddir());
     fi_response.setDirectIo(fi.getDirectIo());
-    fi_response.setFh(res);
+    fi_response.setFh(fh);
     fi_response.setFlags(fi.getFlags());
     fi_response.setFlush(fi.getFlush());
     fi_response.setKeepCache(fi.getKeepCache());
@@ -1051,7 +1281,7 @@ public:
     fi_response.setPollEvents(fi.getPollEvents());
     fi_response.setWritepage(fi.getWritepage());
 
-    res = hello_stat(file_ino, &attr);
+    int res = hello_stat(file_ino, &attr);
     int err = errno;
 
     response.setIno(file_ino);
@@ -1087,7 +1317,15 @@ public:
 
     Flush::FuseFileInfo::Reader fi = req.getFi();
 
-    int res = ::close(dup(fi.getFh()));
+    int64_t fh = fi.getFh();
+
+    if (fh and not fh_set.contains(fh)) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
+
+    int res = ::close(dup(fh));
     int err = errno;
 
     response.setErrno(err);
@@ -1106,16 +1344,23 @@ public:
     Fsync::FuseFileInfo::Reader fi = req.getFi();
 
     int res;
+    int64_t fh = fi.getFh();
+
+    if (fh and not fh_set.contains(fh)) {
+      response.setErrno(EACCES);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
 
     #ifndef __APPLE__
       uint64_t datasync = req.getDatasync();
       if (datasync) {
-        res = ::fdatasync(fi.getFh());
+        res = ::fdatasync(fh);
       } else {
-        res = ::fsync(fi.getFh());
+        res = ::fsync(fh);
       }
     #else
-      res = ::fsync(fi.getFh());
+      res = ::fsync(fh);
     #endif
 
     int err = errno;
