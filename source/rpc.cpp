@@ -115,8 +115,6 @@ public:
     bool access_ok = check_access(root, user, suffix, file_path);
 
     if (not access_ok) {
-      std::cout << "lookup: access denied!" << std::endl;
-
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -192,8 +190,6 @@ public:
     bool access_ok = check_access(root, user, suffix, path);
 
     if (not access_ok) {
-      std::cout << "getattr: access denied!" << std::endl;
-
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -206,9 +202,6 @@ public:
     int64_t fh = req.getFi().getFh();
 
     if (fh and not fh_set.contains(fh)) {
-      std::cout << fh << std::endl;
-      std::cout << "getattr fh: access denied!" << std::endl;
-
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -424,7 +417,6 @@ public:
       response.setRes(fh);
       return kj::READY_NOW;
     } else {
-      std::cout << "mknod inserting fh: " << fh << std::endl;
       fh_set.insert(fh);
 
       response.setIno(file_ino);
@@ -823,8 +815,6 @@ public:
     bool access_ok = check_access(root, user, suffix, path);
 
     if (not access_ok) {
-      std::cout << "open: access denied!" << std::endl;
-
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -851,7 +841,6 @@ public:
       return kj::READY_NOW;
     }
 
-    std::cout << "open inserting fh: " << fh << std::endl;
     fh_set.insert(fh);
 
     OpenResponse::FuseFileInfo::Builder fi_response = response.initFi();
@@ -914,7 +903,6 @@ public:
     int64_t fh = fi.getFh();
 
     if (fh and not fh_set.contains(fh)) {
-      std::cout << "read fh: access denied!" << std::endl;
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -951,7 +939,6 @@ public:
     int64_t fh = fi.getFh();
 
     if (fh and not fh_set.contains(fh)) {
-      std::cout << "write fh: access denied!" << std::endl;
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -992,7 +979,6 @@ public:
       int64_t fh = fi.getFh();
 
       if (fh and not fh_set.contains(fh)) {
-        std::cout << "bulkwrite fh: access denied!" << std::endl;
         response[i].setErrno(EACCES);
         response[i].setRes(-1);
         return kj::READY_NOW;
@@ -1022,8 +1008,6 @@ public:
     int64_t fh = fi.getFh();
 
     if (fh and not fh_set.contains(fh)) {
-      std::cout << "release fh: access denied!" << std::endl;
-      std::cout << "release fh: " << fh << std::endl;
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -1032,7 +1016,6 @@ public:
     int res = ::close(fh);
     int err = errno;
 
-    std::cout << "release fh erased: " << fh << std::endl;
     fh_set.erase(fh);
 
     response.setErrno(err);
@@ -1063,8 +1046,6 @@ public:
     bool access_ok = check_access(root, user, suffix, path);
 
     if (not access_ok) {
-      std::cout << "readdir: access denied!" << std::endl;
-
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -1209,8 +1190,6 @@ public:
     bool access_ok = check_access(root, user, suffix, path);
 
     if (not access_ok) {
-      std::cout << "access: access denied!" << std::endl;
-
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -1273,7 +1252,6 @@ public:
       response.setErrno(err);
       return kj::READY_NOW;
     }
-    std::cout << "create inserting fh: " << fh << std::endl;
     fh_set.insert(fh);
 
     struct stat attr;
@@ -1342,8 +1320,6 @@ public:
     int64_t fh = fi.getFh();
 
     if (fh and not fh_set.contains(fh)) {
-      std::cout << "flush fh: access denied!" << std::endl;
-      std::cout << "flush fh: " << fh << std::endl;
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -1371,7 +1347,6 @@ public:
     int64_t fh = fi.getFh();
 
     if (fh and not fh_set.contains(fh)) {
-      std::cout << "fsync: access denied!" << std::endl;
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
