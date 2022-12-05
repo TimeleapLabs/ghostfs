@@ -187,6 +187,8 @@ public:
 
     uint64_t ino = req.getIno();
     std::string path = get_path_from_ino(ino);
+    std::cout << "getattr path: " << path << std::endl;
+
 
     if (not path.length()) {
       response.setErrno(ENOENT);
@@ -814,6 +816,7 @@ public:
 
     uint64_t ino = req.getIno();
     std::string path = get_path_from_ino(ino);
+    std::cout << "open path: " << path << std::endl;
 
     if (not path.length()) {
       std::cout << "open: path length is zero" << std::endl;
@@ -1046,6 +1049,7 @@ public:
 
     uint64_t ino = req.getIno();
     std::string path = get_path_from_ino(ino);
+    std::cout << "readdir path: " << path << std::endl;
 
     /**
      * example check access
@@ -1097,6 +1101,7 @@ public:
     for (const auto& entry : iter) {
       std::string file_path = entry.path();
       std::string file_name = std::filesystem::path(file_path).filename();
+      std::cout << "readdir filename: " << file_name << std::endl;
 
       uint64_t file_ino;
 
@@ -1195,6 +1200,7 @@ public:
 
     uint64_t ino = req.getIno();
     std::string path = get_path_from_ino(ino);
+    std::cout << "access path: " << path << std::endl;
 
     if (not path.length()) {
       std::cout << "access: path not found" << std::endl;
