@@ -142,6 +142,8 @@ public:
       ino = path_to_ino[file_path];
     }
 
+    std::cout << "lookup file path: " << file_path << std::endl;
+
     response.setIno(ino);
 
     // e.attr_timeout = 1.0;
