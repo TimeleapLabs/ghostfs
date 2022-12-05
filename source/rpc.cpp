@@ -1197,6 +1197,7 @@ public:
     std::string path = get_path_from_ino(ino);
 
     if (not path.length()) {
+      std::cout << "access: path not found" << std::endl;
       response.setErrno(ENOENT);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -1205,6 +1206,7 @@ public:
     bool access_ok = check_access(root, user, suffix, path);
 
     if (not access_ok) {
+      std::cout << "access: access denied" << std::endl;
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -1227,6 +1229,8 @@ public:
 
     response.setRes(res);
     response.setErrno(err);
+
+    std::cout << "access: response sent correctly" << std::endl;
     
     return kj::READY_NOW;
   }
@@ -1627,7 +1631,7 @@ int start_rpc_server(std::string bind, int port, int auth_port, std::string root
     };
   }
 
-  kj::_::Debug::setLogLevel(kj::_::Debug::Severity::ERROR);
+  kj::_::Debug::setLogLevel(kj::_::Debug::Severity::INFO);
 
   std::string key = key_file.length() ? read_file(key_file) : "";
   std::string cert = cert_file.length() ? read_file(cert_file) : "";
