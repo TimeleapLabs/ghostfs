@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <iterator>
+#include <iostream>
 #include <map>
 #include <string>
 
@@ -91,10 +92,12 @@ std::filesystem::path normalize_path(std::string root, std::string user_id, std:
 }
 
 bool check_access(std::string root, std::string user_id, std::string suffix, std::string path) {
+  std::cout << "cheking access: " << path << std::endl;
   std::filesystem::path user_root = normalize_path(root, user_id, suffix);
 
   auto const root_can = user_root.lexically_normal();
   auto const path_can = std::filesystem::path(path).lexically_normal();
+  std::cout << "cheking access: " << path_can << std::endl;
 
   if (root_can == path_can) {
     return true;
@@ -109,6 +112,7 @@ bool check_access(std::string root, std::string user_id, std::string suffix, std
   for ([[maybe_unused]] auto const& mount : *get_user_mounts(user_id)) {
     std::string source = mount.second;
     auto const source_can = std::filesystem::canonical(path);
+    std::cout << "cheking access: " << source_can << std::endl;
 
     auto itr = std::search(path_can.begin(), path_can.end(), source_can.begin(), source_can.end());
 

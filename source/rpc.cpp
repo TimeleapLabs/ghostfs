@@ -107,7 +107,7 @@ public:
     bool is_mount = parent == 1 && mounts->contains(name);
     std::filesystem::path file_path;
 
-    std::cout << "lookup file path: " << file_path << std::endl;
+    std::cout << "lookup file path 0: " << file_path << std::endl;
 
 
     if (is_mount) {
@@ -122,10 +122,11 @@ public:
       std::cout << "lookup: mount is not there" << std::endl;
     }
 
-    std::cout << "lookup file path: " << file_path << std::endl;
+    std::cout << "lookup file path 1: " << file_path << std::endl;
 
 
     bool access_ok = check_access(root, user, suffix, file_path);
+    std::cout << "lookup access ok: " << file_path << std::endl;
 
     if (not access_ok) {
       std::cout << "lookup: access denied" << std::endl;
@@ -152,7 +153,7 @@ public:
       ino = path_to_ino[file_path];
     }
 
-    std::cout << "lookup file path: " << file_path << std::endl;
+    std::cout << "lookup file path 2: " << file_path << std::endl;
 
     response.setIno(ino);
 
