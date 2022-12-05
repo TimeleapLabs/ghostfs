@@ -190,6 +190,7 @@ public:
     bool access_ok = check_access(root, user, suffix, path);
 
     if (not access_ok) {
+      std::cout << "getattr: access denied" << std::endl;
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -202,6 +203,7 @@ public:
     int64_t fh = req.getFi().getFh();
 
     if (fh and not fh_set.contains(fh)) {
+      std::cout << "getattr: fh not found" << std::endl;
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
