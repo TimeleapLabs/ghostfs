@@ -807,6 +807,7 @@ public:
     std::string path = get_path_from_ino(ino);
 
     if (not path.length()) {
+      std::cout << "open: path length is zero" << std::endl;
       response.setErrno(ENOENT);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -823,6 +824,7 @@ public:
 
     if (not ino_to_path.contains(req.getIno())) {
       // File is unknown
+      std::cout << "open: file is unknown" << std::endl;
       response.setRes(-1);
       response.setErrno(ENOENT);
       return kj::READY_NOW;
@@ -838,6 +840,7 @@ public:
     response.setRes(fh);
 
     if (fh == -1) {
+      std::cout << "open: fh is -1" << std::endl;
       response.setRes(fh);
       return kj::READY_NOW;
     }
@@ -859,7 +862,7 @@ public:
     fi_response.setPollEvents(fi.getPollEvents());
     fi_response.setWritepage(fi.getWritepage());
 
-    // std::cout << "open_response sent correctly: " << response_payload << std::endl;
+    std::cout << "open_response sent correctly: " << std::endl;
 
     return kj::READY_NOW;
   }
