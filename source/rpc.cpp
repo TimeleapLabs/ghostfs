@@ -103,7 +103,6 @@ public:
     std::cout << "lookup parent: " << parent << std::endl;
     std::cout << "lookup name: " << name << std::endl;
 
-
     std::map<std::string, std::string>* mounts = get_user_mounts(user);
     bool is_mount = parent == 1 && mounts->contains(name);
     std::filesystem::path file_path;
@@ -120,7 +119,11 @@ public:
       std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
       std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
       file_path = parent_path / std::filesystem::path(name);
+      std::cout << "lookup: mount is not there" << std::endl;
     }
+
+    std::cout << "lookup file path: " << file_path << std::endl;
+
 
     bool access_ok = check_access(root, user, suffix, file_path);
 
