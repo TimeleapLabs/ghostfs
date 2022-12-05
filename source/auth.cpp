@@ -91,6 +91,10 @@ std::filesystem::path normalize_path(std::string root, std::string user_id, std:
 }
 
 bool check_access(std::string root, std::string user_id, std::string suffix, std::string path) {
+  if (not std::filesystem::exists(path)) {
+      return true;
+  }
+
   std::filesystem::path user_root = normalize_path(root, user_id, suffix);
 
   auto const root_can = user_root.lexically_normal();
