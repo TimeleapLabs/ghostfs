@@ -124,6 +124,13 @@ public:
 
     std::cout << "lookup file path 1: " << file_path << std::endl;
 
+    if (not std::filesystem::exists(file_path)) {
+      std::cout << "lookup: file not found" << std::endl;
+      int err = errno;
+      response.setErrno(err);
+      response.setRes(-1);
+      return kj::READY_NOW;
+    }
 
     bool access_ok = check_access(root, user, suffix, file_path);
     std::cout << "lookup access ok: " << file_path << std::endl;
@@ -131,14 +138,6 @@ public:
     if (not access_ok) {
       std::cout << "lookup: access denied" << std::endl;
       response.setErrno(EACCES);
-      response.setRes(-1);
-      return kj::READY_NOW;
-    }
-
-    if (not std::filesystem::exists(file_path)) {
-      std::cout << "lookup: file not found" << std::endl;
-      int err = errno;
-      response.setErrno(err);
       response.setRes(-1);
       return kj::READY_NOW;
     }
