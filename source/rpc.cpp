@@ -82,6 +82,7 @@ class GhostFSImpl final : public GhostFS::Server {
     } else if (ino_to_path.contains(ino)) {
       return ino_to_path[ino];
     }
+    std::cout << "ino not found" << std::endl;
     return "";
   }
 
@@ -105,6 +106,8 @@ public:
 
     if (is_mount) {
       file_path = std::filesystem::path(root) / (*mounts)[name];
+      std::cout << "lookup: mount is there" << std::endl;
+
     } else {
       std::string user_root = normalize_path(root, user, suffix);
       std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
@@ -115,12 +118,14 @@ public:
     bool access_ok = check_access(root, user, suffix, file_path);
 
     if (not access_ok) {
+      std::cout << "lookup: access denied" << std::endl;
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
     }
 
     if (not std::filesystem::exists(file_path)) {
+      std::cout << "lookup: file not found" << std::endl;
       int err = errno;
       response.setErrno(err);
       response.setRes(-1);
@@ -167,6 +172,8 @@ public:
 
     response.setErrno(err);
     response.setRes(res);
+
+    std::cout << "lookup: response sent correctly" << std::endl;
 
     return kj::READY_NOW;
   }
