@@ -871,7 +871,7 @@ public:
     fi_response.setPollEvents(fi.getPollEvents());
     fi_response.setWritepage(fi.getWritepage());
 
-    std::cout << "open_response sent correctly" << std::endl;
+    std::cout << "open: response sent correctly" << std::endl;
 
     return kj::READY_NOW;
   }
@@ -1051,6 +1051,7 @@ public:
      * example check access
      */
     if (not path.length()) {
+      std::cout << "readdir: path not found" << std::endl;
       response.setErrno(ENOENT);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -1059,6 +1060,7 @@ public:
     bool access_ok = check_access(root, user, suffix, path);
 
     if (not access_ok) {
+      std::cout << "readdir: access denied" << std::endl;
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -1138,7 +1140,7 @@ public:
     response.setErrno(0);
     response.setRes(0);
 
-    // std::cout << "readdir_response sent correctly: " << response_payload << std::endl;
+    std::cout << "readdir: response sent correctly" << std::endl;
 
     return kj::READY_NOW;
   }
