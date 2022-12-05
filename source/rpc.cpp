@@ -100,9 +100,16 @@ public:
     uint64_t parent = req.getParent();
     std::string name = req.getName();
 
+    std::cout << "lookup parent: " << parent << std::endl;
+    std::cout << "lookup name: " << name << std::endl;
+
+
     std::map<std::string, std::string>* mounts = get_user_mounts(user);
     bool is_mount = parent == 1 && mounts->contains(name);
     std::filesystem::path file_path;
+
+    std::cout << "lookup file path: " << file_path << std::endl;
+
 
     if (is_mount) {
       file_path = std::filesystem::path(root) / (*mounts)[name];
