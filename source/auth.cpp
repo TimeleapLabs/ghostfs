@@ -92,6 +92,11 @@ std::filesystem::path normalize_path(std::string root, std::string user_id, std:
 }
 
 bool check_access(std::string root, std::string user_id, std::string suffix, std::string path) {
+  if (not std::filesystem::exists(path)) {
+      std::cout << "cheking access file does not exist so not our problem?: " << path << std::endl;
+      return true;
+  }
+
   std::cout << "cheking access 0: " << path << std::endl;
   std::filesystem::path user_root = normalize_path(root, user_id, suffix);
 
