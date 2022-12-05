@@ -82,6 +82,7 @@ class GhostFSImpl final : public GhostFS::Server {
     } else if (ino_to_path.contains(ino)) {
       return ino_to_path[ino];
     }
+    std::cout << "ino not found" << std::endl;
     return "";
   }
 
@@ -99,28 +100,43 @@ public:
     uint64_t parent = req.getParent();
     std::string name = req.getName();
 
+    std::cout << "lookup parent: " << parent << std::endl;
+    std::cout << "lookup name: " << name << std::endl;
+
     std::map<std::string, std::string>* mounts = get_user_mounts(user);
     bool is_mount = parent == 1 && mounts->contains(name);
     std::filesystem::path file_path;
 
+    std::cout << "lookup file path 0: " << file_path << std::endl;
+
+
     if (is_mount) {
       file_path = std::filesystem::path(root) / (*mounts)[name];
+      std::cout << "lookup: mount is there" << std::endl;
+
     } else {
       std::string user_root = normalize_path(root, user, suffix);
       std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
       std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
       file_path = parent_path / std::filesystem::path(name);
+      std::cout << "lookup: mount is not there" << std::endl;
     }
 
+    std::cout << "lookup file path 1: " << file_path << std::endl;
+
+
     bool access_ok = check_access(root, user, suffix, file_path);
+    std::cout << "lookup access ok: " << file_path << std::endl;
 
     if (not access_ok) {
+      std::cout << "lookup: access denied" << std::endl;
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
     }
 
     if (not std::filesystem::exists(file_path)) {
+      std::cout << "lookup: file not found" << std::endl;
       int err = errno;
       response.setErrno(err);
       response.setRes(-1);
@@ -136,6 +152,8 @@ public:
     } else {
       ino = path_to_ino[file_path];
     }
+
+    std::cout << "lookup file path 2: " << file_path << std::endl;
 
     response.setIno(ino);
 
@@ -168,6 +186,8 @@ public:
     response.setErrno(err);
     response.setRes(res);
 
+    std::cout << "lookup: response sent correctly" << std::endl;
+
     return kj::READY_NOW;
   }
 
@@ -180,6 +200,8 @@ public:
 
     uint64_t ino = req.getIno();
     std::string path = get_path_from_ino(ino);
+    std::cout << "getattr path: " << path << std::endl;
+
 
     if (not path.length()) {
       response.setErrno(ENOENT);
@@ -190,6 +212,7 @@ public:
     bool access_ok = check_access(root, user, suffix, path);
 
     if (not access_ok) {
+      std::cout << "getattr: access denied" << std::endl;
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -202,6 +225,7 @@ public:
     int64_t fh = req.getFi().getFh();
 
     if (fh and not fh_set.contains(fh)) {
+      std::cout << "getattr: fh not found" << std::endl;
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -245,7 +269,7 @@ public:
     response.setErrno(err);
     response.setRes(res);
 
-    // std::cout << "getattr_response sent correctly: " << response_payload << std::endl;
+    std::cout << "getattr_response sent correctly" << std::endl;
 
     return kj::READY_NOW;
   }
@@ -805,8 +829,10 @@ public:
 
     uint64_t ino = req.getIno();
     std::string path = get_path_from_ino(ino);
+    std::cout << "open path: " << path << std::endl;
 
     if (not path.length()) {
+      std::cout << "open: path length is zero" << std::endl;
       response.setErrno(ENOENT);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -815,6 +841,7 @@ public:
     bool access_ok = check_access(root, user, suffix, path);
 
     if (not access_ok) {
+      std::cout << "open: access denied" << std::endl;
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -822,6 +849,7 @@ public:
 
     if (not ino_to_path.contains(req.getIno())) {
       // File is unknown
+      std::cout << "open: file is unknown" << std::endl;
       response.setRes(-1);
       response.setErrno(ENOENT);
       return kj::READY_NOW;
@@ -837,6 +865,7 @@ public:
     response.setRes(fh);
 
     if (fh == -1) {
+      std::cout << "open: fh is -1" << std::endl;
       response.setRes(fh);
       return kj::READY_NOW;
     }
@@ -858,7 +887,7 @@ public:
     fi_response.setPollEvents(fi.getPollEvents());
     fi_response.setWritepage(fi.getWritepage());
 
-    // std::cout << "open_response sent correctly: " << response_payload << std::endl;
+    std::cout << "open: response sent correctly" << std::endl;
 
     return kj::READY_NOW;
   }
@@ -1033,11 +1062,13 @@ public:
 
     uint64_t ino = req.getIno();
     std::string path = get_path_from_ino(ino);
+    std::cout << "readdir path: " << path << std::endl;
 
     /**
      * example check access
      */
     if (not path.length()) {
+      std::cout << "readdir: path not found" << std::endl;
       response.setErrno(ENOENT);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -1046,6 +1077,7 @@ public:
     bool access_ok = check_access(root, user, suffix, path);
 
     if (not access_ok) {
+      std::cout << "readdir: access denied" << std::endl;
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -1082,6 +1114,7 @@ public:
     for (const auto& entry : iter) {
       std::string file_path = entry.path();
       std::string file_name = std::filesystem::path(file_path).filename();
+      std::cout << "readdir filename: " << file_name << std::endl;
 
       uint64_t file_ino;
 
@@ -1125,7 +1158,7 @@ public:
     response.setErrno(0);
     response.setRes(0);
 
-    // std::cout << "readdir_response sent correctly: " << response_payload << std::endl;
+    std::cout << "readdir: response sent correctly" << std::endl;
 
     return kj::READY_NOW;
   }
@@ -1180,8 +1213,10 @@ public:
 
     uint64_t ino = req.getIno();
     std::string path = get_path_from_ino(ino);
+    std::cout << "access path: " << path << std::endl;
 
     if (not path.length()) {
+      std::cout << "access: path not found" << std::endl;
       response.setErrno(ENOENT);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -1190,6 +1225,7 @@ public:
     bool access_ok = check_access(root, user, suffix, path);
 
     if (not access_ok) {
+      std::cout << "access: access denied" << std::endl;
       response.setErrno(EACCES);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -1212,6 +1248,8 @@ public:
 
     response.setRes(res);
     response.setErrno(err);
+
+    std::cout << "access: response sent correctly" << std::endl;
     
     return kj::READY_NOW;
   }
@@ -1612,7 +1650,7 @@ int start_rpc_server(std::string bind, int port, int auth_port, std::string root
     };
   }
 
-  kj::_::Debug::setLogLevel(kj::_::Debug::Severity::ERROR);
+  kj::_::Debug::setLogLevel(kj::_::Debug::Severity::INFO);
 
   std::string key = key_file.length() ? read_file(key_file) : "";
   std::string cert = cert_file.length() ? read_file(cert_file) : "";
