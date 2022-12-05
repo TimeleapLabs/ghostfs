@@ -92,34 +92,41 @@ std::filesystem::path normalize_path(std::string root, std::string user_id, std:
 }
 
 bool check_access(std::string root, std::string user_id, std::string suffix, std::string path) {
-  std::cout << "cheking access: " << path << std::endl;
+  std::cout << "cheking access 0: " << path << std::endl;
   std::filesystem::path user_root = normalize_path(root, user_id, suffix);
 
   auto const root_can = user_root.lexically_normal();
   auto const path_can = std::filesystem::path(path).lexically_normal();
-  std::cout << "cheking access: " << path_can << std::endl;
+  std::cout << "cheking access 1: " << path_can << std::endl;
 
   if (root_can == path_can) {
+    std::cout << "cheking access 2: " << root_can << std::endl;
     return true;
   }
 
   auto itr = std::search(path_can.begin(), path_can.end(), root_can.begin(), root_can.end());
+  std::cout << "cheking access 3" << std::endl;
 
   if (itr == path_can.begin()) {
+    std::cout << "cheking access 4" << std::endl;
     return true;
   };
 
   for ([[maybe_unused]] auto const& mount : *get_user_mounts(user_id)) {
     std::string source = mount.second;
+    std::cout << "cheking access 5: " << path << std::endl;
     auto const source_can = std::filesystem::canonical(path);
-    std::cout << "cheking access: " << source_can << std::endl;
+    std::cout << "cheking access 6: " << source_can << std::endl;
 
     auto itr = std::search(path_can.begin(), path_can.end(), source_can.begin(), source_can.end());
+    std::cout << "cheking access 7" << std::endl;
 
     if (itr == path_can.begin()) {
+      std::cout << "cheking access 8" << std::endl;
       return true;
     };
   }
 
+  std::cout << "cheking access 9" << std::endl;
   return false;
 }
