@@ -245,7 +245,7 @@ public:
     response.setErrno(err);
     response.setRes(res);
 
-    // std::cout << "getattr_response sent correctly: " << response_payload << std::endl;
+    std::cout << "getattr_response sent correctly" << std::endl;
 
     return kj::READY_NOW;
   }
@@ -862,7 +862,7 @@ public:
     fi_response.setPollEvents(fi.getPollEvents());
     fi_response.setWritepage(fi.getWritepage());
 
-    std::cout << "open_response sent correctly: " << std::endl;
+    std::cout << "open_response sent correctly" << std::endl;
 
     return kj::READY_NOW;
   }
