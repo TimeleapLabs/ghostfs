@@ -3,12 +3,10 @@ name: Build For Linux
 on:
   push:
     branches:
-      - master
-      - main
+      - dev
   pull_request:
     branches:
-      - master
-      - main
+      - dev
 
 env:
   CPM_SOURCE_CACHE: ${{ github.workspace }}/cpm_modules
@@ -44,7 +42,7 @@ jobs:
         id: info
         run: |
           echo Built from \#`git rev-parse --short HEAD` > release.md
-          echo ::set-output name=tag::linux-`git rev-parse --short HEAD`
+          echo ::set-output name=tag::linux-`git rev-parse --short HEAD`-dev
 
       - name: Release
         uses: ncipollo/release-action@v1
