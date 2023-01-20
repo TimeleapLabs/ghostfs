@@ -913,6 +913,8 @@ public:
 
     int err = errno;
 
+    std::cout << "read_response setting ptrs" << std::endl;
+
     kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte*)buf, res);
     capnp::Data::Reader buf_reader(buf_ptr);
 
@@ -920,12 +922,16 @@ public:
     response.setErrno(err);
     response.setRes(res);
 
+    std::cout << "read_response sent" << std::endl;
+
     return kj::READY_NOW;
   }
 
   kj::Promise<void> write(WriteContext context) override {
     auto params = context.getParams();
     auto req = params.getReq();
+
+    std::cout << "write setting ptrs" << std::endl;
 
     Write::FuseFileInfo::Reader fi = req.getFi();
     capnp::Data::Reader buf_reader = req.getBuf();
@@ -952,6 +958,8 @@ public:
     response.setErrno(err);
     response.setIno(req.getIno());
     response.setWritten(written);
+
+    std::cout << "write_response sent correctly" << std::endl;
 
     return kj::READY_NOW;
   }
