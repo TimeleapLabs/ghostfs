@@ -909,13 +909,16 @@ public:
     }
 
     ::lseek(fi.getFh(), off, SEEK_SET);
-    uint64_t res = ::read(fi.getFh(), &buf, size);
+    ssize_t res = ::read(fi.getFh(), &buf, size);
+    uint64_t bytesRead = res > 0 ? res : 0;
 
     int err = errno;
 
     std::cout << "read_response setting ptrs" << std::endl;
+    std::cout << "read_request size: " << size << ", read: " << bytesRead
+              << ", res: " << res << ", errno: " << err << std::endl;
 
-    kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte*)buf, res);
+    kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte*)buf, bytesRead);
     capnp::Data::Reader buf_reader(buf_ptr);
 
     response.setBuf(buf_reader);
