@@ -1268,7 +1268,7 @@ public:
     int err = errno;
 
     std::cout << "create: open file path: " << file_path << ", fh: " << fh
-              << ", err: " << err << ", O_SYNC: " << flags & O_SYNC << std::endl;
+              << ", err: " << err << ", O_SYNC: " << ((flags & O_SYNC) == O_SYNC) << std::endl;
 
     if (fh == -1) {
       response.setRes(fh);
