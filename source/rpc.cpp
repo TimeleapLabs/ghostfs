@@ -1304,7 +1304,7 @@ public:
     fi_response.setWritepage(fi.getWritepage());
 
     int res = hello_stat(file_ino, &attr);
-    int err = errno;
+    err = errno;
 
     response.setIno(file_ino);
 
