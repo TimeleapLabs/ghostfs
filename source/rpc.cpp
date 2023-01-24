@@ -1263,11 +1263,12 @@ public:
     // std::cout << "create: open file path: " << file_path.c_str() << std::endl;
     // std::cout << "create: flags: " << fi.getFlags() << std::endl;
 
-    int fh = ::open(file_path.c_str(), req.getFi().getFlags(), req.getMode());
+    int64_t flags = req.getFi().getFlags()
+    int fh = ::open(file_path.c_str(), flags, req.getMode());
     int err = errno;
 
     std::cout << "create: open file path: " << file_path << ", fh: " << fh
-              << ", err: " << err << std::endl;
+              << ", err: " << err << ", O_SYNC: " << flags & O_SYNC << std::endl;
 
     if (fh == -1) {
       response.setRes(fh);
