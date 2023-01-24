@@ -962,7 +962,8 @@ public:
     ssize_t written = ::write(fi.getFh(), buf, req.getSize());
     int err = errno;
 
-    std::cout << "write err: " << err << ", written: " << written << std::endl;
+    std::cout << "write err: " << err << ", written: " << written
+              << ", fh: " << fi.getFh() << std::endl;
 
     response.setRes(0);
     response.setErrno(err);
