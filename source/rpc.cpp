@@ -1265,6 +1265,8 @@ public:
 
     int fh = ::creat(file_path.c_str(), req.getMode());
 
+    std::cout << "create: open file path: " << file_path << ", fh: " << fh << std::endl;
+
     if (fh == -1) {
       int err = errno;
 
