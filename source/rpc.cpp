@@ -1033,15 +1033,13 @@ public:
     }
 
     std::cout << "releasing " << fh << std::endl;
-    //int res = ::close(fh);
+    int res = ::close(fh);
     int err = errno;
 
     fh_set.erase(fh);
 
-    response.setErrno(0);
-    response.setRes(0);
-    // response.setErrno(err);
-    // response.setRes(res);
+    response.setErrno(err);
+    response.setRes(res);
 
     return kj::READY_NOW;
   }
