@@ -833,6 +833,9 @@ public:
     Open::FuseFileInfo::Reader fi = req.getFi();
 
     int64_t fh = ::open(ino_to_path[req.getIno()].c_str(), fi.getFlags());
+
+    std::cout << "open fh: " << fh << ", path: " << path << std::endl; 
+
     int err = errno;
     response.setErrno(err);
     response.setRes(fh);
