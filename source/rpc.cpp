@@ -684,6 +684,7 @@ public:
     int res = ::symlinkat(link.c_str(), fh, file_path.c_str());
     int err = errno;
 
+    std::cout << "symlink closing " << fh << std::endl;
     ::close(fh);
     
     response.setErrno(err);
@@ -955,13 +956,15 @@ public:
     }
 
     ::lseek(fi.getFh(), req.getOff(), SEEK_SET);
-    size_t written = ::write(fi.getFh(), buf, req.getSize());
+    ssize_t written = ::write(fi.getFh(), buf, req.getSize());
     int err = errno;
+
+    std::cout << "write err: " << err << ", written: " << written << std::endl;
 
     response.setRes(0);
     response.setErrno(err);
     response.setIno(req.getIno());
-    response.setWritten(written);
+    response.setWritten(written > 0 ? written : 0);
 
     std::cout << "write_response sent correctly" << std::endl;
 
@@ -1025,6 +1028,7 @@ public:
       return kj::READY_NOW;
     }
 
+    std::cout << "releasing " << fh << std::endl;
     int res = ::close(fh);
     int err = errno;
 
@@ -1337,6 +1341,7 @@ public:
       return kj::READY_NOW;
     }
 
+    std::cout << "flushing dup(" << fh << ")" << std::endl;
     int res = ::close(dup(fh));
     int err = errno;
 
