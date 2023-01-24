@@ -1263,7 +1263,7 @@ public:
     // std::cout << "create: open file path: " << file_path.c_str() << std::endl;
     // std::cout << "create: flags: " << fi.getFlags() << std::endl;
 
-    int64_t flags = req.getFi().getFlags()
+    int64_t flags = req.getFi().getFlags();
     int fh = ::open(file_path.c_str(), flags, req.getMode());
     int err = errno;
 
