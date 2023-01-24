@@ -1264,12 +1264,12 @@ public:
     // std::cout << "create: flags: " << fi.getFlags() << std::endl;
 
     int fh = ::open(file_path.c_str(), req.getFi().getFlags(), req.getMode());
+    int err = errno;
 
-    std::cout << "create: open file path: " << file_path << ", fh: " << fh << std::endl;
+    std::cout << "create: open file path: " << file_path << ", fh: " << fh
+              << ", err: " << err << std::endl;
 
     if (fh == -1) {
-      int err = errno;
-
       response.setRes(fh);
       response.setErrno(err);
       return kj::READY_NOW;
