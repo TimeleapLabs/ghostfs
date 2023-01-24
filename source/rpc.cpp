@@ -912,8 +912,8 @@ public:
       return kj::READY_NOW;
     }
 
-    ::lseek(fi.getFh(), off, SEEK_SET);
-    ssize_t res = ::read(fi.getFh(), &buf, size);
+    ::lseek(fh, off, SEEK_SET);
+    ssize_t res = ::read(fh, &buf, size);
     uint64_t bytesRead = res > 0 ? res : 0;
 
     int err = errno;
