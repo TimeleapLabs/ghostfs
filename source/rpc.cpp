@@ -916,7 +916,8 @@ public:
 
     std::cout << "read_response setting ptrs" << std::endl;
     std::cout << "read_request size: " << size << ", read: " << bytesRead
-              << ", res: " << res << ", errno: " << err << std::endl;
+              << ", res: " << res << ", errno: " << err
+              << ", fh: " << fi.getFh() << std::endl;
 
     kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte*)buf, bytesRead);
     capnp::Data::Reader buf_reader(buf_ptr);
