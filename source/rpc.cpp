@@ -683,8 +683,9 @@ public:
 
     int res = ::symlinkat(link.c_str(), fh, file_path.c_str());
     int err = errno;
-
+    
     // std::cout << "symlink closing " << fh << std::endl;
+    
     ::close(fh);
     
     response.setErrno(err);
@@ -957,6 +958,7 @@ public:
     }
 
     ::lseek(fi.getFh(), req.getOff(), SEEK_SET);
+
     ssize_t written = ::write(fi.getFh(), buf, req.getSize());
     int err = errno;
 
@@ -1031,6 +1033,7 @@ public:
     }
 
     // std::cout << "releasing " << fh << std::endl;
+
     int res = ::close(fh);
     int err = errno;
 
@@ -1303,6 +1306,7 @@ public:
     fi_response.setWritepage(fi.getWritepage());
 
     int res = hello_stat(file_ino, &attr);
+
     err = errno;
 
     response.setIno(file_ino);
@@ -1347,6 +1351,7 @@ public:
     }
 
     // std::cout << "flushing dup(" << fh << ")" << std::endl;
+    
     int res = ::close(dup(fh));
     int err = errno;
 
