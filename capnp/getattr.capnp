@@ -5,7 +5,7 @@ struct Getattr {
   fi    @1 :FuseFileInfo;
 
   struct FuseFileInfo {
-    flags         @0  :Int8;
+    flags         @0  :Int64;
     writepage     @1  :UInt64;
     directIo      @2  :UInt64;
     keepCache     @3  :UInt64;

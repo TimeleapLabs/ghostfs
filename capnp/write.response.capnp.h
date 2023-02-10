@@ -65,7 +65,7 @@ public:
 
   inline  ::int8_t getErrno() const;
 
-  inline  ::uint64_t getWritten() const;
+  inline  ::int64_t getWritten() const;
 
 private:
   ::capnp::_::StructReader _reader;
@@ -104,8 +104,8 @@ public:
   inline  ::int8_t getErrno();
   inline void setErrno( ::int8_t value);
 
-  inline  ::uint64_t getWritten();
-  inline void setWritten( ::uint64_t value);
+  inline  ::int64_t getWritten();
+  inline void setWritten( ::int64_t value);
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -177,17 +177,17 @@ inline void WriteResponse::Builder::setErrno( ::int8_t value) {
       ::capnp::bounded<9>() * ::capnp::ELEMENTS, value);
 }
 
-inline  ::uint64_t WriteResponse::Reader::getWritten() const {
-  return _reader.getDataField< ::uint64_t>(
+inline  ::int64_t WriteResponse::Reader::getWritten() const {
+  return _reader.getDataField< ::int64_t>(
       ::capnp::bounded<2>() * ::capnp::ELEMENTS);
 }
 
-inline  ::uint64_t WriteResponse::Builder::getWritten() {
-  return _builder.getDataField< ::uint64_t>(
+inline  ::int64_t WriteResponse::Builder::getWritten() {
+  return _builder.getDataField< ::int64_t>(
       ::capnp::bounded<2>() * ::capnp::ELEMENTS);
 }
-inline void WriteResponse::Builder::setWritten( ::uint64_t value) {
-  _builder.setDataField< ::uint64_t>(
+inline void WriteResponse::Builder::setWritten( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
       ::capnp::bounded<2>() * ::capnp::ELEMENTS, value);
 }
 

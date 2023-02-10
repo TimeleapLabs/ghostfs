@@ -683,7 +683,9 @@ public:
 
     int res = ::symlinkat(link.c_str(), fh, file_path.c_str());
     int err = errno;
-
+    
+    // std::cout << "symlink closing " << fh << std::endl;
+    
     ::close(fh);
     
     response.setErrno(err);
@@ -832,6 +834,9 @@ public:
     Open::FuseFileInfo::Reader fi = req.getFi();
 
     int64_t fh = ::open(ino_to_path[req.getIno()].c_str(), fi.getFlags());
+
+    // std::cout << "open fh: " << fh << ", path: " << path << std::endl; 
+
     int err = errno;
     response.setErrno(err);
     response.setRes(fh);
@@ -908,17 +913,25 @@ public:
       return kj::READY_NOW;
     }
 
-    ::lseek(fi.getFh(), off, SEEK_SET);
-    uint64_t res = ::read(fi.getFh(), &buf, size);
+    ::lseek(fh, off, SEEK_SET);
+    ssize_t res = ::read(fh, &buf, size);
+    uint64_t bytesRead = res > 0 ? res : 0;
 
     int err = errno;
 
-    kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte*)buf, res);
+    // std::cout << "read_response setting ptrs" << std::endl;
+    // std::cout << "read_request size: " << size << ", read: " << bytesRead
+    //          << ", res: " << res << ", errno: " << err
+    //          << ", fh: " << fi.getFh() << std::endl;
+
+    kj::ArrayPtr<kj::byte> buf_ptr = kj::arrayPtr((kj::byte*)buf, bytesRead);
     capnp::Data::Reader buf_reader(buf_ptr);
 
     response.setBuf(buf_reader);
     response.setErrno(err);
     response.setRes(res);
+
+    // std::cout << "read_response sent" << std::endl;
 
     return kj::READY_NOW;
   }
@@ -945,13 +958,19 @@ public:
     }
 
     ::lseek(fi.getFh(), req.getOff(), SEEK_SET);
-    size_t written = ::write(fi.getFh(), buf, req.getSize());
+
+    ssize_t written = ::write(fi.getFh(), buf, req.getSize());
     int err = errno;
+
+    //std::cout << "write err: " << err << ", written: " << written
+    //          << ", fh: " << fi.getFh() << std::endl;
 
     response.setRes(0);
     response.setErrno(err);
     response.setIno(req.getIno());
-    response.setWritten(written);
+    response.setWritten(written > 0 ? written : 0);
+
+    // std::cout << "write_response sent correctly" << std::endl;
 
     return kj::READY_NOW;
   }
@@ -1012,6 +1031,8 @@ public:
       response.setRes(-1);
       return kj::READY_NOW;
     }
+
+    // std::cout << "releasing " << fh << std::endl;
 
     int res = ::close(fh);
     int err = errno;
@@ -1243,11 +1264,14 @@ public:
     // std::cout << "create: open file path: " << file_path.c_str() << std::endl;
     // std::cout << "create: flags: " << fi.getFlags() << std::endl;
 
-    int fh = ::creat(file_path.c_str(), req.getMode());
+    int64_t flags = req.getFi().getFlags();
+    int fh = ::open(file_path.c_str(), flags, req.getMode());
+    int err = errno;
+
+    // std::cout << "create: open file path: " << file_path << ", fh: " << fh
+    //           << ", err: " << err << ", O_SYNC: " << ((flags & O_SYNC) == O_SYNC) << std::endl;
 
     if (fh == -1) {
-      int err = errno;
-
       response.setRes(fh);
       response.setErrno(err);
       return kj::READY_NOW;
@@ -1282,7 +1306,8 @@ public:
     fi_response.setWritepage(fi.getWritepage());
 
     int res = hello_stat(file_ino, &attr);
-    int err = errno;
+
+    err = errno;
 
     response.setIno(file_ino);
 
@@ -1325,6 +1350,8 @@ public:
       return kj::READY_NOW;
     }
 
+    // std::cout << "flushing dup(" << fh << ")" << std::endl;
+    
     int res = ::close(dup(fh));
     int err = errno;
 
