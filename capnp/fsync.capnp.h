@@ -47,7 +47,7 @@ struct Fsync::FuseFileInfo {
   class Pipeline;
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(b8aa2584ec15c2b3, 11, 0)
+    CAPNP_DECLARE_STRUCT_HEADER(b8aa2584ec15c2b3, 12, 0)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -165,7 +165,7 @@ public:
   }
 #endif  // !CAPNP_LITE
 
-  inline  ::int8_t getFlags() const;
+  inline  ::int64_t getFlags() const;
 
   inline  ::uint64_t getWritepage() const;
 
@@ -217,8 +217,8 @@ public:
   inline ::kj::StringTree toString() const { return asReader().toString(); }
 #endif  // !CAPNP_LITE
 
-  inline  ::int8_t getFlags();
-  inline void setFlags( ::int8_t value);
+  inline  ::int64_t getFlags();
+  inline void setFlags( ::int64_t value);
 
   inline  ::uint64_t getWritepage();
   inline void setWritepage( ::uint64_t value);
@@ -348,17 +348,17 @@ inline ::capnp::Orphan< ::Fsync::FuseFileInfo> Fsync::Builder::disownFi() {
       ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 
-inline  ::int8_t Fsync::FuseFileInfo::Reader::getFlags() const {
-  return _reader.getDataField< ::int8_t>(
+inline  ::int64_t Fsync::FuseFileInfo::Reader::getFlags() const {
+  return _reader.getDataField< ::int64_t>(
       ::capnp::bounded<0>() * ::capnp::ELEMENTS);
 }
 
-inline  ::int8_t Fsync::FuseFileInfo::Builder::getFlags() {
-  return _builder.getDataField< ::int8_t>(
+inline  ::int64_t Fsync::FuseFileInfo::Builder::getFlags() {
+  return _builder.getDataField< ::int64_t>(
       ::capnp::bounded<0>() * ::capnp::ELEMENTS);
 }
-inline void Fsync::FuseFileInfo::Builder::setFlags( ::int8_t value) {
-  _builder.setDataField< ::int8_t>(
+inline void Fsync::FuseFileInfo::Builder::setFlags( ::int64_t value) {
+  _builder.setDataField< ::int64_t>(
       ::capnp::bounded<0>() * ::capnp::ELEMENTS, value);
 }
 
@@ -490,30 +490,30 @@ inline void Fsync::FuseFileInfo::Builder::setLockOwner( ::uint64_t value) {
 
 inline  ::uint32_t Fsync::FuseFileInfo::Reader::getPollEvents() const {
   return _reader.getDataField< ::uint32_t>(
-      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+      ::capnp::bounded<20>() * ::capnp::ELEMENTS);
 }
 
 inline  ::uint32_t Fsync::FuseFileInfo::Builder::getPollEvents() {
   return _builder.getDataField< ::uint32_t>(
-      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+      ::capnp::bounded<20>() * ::capnp::ELEMENTS);
 }
 inline void Fsync::FuseFileInfo::Builder::setPollEvents( ::uint32_t value) {
   _builder.setDataField< ::uint32_t>(
-      ::capnp::bounded<1>() * ::capnp::ELEMENTS, value);
+      ::capnp::bounded<20>() * ::capnp::ELEMENTS, value);
 }
 
 inline  ::uint64_t Fsync::FuseFileInfo::Reader::getNoflush() const {
   return _reader.getDataField< ::uint64_t>(
-      ::capnp::bounded<10>() * ::capnp::ELEMENTS);
+      ::capnp::bounded<11>() * ::capnp::ELEMENTS);
 }
 
 inline  ::uint64_t Fsync::FuseFileInfo::Builder::getNoflush() {
   return _builder.getDataField< ::uint64_t>(
-      ::capnp::bounded<10>() * ::capnp::ELEMENTS);
+      ::capnp::bounded<11>() * ::capnp::ELEMENTS);
 }
 inline void Fsync::FuseFileInfo::Builder::setNoflush( ::uint64_t value) {
   _builder.setDataField< ::uint64_t>(
-      ::capnp::bounded<10>() * ::capnp::ELEMENTS, value);
+      ::capnp::bounded<11>() * ::capnp::ELEMENTS, value);
 }
 
 
