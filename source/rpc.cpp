@@ -87,7 +87,7 @@ class GhostFSImpl final : public GhostFS::Server {
 
 public:
   explicit GhostFSImpl(std::string _user, std::string _root, std::string _suffix)
-      : user(move(_user)), root(move(_root)), suffix(move(_suffix)) {}
+      : user(std::move(_user)), root(std::move(_root)), suffix(std::move(_suffix)) {}
 
   kj::Promise<void> lookup(LookupContext context) override {
     auto params = context.getParams();
@@ -1595,7 +1595,7 @@ class GhostFSAuthImpl final : public GhostFSAuth::Server {
 
 public:
   explicit GhostFSAuthImpl(std::string _root, std::string _suffix)
-      : root(move(_root)), suffix(move(_suffix)) {}
+      : root(std::move(_root)), suffix(std::move(_suffix)) {}
 
   kj::Promise<void> auth(AuthContext context) override {
     auto params = context.getParams();
