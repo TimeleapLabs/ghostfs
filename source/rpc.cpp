@@ -681,9 +681,9 @@ public:
     }
 
     std::cout << "SYMLINK link: " << link.c_str() << std::endl;
-    std::cout << "SYMLINK file_path: " << file_path.c_str() << std::endl;
+    std::cout << "SYMLINK name: " << name.c_str() << std::endl;
 
-    int res = ::symlinkat(link.c_str(), fh, file_path.c_str());
+    int res = ::symlinkat(link.c_str(), fh, name.c_str());
     int err = errno;
     
     // std::cout << "symlink closing " << fh << std::endl;
