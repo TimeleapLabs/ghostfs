@@ -669,8 +669,7 @@ public:
       return kj::READY_NOW;
     }
 
-    // std::cout << "SYMLINK file_path: " << file_path.c_str() << std::endl;
-    // std::cout << "SYMLINK link: " << link.c_str() << std::endl;
+    std::cout << "SYMLINK parent_path: " << parent_path.c_str() << std::endl;
     
     int fh = ::open(parent_path.c_str(), O_RDONLY|O_DIRECTORY);
 
@@ -680,6 +679,9 @@ public:
       response.setRes(fh);
       return kj::READY_NOW;
     }
+
+    std::cout << "SYMLINK link: " << link.c_str() << std::endl;
+    std::cout << "SYMLINK file_path: " << file_path.c_str() << std::endl;
 
     int res = ::symlinkat(link.c_str(), fh, file_path.c_str());
     int err = errno;
