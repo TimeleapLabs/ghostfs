@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <iostream>
 #include <iterator>
 #include <map>
 #include <string>
@@ -92,6 +93,10 @@ std::filesystem::path normalize_path(std::string root, std::string user_id, std:
 
 bool is_subpath(const std::filesystem::path& root, const std::filesystem::path& path) {
   const auto mismatch_pair = std::mismatch(root.begin(), root.end(), path.begin(), path.end());
+  std::cout << "root: " << root << std::endl;
+  std::cout << "path: " << path << std::endl;
+  std::cout << "return: " << (mismatch_pair.second == path.end() ? "YES" : "NO") << std::endl;
+
   return mismatch_pair.second == path.end();
 }
 
