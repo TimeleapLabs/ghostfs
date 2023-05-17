@@ -193,7 +193,7 @@ int hello_stat(fuse_ino_t ino, struct stat *stbuf) {
     return -1;
   }
 
-  int res = stat(ino_to_path[ino].c_str(), stbuf);
+  int res = lstat(ino_to_path[ino].c_str(), stbuf);
   stbuf->st_ino = ino;
 
   return res;
@@ -1272,7 +1272,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
