@@ -636,6 +636,8 @@ public:
     
     response.setRes(res);
 
+    std::cout << "READLINK res: " << res << std::endl;
+
     if (res != -1) {
       response.setLink(std::string(buf, res));
     }
