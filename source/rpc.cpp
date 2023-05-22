@@ -621,7 +621,7 @@ public:
       return kj::READY_NOW;
     }
 
-    // std::cout << "READLINK name: " << name << std::endl;
+    std::cout << "READLINK name: " << ino_to_path[req.getIno()].c_str() << std::endl;
 
     char buf[PATH_MAX + 1];
 
