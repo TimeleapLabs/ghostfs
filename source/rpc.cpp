@@ -643,6 +643,7 @@ public:
     std::cout << "READLINK err: " << err << std::endl;
     std::cout << "READLINK buf size: " << sizeof(buf) << std::endl;
     std::cout << "READLINK res: " << res << std::endl;
+    std::cout << "READLINK buf: " << std::string(buf) << std::endl;
 
     if (res != -1) {
       response.setLink(std::string(buf, res));
