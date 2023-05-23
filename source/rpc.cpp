@@ -623,7 +623,7 @@ public:
 
     std::cout << "READLINK name: " << ino_to_path[req.getIno()].c_str() << std::endl;
 
-    char buf[PATH_MAX + 1];
+    char buf[PATH_MAX];
 
     int res = ::readlink(ino_to_path[req.getIno()].c_str(), buf, sizeof(buf) - 1);  // Decrease the buffer size by 1
     int err = errno;
