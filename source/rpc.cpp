@@ -625,13 +625,17 @@ public:
 
     char buf[PATH_MAX + 1];
 
-    int res = ::readlink(ino_to_path[req.getIno()].c_str(), buf, sizeof(buf));
+    int res = ::readlink(ino_to_path[req.getIno()].c_str(), buf, sizeof(buf) - 1);  // Decrease the buffer size by 1
     int err = errno;
 
-    if (res == sizeof(buf)) {
+    if (res >= static_cast<int>(sizeof(buf) - 1)) {
       response.setErrno(ENAMETOOLONG);
     } else {
       response.setErrno(err);
+    }
+
+    if (res != -1) {
+      buf[res] = '\0';  // Null-terminate the buffer manually
     }
     
     response.setRes(res);
