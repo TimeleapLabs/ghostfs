@@ -1352,7 +1352,7 @@ static void hello_ll_readlink(fuse_req_t req, fuse_ino_t ino) {
 
   int res = response.getRes();
 
-  if (res == -1){
+  if (res == -1) {
     int err = response.getErrno();
     fuse_reply_err(req, err);
   } else {
