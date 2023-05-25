@@ -621,8 +621,6 @@ public:
       return kj::READY_NOW;
     }
 
-    std::cout << "READLINK name: " << ino_to_path[req.getIno()].c_str() << std::endl;
-
     char buf[PATH_MAX];
 
     int res = ::readlink(ino_to_path[req.getIno()].c_str(), buf, sizeof(buf) - 1);  // Decrease the buffer size by 1
@@ -639,11 +637,6 @@ public:
     }
     
     response.setRes(res);
-    
-    std::cout << "READLINK err: " << err << std::endl;
-    std::cout << "READLINK buf size: " << sizeof(buf) << std::endl;
-    std::cout << "READLINK res: " << res << std::endl;
-    std::cout << "READLINK buf: " << std::string(buf) << std::endl;
 
     if (res != -1) {
       response.setLink(std::string(buf, res));
