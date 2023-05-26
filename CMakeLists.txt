@@ -23,7 +23,7 @@ include(cmake/CPM.cmake)
 
 # ---- Add OpenSSL ----
 find_package(OpenSSL REQUIRED)
-include_directories(OPENSSL_INCLUDE_DIR})
+include_directories(${OPENSSL_INCLUDE_DIR})
 
 message("OpenSSL Include: ${OPENSSL_INCLUDE_DIR}")
 
@@ -38,7 +38,7 @@ CPMAddPackage(
 
 CPMAddPackage(
   NAME capnproto
-  VERSION 0.10.2
+  VERSION 0.10.4
   GITHUB_REPOSITORY capnproto/capnproto
   OPTIONS "WITH_OPENSSL ON" "BUILD_TESTING OFF"
   #OPTIONS "WITH_OPENSSL ON" "BUILD_TESTING OFF" "CMAKE_BUILD_TYPE Debug"

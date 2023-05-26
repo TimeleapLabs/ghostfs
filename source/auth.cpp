@@ -1,6 +1,5 @@
 #include <ghostfs/uuid.h>
 
-#include <algorithm>
 #include <filesystem>
 #include <iterator>
 #include <map>
@@ -90,9 +89,14 @@ std::filesystem::path normalize_path(std::string root, std::string user_id, std:
   return std::filesystem::path(root) / users[user_id].sub_directory / path;
 }
 
+bool is_subpath(const std::filesystem::path& root, const std::filesystem::path& path) {
+  const auto mismatch_pair = std::mismatch(path.begin(), path.end(), root.begin(), root.end());
+  return mismatch_pair.second == root.end();
+}
+
 bool check_access(std::string root, std::string user_id, std::string suffix, std::string path) {
   if (not std::filesystem::exists(path)) {
-      return true;
+    return true;
   }
 
   std::filesystem::path user_root = normalize_path(root, user_id, suffix);
@@ -104,9 +108,7 @@ bool check_access(std::string root, std::string user_id, std::string suffix, std
     return true;
   }
 
-  auto itr = std::search(path_can.begin(), path_can.end(), root_can.begin(), root_can.end());
-
-  if (itr == path_can.begin()) {
+  if (is_subpath(root_can, path_can)) {
     return true;
   };
 
@@ -114,9 +116,7 @@ bool check_access(std::string root, std::string user_id, std::string suffix, std
     std::string source = mount.second;
     auto const source_can = std::filesystem::canonical(path);
 
-    auto itr = std::search(path_can.begin(), path_can.end(), source_can.begin(), source_can.end());
-
-    if (itr == path_can.begin()) {
+    if (is_subpath(source_can, path_can)) {
       return true;
     };
   }

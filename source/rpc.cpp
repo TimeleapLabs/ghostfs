@@ -87,7 +87,7 @@ class GhostFSImpl final : public GhostFS::Server {
 
 public:
   explicit GhostFSImpl(std::string _user, std::string _root, std::string _suffix)
-      : user(move(_user)), root(move(_root)), suffix(move(_suffix)) {}
+      : user(std::move(_user)), root(std::move(_root)), suffix(std::move(_suffix)) {}
 
   kj::Promise<void> lookup(LookupContext context) override {
     auto params = context.getParams();
@@ -621,20 +621,29 @@ public:
       return kj::READY_NOW;
     }
 
-    // std::cout << "READLINK name: " << name << std::endl;
+    // std::cout << "READLINK name: " << ino_to_path[req.getIno()].c_str() << std::endl;
 
-    char buf[PATH_MAX + 1];
+    char buf[PATH_MAX];
 
-    int res = ::readlink(ino_to_path[req.getIno()].c_str(), buf, sizeof(buf));
+    int res = ::readlink(ino_to_path[req.getIno()].c_str(), buf, sizeof(buf) - 1);  // Decrease the buffer size by 1
     int err = errno;
 
-    if (res == sizeof(buf)) {
+    if (res >= static_cast<int>(sizeof(buf) - 1)) {
       response.setErrno(ENAMETOOLONG);
     } else {
       response.setErrno(err);
     }
+
+    if (res != -1) {
+      buf[res] = '\0';  // Null-terminate the buffer manually
+    }
     
     response.setRes(res);
+    
+    // std::cout << "READLINK err: " << err << std::endl;
+    // std::cout << "READLINK buf size: " << sizeof(buf) << std::endl;
+    // std::cout << "READLINK res: " << res << std::endl;
+    // std::cout << "READLINK buf: " << std::string(buf) << std::endl;
 
     if (res != -1) {
       response.setLink(std::string(buf, res));
@@ -668,9 +677,6 @@ public:
       response.setRes(-1);
       return kj::READY_NOW;
     }
-
-    // std::cout << "SYMLINK file_path: " << file_path.c_str() << std::endl;
-    // std::cout << "SYMLINK link: " << link.c_str() << std::endl;
     
     int fh = ::open(parent_path.c_str(), O_RDONLY|O_DIRECTORY);
 
@@ -681,7 +687,7 @@ public:
       return kj::READY_NOW;
     }
 
-    int res = ::symlinkat(link.c_str(), fh, file_path.c_str());
+    int res = ::symlinkat(link.c_str(), fh, name.c_str());
     int err = errno;
     
     // std::cout << "symlink closing " << fh << std::endl;
@@ -1595,7 +1601,7 @@ class GhostFSAuthImpl final : public GhostFSAuth::Server {
 
 public:
   explicit GhostFSAuthImpl(std::string _root, std::string _suffix)
-      : root(move(_root)), suffix(move(_suffix)) {}
+      : root(std::move(_root)), suffix(std::move(_suffix)) {}
 
   kj::Promise<void> auth(AuthContext context) override {
     auto params = context.getParams();
