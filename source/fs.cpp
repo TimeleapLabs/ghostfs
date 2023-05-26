@@ -193,7 +193,7 @@ int hello_stat(fuse_ino_t ino, struct stat *stbuf) {
     return -1;
   }
 
-  int res = stat(ino_to_path[ino].c_str(), stbuf);
+  int res = lstat(ino_to_path[ino].c_str(), stbuf);
   stbuf->st_ino = ino;
 
   return res;
@@ -1352,7 +1352,7 @@ static void hello_ll_readlink(fuse_req_t req, fuse_ino_t ino) {
 
   int res = response.getRes();
 
-  if (res){
+  if (res == -1) {
     int err = response.getErrno();
     fuse_reply_err(req, err);
   } else {
