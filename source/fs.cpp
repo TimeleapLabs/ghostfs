@@ -1272,7 +1272,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-// clang-format off
+  // clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
@@ -1352,7 +1352,7 @@ static void hello_ll_readlink(fuse_req_t req, fuse_ino_t ino) {
 
   int res = response.getRes();
 
-  if (res){
+  if (res == -1) {
     int err = response.getErrno();
     fuse_reply_err(req, err);
   } else {
