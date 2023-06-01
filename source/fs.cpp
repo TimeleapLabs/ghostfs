@@ -193,7 +193,7 @@ int hello_stat(fuse_ino_t ino, struct stat *stbuf) {
     return -1;
   }
 
-  int res = stat(ino_to_path[ino].c_str(), stbuf);
+  int res = lstat(ino_to_path[ino].c_str(), stbuf);
   stbuf->st_ino = ino;
 
   return res;
@@ -1352,7 +1352,7 @@ static void hello_ll_readlink(fuse_req_t req, fuse_ino_t ino) {
 
   int res = response.getRes();
 
-  if (res){
+  if (res == -1) {
     int err = response.getErrno();
     fuse_reply_err(req, err);
   } else {
@@ -1368,12 +1368,12 @@ static const struct fuse_lowlevel_ops hello_ll_oper = {
     .lookup = hello_ll_lookup,
     .getattr = hello_ll_getattr,
     .setattr = hello_ll_setattr,
-    //.readlink = hello_ll_readlink,
+    .readlink = hello_ll_readlink,
     .mknod = hello_ll_mknod,
     .mkdir = hello_ll_mkdir,
     .unlink = hello_ll_unlink,
     .rmdir = hello_ll_rmdir,
-    //.symlink = hello_ll_symlink,
+    .symlink = hello_ll_symlink,
     .rename = hello_ll_rename,
     .open = hello_ll_open,
     .read = hello_ll_read,
