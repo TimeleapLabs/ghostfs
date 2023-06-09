@@ -13,7 +13,11 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, ubuntu-22.04]
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v2
@@ -42,7 +46,7 @@ jobs:
         id: info
         run: |
           echo Built from \#`git rev-parse --short HEAD` > release.md
-          echo ::set-output name=tag::linux-ubuntu-22.04-`git rev-parse --short HEAD`-dev
+          echo ::set-output name=tag::linux-${{ matrix.os }}-`git rev-parse --short HEAD`-dev
 
       - name: Release
         uses: ncipollo/release-action@v1
