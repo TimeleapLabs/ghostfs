@@ -1,0 +1,57 @@
+name: Build For Linux
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+    branches:
+      - master
+      - main
+
+env:
+  CPM_SOURCE_CACHE: ${{ github.workspace }}/cpm_modules
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/cache@v2
+        with:
+          path: "**/cpm_modules"
+          key: ${{ github.workflow }}-cpm-modules-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+
+      - name: Set up GCC
+        uses: egor-tensin/setup-gcc@v1
+        with:
+          version: latest
+          platform: x64
+
+      - name: Install Dependencies
+        run: sudo apt-get install -y libfuse-dev zlib1g-dev
+
+      - name: Configure
+        run: cmake -S standalone -B build/standalone
+
+      - name: Build
+        run: cmake --build build/standalone -j3
+
+      - name: Make Release Body
+        id: info
+        run: |
+          echo Built from \#`git rev-parse --short HEAD` > release.md
+          echo ::set-output name=tag::linux-ubuntu-22.04-`git rev-parse --short HEAD`
+
+      - name: Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "build/standalone/GhostFS"
+          bodyFile: "release.md"
+          prerelease: true
+          tag: ${{ steps.info.outputs.tag }}
+          token: ${{ secrets.PERSONAL_TOKEN }}
+          repo: ghostfs-builds
