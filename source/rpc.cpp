@@ -112,13 +112,13 @@ public:
       file_path = parent_path / std::filesystem::path(name);
     }
 
-    bool access_ok = check_access(root, user, suffix, file_path);
+    // bool access_ok = check_access(root, user, suffix, file_path);
 
-    if (not access_ok) {
-      response.setErrno(EACCES);
-      response.setRes(-1);
-      return kj::READY_NOW;
-    }
+    // if (not access_ok) {
+    //   response.setErrno(EACCES);
+    //   response.setRes(-1);
+    //   return kj::READY_NOW;
+    // }
 
     if (not std::filesystem::exists(file_path)) {
       int err = errno;
