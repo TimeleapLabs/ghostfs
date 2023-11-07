@@ -307,6 +307,9 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
 
   int res = response.getRes();
 
+  std::cout << "LOOKUP res: " << res << std::endl;
+  std::cout << "LOOKUP err: " << response.getErrno() << std::endl;
+
   if (res == -1) {
     // std::cout << "LOOKUP::ENOENT" << std::endl;
     fuse_reply_err(req, response.getErrno());
@@ -1276,7 +1279,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
