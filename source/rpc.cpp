@@ -613,13 +613,13 @@ public:
       return kj::READY_NOW;
     }
 
-    bool access_ok = check_access(root, user, suffix, path);
+    // bool access_ok = check_access(root, user, suffix, path);
 
-    if (not access_ok) {
-      response.setErrno(EACCES);
-      response.setRes(-1);
-      return kj::READY_NOW;
-    }
+    // if (not access_ok) {
+    //   response.setErrno(EACCES);
+    //   response.setRes(-1);
+    //   return kj::READY_NOW;
+    // }
 
     // std::cout << "READLINK name: " << ino_to_path[req.getIno()].c_str() << std::endl;
 
