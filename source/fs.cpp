@@ -285,7 +285,7 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
  * @param name -> *char
  */
 static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name) {
-  // printf("Called .lookup\n");
+  printf("Called .lookup\n");
 
   auto &waitScope = ioContext->waitScope;
   auto request = client->lookupRequest();
@@ -295,7 +295,7 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
   lookup.setParent(parent);
   lookup.setName(name);
 
-  // std::cout << "LOOKUP name: " << name << std::endl;
+  std::cout << "LOOKUP name: " << name << std::endl;
 
   auto promise = request.send();
   auto result = promise.wait(waitScope);
@@ -338,7 +338,7 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
 
   fuse_reply_entry(req, &e);
 
-  // std::cout << "hello_ll_lookup executed correctly: " << payload << std::endl;
+  std::cout << "hello_ll_lookup executed correctly" << std::endl;
 }
 
 /**
@@ -1276,7 +1276,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-// clang-format off
+  // clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
