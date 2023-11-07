@@ -298,12 +298,20 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
   std::cout << "LOOKUP name: " << name << std::endl;
 
   auto promise = request.send();
+  std::cout << "LOOKUP name1: " << name << std::endl;
   auto result = promise.wait(waitScope);
+  std::cout << "LOOKUP name2: " << name << std::endl;
   auto response = result.getRes();
+
+  std::cout << "LOOKUP name3: " << name << std::endl;
 
   struct stat attr;
 
+  std::cout << "LOOKUP name4: " << name << std::endl;
+
   memset(&attr, 0, sizeof(attr));
+
+  std::cout << "LOOKUP name5: " << name << std::endl;
 
   int res = response.getRes();
 
@@ -1279,7 +1287,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-// clang-format off
+  // clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
