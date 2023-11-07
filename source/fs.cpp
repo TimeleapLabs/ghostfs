@@ -813,6 +813,10 @@ static void hello_ll_symlink(fuse_req_t req, const char *link, fuse_ino_t parent
   symlink.setParent(parent);
   symlink.setName(name);
 
+  std::cout << "link: " << link << std::endl;
+  std::cout << "parent: " << parent << std::endl;
+  std::cout << "name: " << name << std::endl;
+
   auto promise = request.send();
   auto result = promise.wait(waitScope);
   auto response = result.getRes();
@@ -1272,7 +1276,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
