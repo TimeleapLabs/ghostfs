@@ -93,23 +93,38 @@ public:
     auto params = context.getParams();
     auto req = params.getReq();
 
+    std::cout << "LOOKUP server1" << std::endl;
+
     auto results = context.getResults();
     auto response = results.getRes();
 
+    std::cout << "LOOKUP server2" << std::endl;
+
     uint64_t parent = req.getParent();
+    std::cout << "LOOKUP parent:" << parent << std::endl;
     std::string name = req.getName();
+    std::cout << "LOOKUP name server" << name << std::endl;
 
     std::map<std::string, std::string>* mounts = get_user_mounts(user);
+    std::cout << "LOOKUP mounts server" << mounts << std::endl;
     bool is_mount = parent == 1 && mounts->contains(name);
+    std::cout << "LOOKUP is_mount server" << is_mount << std::endl;
     std::filesystem::path file_path;
+    std::cout << "LOOKUP file_path1 server" << file_path << std::endl;
 
     if (is_mount) {
       file_path = std::filesystem::path(root) / (*mounts)[name];
+      std::cout << "LOOKUP file_path2 server" << file_path << std::endl;
+
     } else {
       std::string user_root = normalize_path(root, user, suffix);
+      std::cout << "LOOKUP user_root server" << user_root << std::endl;
       std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
+      std::cout << "LOOKUP parent_path_name server" << parent_path_name << std::endl;
       std::filesystem::path parent_path = std::filesystem::path(parent_path_name);
+      std::cout << "LOOKUP parent_path server" << parent_path << std::endl;
       file_path = parent_path / std::filesystem::path(name);
+      std::cout << "LOOKUP file_path3 server" << file_path << std::endl;
     }
 
     // bool access_ok = check_access(root, user, suffix, file_path);
@@ -122,6 +137,7 @@ public:
 
     if (not std::filesystem::exists(file_path)) {
       int err = errno;
+      std::cout << "LOOKUP err server" << err << std::endl;
       response.setErrno(err);
       response.setRes(-1);
       return kj::READY_NOW;
@@ -130,10 +146,12 @@ public:
     uint64_t ino;
 
     if (not path_to_ino.contains(file_path)) {
+      std::cout << "LOOKUP if server" << std::endl;
       ino = ++current_ino;
       ino_to_path[ino] = file_path;
       path_to_ino[file_path] = ino;
     } else {
+      std::cout << "LOOKUP else server" << std::endl;
       ino = path_to_ino[file_path];
     }
 
@@ -148,6 +166,7 @@ public:
 
     int res = hello_stat(ino, &attr);
     int err = errno;
+    std::cout << "LOOKUP err2 server" << err << std::endl;
 
     LookupResponse::Attr::Builder attributes = response.initAttr();
 
@@ -167,6 +186,7 @@ public:
 
     response.setErrno(err);
     response.setRes(res);
+    std::cout << "LOOKUP end server" << std::endl;
 
     return kj::READY_NOW;
   }
