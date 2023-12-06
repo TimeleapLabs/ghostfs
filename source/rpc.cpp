@@ -137,13 +137,13 @@ public:
 
     std::cout << "LOOKUP here server" << std::endl;
 
-    if (not std::filesystem::exists(file_path)) {
-      int err = errno;
-      std::cout << "LOOKUP err server: " << err << std::endl;
-      response.setErrno(err);
-      response.setRes(-1);
-      return kj::READY_NOW;
-    }
+    // if (not std::filesystem::exists(file_path)) {
+    //   int err = errno;
+    //   std::cout << "LOOKUP err server: " << err << std::endl;
+    //   response.setErrno(err);
+    //   response.setRes(-1);
+    //   return kj::READY_NOW;
+    // }
 
     std::cout << "LOOKUP here2 server" << std::endl;
 
