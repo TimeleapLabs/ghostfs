@@ -240,13 +240,9 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
 
   fillFileInfo(&fuseFileInfo, fi);
 
-  std::cout << "GETATTR before: " << std::endl;
-
   auto promise = request.send();
   auto result = promise.wait(waitScope);
   auto response = result.getRes();
-
-  std::cout << "GETATTR after: " << std::endl;
 
   struct stat attr;
 
@@ -255,7 +251,6 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
   int res = response.getRes();
 
   if (res == -1) {
-    // std::cout << "GETATTR::ENOENT" << std::endl;
     fuse_reply_err(req, response.getErrno());
     return;
   }
@@ -289,7 +284,7 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
  * @param name -> *char
  */
 static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name) {
-  printf("Called .lookup\n");
+  // printf("Called .lookup\n");
 
   auto &waitScope = ioContext->waitScope;
   auto request = client->lookupRequest();
@@ -299,31 +294,17 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
   lookup.setParent(parent);
   lookup.setName(name);
 
-  std::cout << "LOOKUP name: " << name << std::endl;
-
   auto promise = request.send();
-  std::cout << "LOOKUP name1: " << name << std::endl;
   auto result = promise.wait(waitScope);
-  std::cout << "LOOKUP name2: " << name << std::endl;
   auto response = result.getRes();
-
-  std::cout << "LOOKUP name3: " << name << std::endl;
 
   struct stat attr;
 
-  std::cout << "LOOKUP name4: " << name << std::endl;
-
   memset(&attr, 0, sizeof(attr));
-
-  std::cout << "LOOKUP name5: " << name << std::endl;
 
   int res = response.getRes();
 
-  std::cout << "LOOKUP res: " << res << std::endl;
-  std::cout << "LOOKUP err: " << response.getErrno() << std::endl;
-
   if (res == -1) {
-    // std::cout << "LOOKUP::ENOENT" << std::endl;
     fuse_reply_err(req, response.getErrno());
     return;
   }
@@ -353,7 +334,7 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
 
   fuse_reply_entry(req, &e);
 
-  std::cout << "hello_ll_lookup executed correctly" << std::endl;
+  // std::cout << "hello_ll_lookup executed correctly" << std::endl;
 }
 
 /**
@@ -901,7 +882,6 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
   int res = response.getRes();
 
   if (res == -1) {
-    // std::cout << "MKNOD::ENOENT" << std::endl;
     fuse_reply_err(req, response.getErrno());
     return;
   }
@@ -1012,7 +992,6 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
   int res = response.getRes();
 
   if (res == -1) {
-    // std::cout << "CREATE::ENOENT" << std::endl;
     fuse_reply_err(req, response.getErrno());
     return;
   }
@@ -1076,7 +1055,6 @@ static void hello_ll_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, 
   int res = response.getRes();
 
   if (res == -1) {
-    // std::cout << "MKDIR::ENOENT" << std::endl;
     fuse_reply_err(req, response.getErrno());
     return;
   }
@@ -1291,7 +1269,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
@@ -1313,7 +1291,6 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   int res = response.getRes();
 
   if (res == -1) {
-    // std::cout << "SETATTR::ENOENT" << std::endl;
     fuse_reply_err(req, response.getErrno());
     return;
   }
@@ -1346,7 +1323,6 @@ static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, 
   int res = response.getRes();
 
   if (res == -1) {
-    // std::cout << "SETXATTR::ENOENT" << std::endl;
     fuse_reply_err(req, response.getErrno());
     return;
   }
