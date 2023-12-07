@@ -206,6 +206,7 @@ public:
 
     uint64_t ino = req.getIno();
     std::string path = get_path_from_ino(ino);
+    std::cout << "GETATTR path server: " << path << std::endl;
 
     if (not path.length()) {
       response.setErrno(ENOENT);
@@ -221,6 +222,8 @@ public:
       return kj::READY_NOW;
     }
 
+    std::cout << "GETATTR access server: " << std::endl;
+
     struct stat attr;
 
     memset(&attr, 0, sizeof(attr));
@@ -235,6 +238,8 @@ public:
 
     int res = hello_stat(req.getIno(), fh, &attr);
     int err = errno;
+
+    std::cout << "GETATTR err server: " << err << std::endl;
 
     GetattrResponse::Attr::Builder attributes = response.initAttr();
 

@@ -240,9 +240,13 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
 
   fillFileInfo(&fuseFileInfo, fi);
 
+  std::cout << "GETATTR before: " << std::endl;
+
   auto promise = request.send();
   auto result = promise.wait(waitScope);
   auto response = result.getRes();
+
+  std::cout << "GETATTR after: " << std::endl;
 
   struct stat attr;
 
@@ -1287,7 +1291,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-// clang-format off
+  // clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
