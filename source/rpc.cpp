@@ -105,7 +105,6 @@ public:
 
     if (is_mount) {
       file_path = std::filesystem::path(root) / (*mounts)[name];
-
     } else {
       std::string user_root = normalize_path(root, user, suffix);
       std::string parent_path_name = parent == 1 ? user_root : ino_to_path[parent];
@@ -120,14 +119,6 @@ public:
       response.setRes(-1);
       return kj::READY_NOW;
     }
-
-    // if (not std::filesystem::exists(file_path)) {
-    //   int err = errno;
-    //   std::cout << "LOOKUP err server: " << err << std::endl;
-    //   response.setErrno(err);
-    //   response.setRes(-1);
-    //   return kj::READY_NOW;
-    // }
 
     uint64_t ino;
 

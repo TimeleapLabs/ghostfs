@@ -1265,7 +1265,7 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   attributes.setStBlksize(attr->st_blksize);
   attributes.setStBlocks(attr->st_blocks);
 
-  // clang-format off
+// clang-format off
   #if defined(__APPLE__)
     stAtime.setTvSec(attr->st_atimespec.tv_sec);
     stAtime.setTvNSec(attr->st_atimespec.tv_nsec);
@@ -1328,7 +1328,7 @@ static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, 
 #endif
 
 static void hello_ll_readlink(fuse_req_t req, fuse_ino_t ino) {
-  printf("Called .readlink\n");
+  // printf("Called .readlink\n");
 
   auto &waitScope = ioContext->waitScope;
   auto request = client->readlinkRequest();
@@ -1351,7 +1351,7 @@ static void hello_ll_readlink(fuse_req_t req, fuse_ino_t ino) {
     fuse_reply_readlink(req, link.c_str());
   }
 
-  std::cout << "readlink executed correctly " << std::endl;
+  // std::cout << "readlink executed correctly " << std::endl;
 }
 
 // clang-format off
