@@ -95,9 +95,9 @@ bool is_subpath(const std::filesystem::path& root, const std::filesystem::path& 
 }
 
 bool check_access(std::string root, std::string user_id, std::string suffix, std::string path) {
-  if (not std::filesystem::exists(path)) {
-    return true;
-  }
+  // if (not std::filesystem::exists(path)) {
+  //   return true;
+  // }
 
   std::filesystem::path user_root = normalize_path(root, user_id, suffix);
 
