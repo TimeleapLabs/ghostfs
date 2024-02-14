@@ -251,7 +251,6 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
   int res = response.getRes();
 
   if (res == -1) {
-    // std::cout << "GETATTR::ENOENT" << std::endl;
     fuse_reply_err(req, response.getErrno());
     return;
   }
@@ -295,8 +294,6 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
   lookup.setParent(parent);
   lookup.setName(name);
 
-  // std::cout << "LOOKUP name: " << name << std::endl;
-
   auto promise = request.send();
   auto result = promise.wait(waitScope);
   auto response = result.getRes();
@@ -308,7 +305,6 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
   int res = response.getRes();
 
   if (res == -1) {
-    // std::cout << "LOOKUP::ENOENT" << std::endl;
     fuse_reply_err(req, response.getErrno());
     return;
   }
@@ -338,7 +334,7 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
 
   fuse_reply_entry(req, &e);
 
-  // std::cout << "hello_ll_lookup executed correctly: " << payload << std::endl;
+  // std::cout << "hello_ll_lookup executed correctly" << std::endl;
 }
 
 /**
@@ -882,7 +878,6 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
   int res = response.getRes();
 
   if (res == -1) {
-    // std::cout << "MKNOD::ENOENT" << std::endl;
     fuse_reply_err(req, response.getErrno());
     return;
   }
@@ -993,7 +988,6 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
   int res = response.getRes();
 
   if (res == -1) {
-    // std::cout << "CREATE::ENOENT" << std::endl;
     fuse_reply_err(req, response.getErrno());
     return;
   }
@@ -1057,7 +1051,6 @@ static void hello_ll_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, 
   int res = response.getRes();
 
   if (res == -1) {
-    // std::cout << "MKDIR::ENOENT" << std::endl;
     fuse_reply_err(req, response.getErrno());
     return;
   }
@@ -1294,7 +1287,6 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
   int res = response.getRes();
 
   if (res == -1) {
-    // std::cout << "SETATTR::ENOENT" << std::endl;
     fuse_reply_err(req, response.getErrno());
     return;
   }
@@ -1327,7 +1319,6 @@ static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, 
   int res = response.getRes();
 
   if (res == -1) {
-    // std::cout << "SETXATTR::ENOENT" << std::endl;
     fuse_reply_err(req, response.getErrno());
     return;
   }
@@ -1360,7 +1351,7 @@ static void hello_ll_readlink(fuse_req_t req, fuse_ino_t ino) {
     fuse_reply_readlink(req, link.c_str());
   }
 
-  // std::cout << "readlink executed correctly: " << payload << std::endl;
+  // std::cout << "readlink executed correctly " << std::endl;
 }
 
 // clang-format off

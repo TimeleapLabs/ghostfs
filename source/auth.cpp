@@ -94,15 +94,21 @@ bool is_subpath(const std::filesystem::path& root, const std::filesystem::path& 
   return mismatch_pair.second == root.end();
 }
 
-bool check_access(std::string root, std::string user_id, std::string suffix, std::string path) {
-  if (not std::filesystem::exists(path)) {
-    return true;
-  }
+bool check_exists(std::filesystem::path path) {
+  std::error_code ec;
+  bool ok = std::filesystem::exists(path, ec);
+  return ok;
+}
 
+bool check_access(std::string root, std::string user_id, std::string suffix, std::string path) {
   std::filesystem::path user_root = normalize_path(root, user_id, suffix);
 
   auto const root_can = user_root.lexically_normal();
   auto const path_can = std::filesystem::path(path).lexically_normal();
+
+  if (not check_exists(path_can)) {
+    return true;
+  }
 
   if (root_can == path_can) {
     return true;
