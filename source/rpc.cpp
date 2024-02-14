@@ -120,13 +120,6 @@ public:
       return kj::READY_NOW;
     }
 
-    if (not std::filesystem::exists(file_path)) {
-      int err = errno;
-      response.setErrno(err);
-      response.setRes(-1);
-      return kj::READY_NOW;
-    }
-
     uint64_t ino;
 
     if (not path_to_ino.contains(file_path)) {
