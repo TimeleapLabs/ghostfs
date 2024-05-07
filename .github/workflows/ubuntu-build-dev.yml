@@ -55,5 +55,3 @@ jobs:
           bodyFile: "release.md"
           prerelease: true
           tag: ${{ steps.info.outputs.tag }}
-          token: ${{ secrets.PERSONAL_TOKEN }}
-          repo: ghostfs-builds
