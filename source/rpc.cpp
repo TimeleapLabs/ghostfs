@@ -139,7 +139,7 @@ public:
 
     memset(&attr, 0, sizeof(attr));
 
-    int res = hello_stat(ino, &attr);
+    int res = ghostfs_stat(ino, &attr);
     int err = errno;
 
     LookupResponse::Attr::Builder attributes = response.initAttr();
@@ -200,7 +200,7 @@ public:
       return kj::READY_NOW;
     }
 
-    int res = hello_stat(req.getIno(), fh, &attr);
+    int res = ghostfs_stat(req.getIno(), fh, &attr);
     int err = errno;
 
     GetattrResponse::Attr::Builder attributes = response.initAttr();
@@ -420,7 +420,7 @@ public:
       //e.attr_timeout = 1.0;
       //e.entry_timeout = 1.0;
 
-      hello_stat(file_ino, &attr);
+      ghostfs_stat(file_ino, &attr);
       
       MknodResponse::Attr::Builder attributes = response.initAttr();
 
@@ -494,7 +494,7 @@ public:
       
       response.setIno(file_ino);
 
-      hello_stat(file_ino, &attr);
+      ghostfs_stat(file_ino, &attr);
 
       MkdirResponse::Attr::Builder attributes = response.initAttr();
 
@@ -705,7 +705,7 @@ public:
       
       response.setIno(file_ino);
 
-      hello_stat(file_ino, &attr);
+      ghostfs_stat(file_ino, &attr);
 
       SymlinkResponse::Attr::Builder attributes = response.initAttr();
 
@@ -1304,7 +1304,7 @@ public:
     fi_response.setPollEvents(fi.getPollEvents());
     fi_response.setWritepage(fi.getWritepage());
 
-    int res = hello_stat(file_ino, &attr);
+    int res = ghostfs_stat(file_ino, &attr);
 
     err = errno;
 

@@ -11,8 +11,8 @@ int start_fs(char* executable, char* argmnt, std::vector<std::string> options, s
              int port, std::string user, std::string token, uint8_t write_back_cache_size,
              uint8_t read_ahead_cache_size, std::string cert_file);
 
-int hello_stat(fuse_ino_t ino, int64_t fh, struct stat* stbuf);
-int hello_stat(fuse_ino_t ino, struct stat* stbuf);
+int ghostfs_stat(fuse_ino_t ino, int64_t fh, struct stat* stbuf);
+int ghostfs_stat(fuse_ino_t ino, struct stat* stbuf);
 
 extern std::map<uint64_t, std::string> ino_to_path;
 extern std::map<std::string, uint64_t> path_to_ino;

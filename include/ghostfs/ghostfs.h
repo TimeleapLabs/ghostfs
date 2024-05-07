@@ -4,11 +4,6 @@
 
 namespace ghostfs {
 
-  /**  Language codes to be used with the GhostFS class */
-
-  /**
-   * @brief A class for saying hello in multiple languages
-   */
   class GhostFS {
   public:
     /**

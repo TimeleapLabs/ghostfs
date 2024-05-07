@@ -1,11 +1,3 @@
-/*
-  FUSE: Filesystem in Userspace
-  Copyright (C) 2001-2007  Miklos Szeredi <miklos@szeredi.hu>
-  This program can be distributed under the terms of the GNU GPL.
-  See the file COPYING.
-  gcc -Wall hello_ll.c `pkg-config fuse --cflags --libs` -o hello_ll
-*/
-
 #define FUSE_USE_VERSION 29
 
 #include <assert.h>
@@ -169,9 +161,9 @@ template <class T> void fillFileInfo(T *fuseFileInfo, struct fuse_file_info *fi)
  *        Apparently Solaris devs knew how to write non-cryptic code
  */
 
-int hello_stat(fuse_ino_t ino, int64_t fh, struct stat *stbuf) {
+int ghostfs_stat(fuse_ino_t ino, int64_t fh, struct stat *stbuf) {
   if (fh == 0 || ino == 1) {
-    return hello_stat(ino, stbuf);
+    return ghostfs_stat(ino, stbuf);
   }
 
   int res = fstat(fh, stbuf);
@@ -179,7 +171,7 @@ int hello_stat(fuse_ino_t ino, int64_t fh, struct stat *stbuf) {
   return res;
 }
 
-int hello_stat(fuse_ino_t ino, struct stat *stbuf) {
+int ghostfs_stat(fuse_ino_t ino, struct stat *stbuf) {
   if (ino == 1) {
     // This is the fs root
     stbuf->st_ino = ino;
@@ -229,7 +221,7 @@ void dirbuf_add(fuse_req_t req, struct dirbuf *b, const char *name, fuse_ino_t i
  *    unsigned int 	noflush
  * }
  */
-static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
+static void ghostfs_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
   auto &waitScope = ioContext->waitScope;
   auto request = client->getattrRequest();
 
@@ -273,7 +265,7 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
 
   fuse_reply_attr(req, &attr, 1.0);
 
-  // std::cout << "hello_ll_getattr executed correctly: " << payload << std::endl;
+  // std::cout << "ghostfs_ll_getattr executed correctly: " << payload << std::endl;
 }
 
 /**
@@ -283,7 +275,7 @@ static void hello_ll_getattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
  * @param parent -> uint64_t
  * @param name -> *char
  */
-static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name) {
+static void ghostfs_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name) {
   // printf("Called .lookup\n");
 
   auto &waitScope = ioContext->waitScope;
@@ -334,7 +326,7 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
 
   fuse_reply_entry(req, &e);
 
-  // std::cout << "hello_ll_lookup executed correctly" << std::endl;
+  // std::cout << "ghostfs_ll_lookup executed correctly" << std::endl;
 }
 
 /**
@@ -359,8 +351,8 @@ static void hello_ll_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
  *    unsigned int 	noflush
  * }
  */
-static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off,
-                             struct fuse_file_info *fi) {
+static void ghostfs_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off,
+                               struct fuse_file_info *fi) {
   // printf("Called .readdir\n");
 
   auto &waitScope = ioContext->waitScope;
@@ -403,7 +395,7 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
   reply_buf_limited(req, b.p, b.size, off, size);
   // free(b.p);
 
-  // std::cout << "hello_ll_readdir executed correctly: " << payload << std::endl;
+  // std::cout << "ghostfs_ll_readdir executed correctly: " << payload << std::endl;
 }
 
 /**
@@ -426,7 +418,7 @@ static void hello_ll_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t 
  *    unsigned int 	noflush
  * }
  */
-static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
+static void ghostfs_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
   // printf("Called .open\n");
 
   auto &waitScope = ioContext->waitScope;
@@ -468,7 +460,7 @@ static void hello_ll_open(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info 
 
   fuse_reply_open(req, fi);
 
-  // std::cout << "hello_ll_open executed correctly: " << payload << std::endl;
+  // std::cout << "ghostfs_ll_open executed correctly: " << payload << std::endl;
 }
 
 bool reply_from_cache(fuse_req_t req, uint64_t fh, size_t size, off_t off) {
@@ -559,8 +551,8 @@ void read_ahead(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off, struct f
  *    unsigned int 	noflush
  * }
  */
-static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off,
-                          struct fuse_file_info *fi) {
+static void ghostfs_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off,
+                            struct fuse_file_info *fi) {
   // printf("Called .read\n");
 
   if (max_read_ahead_cache > 0) {
@@ -605,7 +597,7 @@ static void hello_ll_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off
 
   fuse_reply_buf(req, buf, res);
 
-  // std::cout << "hello_ll_read executed correctly: " << payload << std::endl;
+  // std::cout << "ghostfs_ll_read executed correctly: " << payload << std::endl;
 }
 
 uint64_t add_to_write_back_cache(cached_write cache) {
@@ -695,8 +687,8 @@ void flush_write_back_cache(uint64_t fh, bool reply) {
  *    unsigned int 	noflush
  * }
  */
-static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size_t size, off_t off,
-                           struct fuse_file_info *fi) {
+static void ghostfs_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size_t size,
+                             off_t off, struct fuse_file_info *fi) {
   // printf("Called .write\n");
 
   if (max_read_ahead_cache > 0) {
@@ -747,10 +739,10 @@ static void hello_ll_write(fuse_req_t req, fuse_ino_t ino, const char *buf, size
 
   fuse_reply_write(req, response.getWritten());
 
-  // std::cout << "hello_ll_write executed correctly: " << payload << std::endl;
+  // std::cout << "ghostfs_ll_write executed correctly: " << payload << std::endl;
 }
 
-static void hello_ll_unlink(fuse_req_t req, fuse_ino_t parent, const char *name) {
+static void ghostfs_ll_unlink(fuse_req_t req, fuse_ino_t parent, const char *name) {
   // printf("Called .unlink\n");
 
   auto &waitScope = ioContext->waitScope;
@@ -773,7 +765,7 @@ static void hello_ll_unlink(fuse_req_t req, fuse_ino_t parent, const char *name)
   // std::cout << "unlink executed correctly: " << payload << std::endl;
 }
 
-static void hello_ll_rmdir(fuse_req_t req, fuse_ino_t parent, const char *name) {
+static void ghostfs_ll_rmdir(fuse_req_t req, fuse_ino_t parent, const char *name) {
   // printf("Called .rmdir\n");
 
   auto &waitScope = ioContext->waitScope;
@@ -796,8 +788,8 @@ static void hello_ll_rmdir(fuse_req_t req, fuse_ino_t parent, const char *name) 
   // std::cout << "rmdir executed correctly: " << payload << std::endl;
 }
 
-static void hello_ll_symlink(fuse_req_t req, const char *link, fuse_ino_t parent,
-                             const char *name) {
+static void ghostfs_ll_symlink(fuse_req_t req, const char *link, fuse_ino_t parent,
+                               const char *name) {
   // printf("Called .symlink\n");
 
   auto &waitScope = ioContext->waitScope;
@@ -857,8 +849,8 @@ static void hello_ll_symlink(fuse_req_t req, const char *link, fuse_ino_t parent
  * @param mode -> uint64_t
  * @param rdev -> uint16_t
  */
-static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode,
-                           dev_t rdev) {
+static void ghostfs_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode,
+                             dev_t rdev) {
   // printf("Called .mknod\n");
 
   auto &waitScope = ioContext->waitScope;
@@ -907,7 +899,7 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
 
   fuse_reply_entry(req, &e);
 
-  // std::cout << "hello_ll_mknod executed correctly: " << payload << std::endl;
+  // std::cout << "ghostfs_ll_mknod executed correctly: " << payload << std::endl;
 }
 
 /**
@@ -917,7 +909,7 @@ static void hello_ll_mknod(fuse_req_t req, fuse_ino_t parent, const char *name, 
  * @param ino -> uint64_t
  * @param mask -> int
  */
-static void hello_ll_access(fuse_req_t req, fuse_ino_t ino, int mask) {
+static void ghostfs_ll_access(fuse_req_t req, fuse_ino_t ino, int mask) {
   auto &waitScope = ioContext->waitScope;
   auto request = client->accessRequest();
 
@@ -961,8 +953,8 @@ static void hello_ll_access(fuse_req_t req, fuse_ino_t ino, int mask) {
  *    unsigned int 	noflush
  * }
  */
-static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode,
-                            struct fuse_file_info *fi) {
+static void ghostfs_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode,
+                              struct fuse_file_info *fi) {
   // printf("Called .create\n");
 
   auto &waitScope = ioContext->waitScope;
@@ -1021,7 +1013,7 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
 
   fuse_reply_create(req, &e, fi);
 
-  // std::cout << "hello_ll_create executed correctly: " << payload << std::endl;
+  // std::cout << "ghostfs_ll_create executed correctly: " << payload << std::endl;
 }
 
 /**
@@ -1032,7 +1024,7 @@ static void hello_ll_create(fuse_req_t req, fuse_ino_t parent, const char *name,
  * @param name -> *char
  * @param mode -> uint64_t
  */
-static void hello_ll_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode) {
+static void ghostfs_ll_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, mode_t mode) {
   // printf("Called .mkdir\n");
 
   auto &waitScope = ioContext->waitScope;
@@ -1080,11 +1072,11 @@ static void hello_ll_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name, 
 
   fuse_reply_entry(req, &e);
 
-  // std::cout << "hello_ll_mkdir executed correctly: " << payload << std::endl;
+  // std::cout << "ghostfs_ll_mkdir executed correctly: " << payload << std::endl;
 }
 
-static void hello_ll_rename(fuse_req_t req, fuse_ino_t parent, const char *name,
-                            fuse_ino_t newparent, const char *newname) {
+static void ghostfs_ll_rename(fuse_req_t req, fuse_ino_t parent, const char *name,
+                              fuse_ino_t newparent, const char *newname) {
   // printf("Called .rename\n");
 
   auto &waitScope = ioContext->waitScope;
@@ -1106,7 +1098,7 @@ static void hello_ll_rename(fuse_req_t req, fuse_ino_t parent, const char *name,
 
   fuse_reply_err(req, res == -1 ? err : 0);
 
-  // std::cout << "hello_ll_rename executed correctly: " << payload << std::endl;
+  // std::cout << "ghostfs_ll_rename executed correctly: " << payload << std::endl;
 }
 
 /**
@@ -1117,7 +1109,7 @@ static void hello_ll_rename(fuse_req_t req, fuse_ino_t parent, const char *name,
  * @param name -> *char
  * @param mode -> uint64_t
  */
-static void hello_ll_release(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
+static void ghostfs_ll_release(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
   auto &waitScope = ioContext->waitScope;
   auto request = client->releaseRequest();
 
@@ -1136,7 +1128,7 @@ static void hello_ll_release(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
 
   fuse_reply_err(req, res == -1 ? err : 0);
 
-  // std::cout << "hello_ll_release executed correctly: " << payload << std::endl;
+  // std::cout << "ghostfs_ll_release executed correctly: " << payload << std::endl;
 }
 
 /**
@@ -1147,7 +1139,7 @@ static void hello_ll_release(fuse_req_t req, fuse_ino_t ino, struct fuse_file_in
  * @param name -> *char
  * @param mode -> uint64_t
  */
-static void hello_ll_flush(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
+static void ghostfs_ll_flush(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
   flush_write_back_cache(fi->fh, false);
 
   auto &waitScope = ioContext->waitScope;
@@ -1177,8 +1169,8 @@ static void hello_ll_flush(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info
  * @param name -> *char
  * @param mode -> uint64_t
  */
-static void hello_ll_fsync(fuse_req_t req, fuse_ino_t ino, int datasync,
-                           struct fuse_file_info *fi) {
+static void ghostfs_ll_fsync(fuse_req_t req, fuse_ino_t ino, int datasync,
+                             struct fuse_file_info *fi) {
   flush_write_back_cache(fi->fh, false);
 
   auto &waitScope = ioContext->waitScope;
@@ -1238,8 +1230,8 @@ static void hello_ll_fsync(fuse_req_t req, fuse_ino_t ino, int datasync,
  *    unsigned int 	noflush
  * }
  */
-static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, int to_set,
-                             struct fuse_file_info *fi) {
+static void ghostfs_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, int to_set,
+                               struct fuse_file_info *fi) {
   auto &waitScope = ioContext->waitScope;
   auto request = client->setattrRequest();
 
@@ -1291,13 +1283,13 @@ static void hello_ll_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, 
     return;
   }
 
-  hello_ll_getattr(req, response.getIno(), fi);
+  ghostfs_ll_getattr(req, response.getIno(), fi);
 
-  // std::cout << "hello_ll_setattr executed correctly: " << payload << std::endl;
+  // std::cout << "ghostfs_ll_setattr executed correctly: " << payload << std::endl;
 }
 
 #ifdef __APPLE__
-static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, const char *value,
+static void ghostfs_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, const char *value,
                               size_t size, int flags, uint32_t position) {
 
   auto &waitScope = ioContext->waitScope;
@@ -1323,11 +1315,11 @@ static void hello_ll_setxattr(fuse_req_t req, fuse_ino_t ino, const char *name, 
     return;
   }
 
-  // std::cout << "hello_ll_setxattr executed correctly: " << payload << std::endl;
+  // std::cout << "ghostfs_ll_setxattr executed correctly: " << payload << std::endl;
 }
 #endif
 
-static void hello_ll_readlink(fuse_req_t req, fuse_ino_t ino) {
+static void ghostfs_ll_readlink(fuse_req_t req, fuse_ino_t ino) {
   // printf("Called .readlink\n");
 
   auto &waitScope = ioContext->waitScope;
@@ -1355,29 +1347,29 @@ static void hello_ll_readlink(fuse_req_t req, fuse_ino_t ino) {
 }
 
 // clang-format off
-static const struct fuse_lowlevel_ops hello_ll_oper = {
-    .lookup = hello_ll_lookup,
-    .getattr = hello_ll_getattr,
-    .setattr = hello_ll_setattr,
-    .readlink = hello_ll_readlink,
-    .mknod = hello_ll_mknod,
-    .mkdir = hello_ll_mkdir,
-    .unlink = hello_ll_unlink,
-    .rmdir = hello_ll_rmdir,
-    .symlink = hello_ll_symlink,
-    .rename = hello_ll_rename,
-    .open = hello_ll_open,
-    .read = hello_ll_read,
-    .write = hello_ll_write,
-    .flush = hello_ll_flush,
-    .release = hello_ll_release,
-    .fsync = hello_ll_fsync,
-    .readdir = hello_ll_readdir,
+static const struct fuse_lowlevel_ops ghostfs_ll_oper = {
+    .lookup = ghostfs_ll_lookup,
+    .getattr = ghostfs_ll_getattr,
+    .setattr = ghostfs_ll_setattr,
+    .readlink = ghostfs_ll_readlink,
+    .mknod = ghostfs_ll_mknod,
+    .mkdir = ghostfs_ll_mkdir,
+    .unlink = ghostfs_ll_unlink,
+    .rmdir = ghostfs_ll_rmdir,
+    .symlink = ghostfs_ll_symlink,
+    .rename = ghostfs_ll_rename,
+    .open = ghostfs_ll_open,
+    .read = ghostfs_ll_read,
+    .write = ghostfs_ll_write,
+    .flush = ghostfs_ll_flush,
+    .release = ghostfs_ll_release,
+    .fsync = ghostfs_ll_fsync,
+    .readdir = ghostfs_ll_readdir,
     #ifdef __APPLE__
-      .setxattr = hello_ll_setxattr,
+      .setxattr = ghostfs_ll_setxattr,
     #endif
-    .access = hello_ll_access,
-    .create = hello_ll_create,
+    .access = ghostfs_ll_access,
+    .create = ghostfs_ll_create,
 };
 // clang-format on
 
@@ -1490,7 +1482,8 @@ int start_fs(char *executable, char *argmnt, std::vector<std::string> options, s
     return -1;
   }
 
-  struct fuse_session *se = fuse_lowlevel_new(&args, &hello_ll_oper, sizeof(hello_ll_oper), NULL);
+  struct fuse_session *se
+      = fuse_lowlevel_new(&args, &ghostfs_ll_oper, sizeof(ghostfs_ll_oper), NULL);
 
   if (se != NULL) {
     if (fuse_set_signal_handlers(se) != -1) {
